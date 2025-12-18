@@ -107,6 +107,17 @@ class Database:
         finally:
             session.close()
 
+    def get_incident_details(self, incident_id):
+        session = self.Session()
+        try:
+            incident = session.query(Incident).filter(Incident.id == incident_id).first()
+            if incident:
+                log_event = session.query(LogEvent).filter(LogEvent.id == incident.log_event_id).first()
+                return incident, log_event
+            return None, None
+        finally:
+            session.close()
+
 
 # Singleton for easy access
 db = Database()

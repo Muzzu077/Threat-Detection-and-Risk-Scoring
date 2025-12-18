@@ -1,5 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 10:05:00.123456,hacker_02,unknown,45.33.22.99,sql_injection_attempt_v2,failed,login_page
-2025-12-18 10:05:05.654321,hacker_02,unknown,45.33.22.99,brute_force_attack,failed,admin_panel
-2025-12-18 10:05:15.987654,malware_bot,unknown,192.168.1.100,malware_upload_attempt,failed,file_server
-2025-12-18 10:05:30.112233,botnet_new,unknown,103.22.15.20,ddos_simulation_flood,failed,api_gateway

@@ -8,6 +8,12 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pandas as pd
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from dotenv import load_dotenv
+
+# 1️⃣ Explicitly load environment variables from project root
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'))
+
 from src.database import db
 from src.anomaly_detection import load_model, train_anomaly_model, detect_anomalies, check_rule_based_anomalies, save_model
 from src.context_analysis import analyze_context
