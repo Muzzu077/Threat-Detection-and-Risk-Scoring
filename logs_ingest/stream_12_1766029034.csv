@@ -1,0 +1,2 @@
+timestamp,user,role,ip,action,status,resource
+2025-12-18 09:07:14.465777,hacker_xyz,unknown,182.21.4.9,sql_inject_attempt,failed,admin_panel

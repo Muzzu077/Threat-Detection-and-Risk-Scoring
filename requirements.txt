@@ -1,0 +1,11 @@
+pandas
+numpy
+scikit-learn
+streamlit
+plotly
+joblib
+sqlalchemy
+watchdog
+bcrypt
+requests
+twilio
