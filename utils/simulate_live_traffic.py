@@ -46,8 +46,8 @@ def generate_traffic_stream():
             for _ in range(num_events):
                 # Pick a scenario
                 scenario = random.choices(
-                    ['normal_browse', 'login_success', 'attack_attempt', 'bot_scan'],
-                    weights=[60, 20, 10, 10],
+                    ['normal_browse', 'login_success', 'suspicious_activity', 'attack_attempt', 'bot_scan'],
+                    weights=[40, 20, 15, 10, 15], # Adjusted for better demo mix
                     k=1
                 )[0]
                 
@@ -64,6 +64,12 @@ def generate_traffic_stream():
                     action = 'login'
                     status = 'success'
                     resource = 'login_page'
+
+                elif scenario == 'suspicious_activity': # Medium Risk
+                    user = random.choice(['customer_101', 'customer_102'])
+                    action = 'download_report'
+                    status = 'success'
+                    resource = 'sensitive_data' # Contextual anomaly potential
                     
                 elif scenario == 'attack_attempt':
                     user = 'hacker_xyz'

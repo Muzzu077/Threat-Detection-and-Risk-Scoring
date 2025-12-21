@@ -5,80 +5,92 @@ from datetime import datetime, timedelta
 import os
 
 # Constants
-USERS = ['alice', 'bob', 'charlie', 'dave', 'eve_admin', 'frank_admin']
-ROLES = {'alice': 'user', 'bob': 'user', 'charlie': 'user', 'dave': 'user', 'eve_admin': 'admin', 'frank_admin': 'admin'}
-IPS = ['192.168.1.10', '192.168.1.11', '192.168.1.12', '192.168.1.13', '10.0.0.5', '10.0.0.6']
-# External/Suspicious IPs
-SUSPICIOUS_IPS = ['182.21.4.9', '45.33.22.11', '203.0.113.5']
-ACTIONS = ['login', 'logout', 'file_access', 'data_export', 'system_config']
-STATUSES = ['success', 'failed']
-RESOURCES = ['HR_portal', 'project_docs', 'admin_panel', 'finance_db', 'public_site']
+# Constants (Aligned with simulate_live_traffic.py)
+USERS = ['public_guest', 'customer_101', 'customer_102', 'bot_crawler', 'hacker_xyz']
+ROLES = {
+    'public_guest': 'guest',
+    'customer_101': 'user',
+    'customer_102': 'user',
+    'bot_crawler': 'impersonator', 
+    'hacker_xyz': 'unknown'
+}
+IPS = {
+    'public_guest': '172.16.0.5',
+    'customer_101': '192.168.1.5',
+    'customer_102': '192.168.1.6',
+    'bot_crawler': '45.33.22.11', 
+    'hacker_xyz': '182.21.4.9' 
+}
+# Combined actions from simulator
+ACTIONS = ['view_page', 'login', 'api_call', 'failed_login', 'sql_inject_attempt', 'download_report']
+RESOURCES = ['home', 'about', 'products', 'login_page', 'admin_panel', 'user_settings', 'sensitive_data']
 
 def generate_logs(num_rows=1000, output_file='data/sample_logs.csv', attack_ratio=0.0):
     data = []
     start_time = datetime.now() - timedelta(days=7)
     
+    # Weights similar to simulator: Normal (60%), Login (20%), Suspicious (15%), Attack (10%)...
+    # We'll approximate for training data
+    
     for _ in range(num_rows):
         is_attack = random.random() < attack_ratio
         
-        # Base timestamp: mostly during office hours (9-17)
-        if is_attack and random.random() < 0.7:
-            # Attack: unusual time (e.g., 2 AM)
-            hour = random.choice([0, 1, 2, 3, 4, 20, 21, 22, 23])
-        else:
-            # Normal: office hours
-            hour = random.randint(9, 17)
-            
+        # Base timestamp
         timestamp = start_time + timedelta(minutes=random.randint(0, 60*24*7))
-        timestamp = timestamp.replace(hour=hour, minute=random.randint(0, 59))
         
         if is_attack:
-            # Attack Scenarios
-            scenario = random.choice(['brute_force', 'unusual_admin', 'data_exfil'])
-            
-            if scenario == 'brute_force':
-                user = random.choice(USERS)
-                role = ROLES[user]
-                ip = random.choice(SUSPICIOUS_IPS) if random.random() > 0.5 else random.choice(IPS)
-                action = 'login'
+            # High Risk / Critical Scenarios
+            scenario = random.choice(['attack_attempt', 'bot_scan'])
+            if scenario == 'attack_attempt':
+                user = 'hacker_xyz'
+                action = random.choice(['failed_login', 'sql_inject_attempt'])
                 status = 'failed'
                 resource = 'admin_panel'
+            else: # bot_scan
+                user = 'bot_crawler'
+                action = 'api_call'
+                status = '403_forbidden'
+                resource = 'user_settings'
+                
+            hour = random.choice([0, 1, 2, 22, 23]) # Night often
             
-            elif scenario == 'unusual_admin':
-                 # Admin login from new IP at odd hours
-                user = 'eve_admin'
-                role = ROLES[user]
-                ip = random.choice(SUSPICIOUS_IPS)
+        else:
+            # Low / Medium Risk Scenarios
+            # 80% Normal, 20% Suspicious (Medium) behavior to learn from?
+            # Actually, for "normal" training data, we want mostly Normal.
+            # But the model needs to see everything to encode labels? 
+            # IsolationForest assumes training data is mostly "normal".
+            
+            scenario = random.choices(['normal', 'login', 'suspicious'], weights=[60, 20, 10])[0]
+            hour = random.randint(8, 20)
+            
+            if scenario == 'normal':
+                user = random.choice(['public_guest', 'customer_101', 'customer_102'])
+                action = 'view_page'
+                status = 'success'
+                resource = random.choice(['home', 'about', 'products'])
+                
+            elif scenario == 'login':
+                user = random.choice(['customer_101', 'customer_102'])
                 action = 'login'
                 status = 'success'
-                resource = 'admin_panel'
+                resource = 'login_page'
                 
-            elif scenario == 'data_exfil':
-                user = random.choice(['alice', 'bob']) # Normal user trying to access sensitive data
-                role = ROLES[user]
-                ip = IPS[USERS.index(user)]
-                action = 'data_export'
+            elif scenario == 'suspicious':
+                # Mimic the Medium risk scenario
+                user = random.choice(['customer_101', 'customer_102'])
+                action = 'download_report'
                 status = 'success'
-                resource = 'finance_db'
+                resource = 'sensitive_data'
+
+        # Lookup Role/IP
+        role = ROLES[user]
+        ip = IPS[user]
         
-        else:
-            # Normal Behavior
-            user = random.choice(USERS)
-            role = ROLES[user]
-            ip = IPS[USERS.index(user)]
-            action = random.choice(ACTIONS)
-            
-            if action == 'login':
-                status = 'success' if random.random() > 0.05 else 'failed' # Occasional failure is normal
-            else:
-                status = 'success'
-                
-            resource = random.choice(RESOURCES)
-            
-            # Constraints for realism
-            if role == 'user' and resource == 'admin_panel':
-                 # Normal users rarely access admin panel successfully
-                 status = 'failed'
+        # Override timestamp hour
+        timestamp = timestamp.replace(hour=hour, minute=random.randint(0, 59))
+
+        data.append([timestamp.strftime('%Y-%m-%d %H:%M:%S'), user, role, ip, action, status, resource])
 
         data.append([timestamp.strftime('%Y-%m-%d %H:%M:%S'), user, role, ip, action, status, resource])
 

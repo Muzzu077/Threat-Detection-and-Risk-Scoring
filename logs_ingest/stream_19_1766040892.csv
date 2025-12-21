@@ -1,2 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 12:24:52.113262,customer_101,user,192.168.1.5,login,success,login_page
