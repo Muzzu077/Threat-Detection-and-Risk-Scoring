@@ -1,49 +1,98 @@
-# Context-Aware Cyber Threat Detection (SOC Edition)
+# 🛡️ Threat Pulse: Context-Aware Security System (Local AI Edition)
 
-**Real-Time Security Operations Center & Alerting System**
+**Real-Time Threat Detection with AI-Powered Explanation & Alerting**
 
-## 🚀 Features
-- **SOC Command Center**: A dark-mode, sci-fi style dashboard for security operators.
-- **Instant Alerts**: Sends Telegram messages immediately when high-risk events occur.
-- **Incident Management**: Tracks threats from "OPEN" to "RESOLVED" directly in the UI.
-- **Live Traffic Simulation**: Automatically mimics a web server under attack.
+Threat Pulse is a next-gen security tool that detects cyber threats in real-time using Deep Learning, explains them using Generative AI, and alerts security teams instantly via WhatsApp.
 
-## 🛠️ Configuration (Telegram Alerts)
-To enable real-world alerts, you must configure your Telegram Bot:
+---
 
-1.  Open `utils/alerting.py`.
-2.  Replace the placeholders:
-    ```python
-    TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE" 
-    TELEGRAM_CHAT_ID = "YOUR_CHAT_ID_HERE"
+## 🚀 Key Features
+
+*   **Real-Time Anomaly Detection**: Uses a local **TensorFlow Autoencoder** to spot unknown threats.
+*   **AI-Powered Summaries**: Integrates **SambaNova AI (Meta-Llama-3.3-70B)** to explain *why* an alert is critical.
+*   **Instant Alerts**: Sends detailed incident reports to **WhatsApp** (via Twilio).
+*   **Live Dashboard**: Interactive **Streamlit** dashboard for monitoring and investigation.
+*   **Privacy-First**: Runs locally. No cloud data ingestion required.
+
+---
+
+## 🛠️ Tech Stack
+
+*   **AI/ML**: TensorFlow (Keras), Scikit-Learn
+*   **GenAI**: SambaNova API (Meta-Llama-3.3-70B-Instruct)
+*   **Backend**: Python, Watchdog
+*   **Database**: SQLite (Local)
+*   **Alerting**: Twilio (WhatsApp)
+*   **Dashboard**: Streamlit, Plotly
+
+---
+
+## 📦 Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/your-repo/threat-pulse.git
+    cd threat-pulse
     ```
-    *(If you don't have these, alerts will simply print to the console).*
 
-## 🎬 How to Run the "SOC Demo"
-1.  **Launch the System**:
-    ```powershell
-    powershell -ExecutionPolicy Bypass -File start_enterprise.ps1
+2.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
     ```
-2.  **Login**:
-    -   **Operator ID**: `admin`
-    -   **Access Key**: `admin123`
 
-3.  **Witness the Live Attack**:
-    -   The system will start "Secure" (Green Banner).
-    -   The **Traffic Simulator** will start generating random events.
-    -   Suddenly, a **Critical Attack** (SQL Injection / Admin Access) will occur.
-    -   **RESULT**:
-        1.  Banner turns **RED** (Critical Status).
-        2.  An **Incident Card** appears on the left.
-        3.  You receive a **Real Telegram Notification** on your phone.
-    
-4.  **Respond**:
-    -   Click **INVESTIGATE** on the dashboard to change status.
-    -   Click **RESOLVE** once handled.
-    -   Banner returns to Green.
+3.  **Configure Environment**:
+    Create a `.env` file in the root directory:
+    ```ini
+    # Twilio Configuration
+    TWILIO_ACCOUNT_SID=your_sid
+    TWILIO_AUTH_TOKEN=your_token
+    TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+    TO_WHATSAPP=whatsapp:+your_number
+
+    # SambaNova AI Key (Free Tier)
+    SAMBANOVA_API_KEY=your_sambanova_key
+    ```
+    *Important: For Twilio Sandbox, send `join <your-keyword>` to the Twilio number first!*
+
+---
+
+## 🚦 How to Run
+
+**One-Click Start (Windows):**
+```powershell
+.\start_enterprise.ps1
+```
+
+This will automatically:
+1.  Start the **Ingestion Service** (Background PID).
+2.  Start the **Traffic Simulator** (Background PID).
+3.  Launch the **Dashboard** in your browser.
+
+---
+
+## 🧪 Simulation & Testing
+
+The system includes a traffic generator that simulates real-world attacks:
+*   **SQL Injection Attempts**
+*   **Brute Force Attacks**
+*   **Data Exfiltration**
+*   **Normal User Behavior**
+
+Watch the **Logs** folder or the **Dashboard** to see attacks being detected and explained in real-time.
+
+---
 
 ## 📂 Project Structure
-- `start_enterprise.ps1`: One-click launcher.
-- `dashboard/app.py`: The SOC Control Room interface.
-- `utils/alerting.py`: Telegram integration logic.
-- `src/database.py`: Stores Logs and Incidents.
+
+*   `src/`: Core logic (Ingestion, Database, Model).
+*   `dashboard/`: Streamlit UI code.
+*   `utils/`: Helper scripts (Alerting, GenAI Client, Data Generation).
+*   `logs_ingest/`: Directory watched for new log files.
+*   `security_events.db`: Local SQLite database.
+
+---
+
+## ⚠️ Troubleshooting
+
+*   **WhatsApp not working?** ensuring you have joined the Twilio Sandbox by sending `join <keyword>` to `+14155238886`.
+*   **No AI Summary?** Check your `SAMBANOVA_API_KEY` quota or internet connection.

@@ -1,0 +1,96 @@
+{
+  "accuracy": 98.6,
+  "precision": 98.64,
+  "recall": 98.6,
+  "f1_score": 98.61,
+  "classes": [
+    "brute_force",
+    "data_exfiltration",
+    "normal",
+    "port_scan",
+    "sql_injection"
+  ],
+  "confusion_matrix": [
+    [
+      126,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      102,
+      0,
+      2,
+      4
+    ],
+    [
+      0,
+      0,
+      545,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      110,
+      4
+    ],
+    [
+      0,
+      0,
+      0,
+      4,
+      103
+    ]
+  ],
+  "classification_report": {
+    "brute_force": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 126.0
+    },
+    "data_exfiltration": {
+      "precision": 1.0,
+      "recall": 0.9444444444444444,
+      "f1-score": 0.9714285714285714,
+      "support": 108.0
+    },
+    "normal": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 545.0
+    },
+    "port_scan": {
+      "precision": 0.9482758620689655,
+      "recall": 0.9649122807017544,
+      "f1-score": 0.9565217391304348,
+      "support": 114.0
+    },
+    "sql_injection": {
+      "precision": 0.9279279279279279,
+      "recall": 0.9626168224299065,
+      "f1-score": 0.944954128440367,
+      "support": 107.0
+    },
+    "accuracy": 0.986,
+    "macro avg": {
+      "precision": 0.9752407579993786,
+      "recall": 0.9743947095152212,
+      "f1-score": 0.9745808877998746,
+      "support": 1000.0
+    },
+    "weighted avg": {
+      "precision": 0.9863917365641504,
+      "recall": 0.986,
+      "f1-score": 0.9860678557182746,
+      "support": 1000.0
+    }
+  },
+  "model_type": "LightGBM"
+}
