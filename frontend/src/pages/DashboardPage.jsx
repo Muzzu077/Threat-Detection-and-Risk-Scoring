@@ -4,11 +4,17 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar
 } from 'recharts';
-import { fetchStats, fetchEvents, fetchIncidents } from '../api/client';
+import { fetchStats, fetchEvents, fetchIncidents, fetchGeoDistribution } from '../api/client';
 import { getSeverity, formatDateTime } from '../utils/helpers';
 import { RiskBadge, AttackTypeBadge } from '../components/Badges';
 import LiveFeed from '../components/LiveFeed';
 import PredictionWidget from '../components/PredictionWidget';
+
+// Country flag emoji helper (ISO-2)
+function flagEmoji(code) {
+  if (!code || code.length !== 2) return '🌐';
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1F1A5 + c.charCodeAt(0)));
+}
 
 const SEV_COLORS = { critical: '#f03250', high: '#ff8c00', medium: '#ffb800', low: '#00e5b0' };
 
@@ -48,16 +54,20 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({});
   const [events, setEvents] = useState([]);
   const [incidents, setIncidents] = useState([]);
+  const [geo, setGeo] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
     try {
-      const [s, e, i] = await Promise.all([fetchStats(), fetchEvents(1, 200), fetchIncidents()]);
+      const [s, e, i, g] = await Promise.all([
+        fetchStats(), fetchEvents(1, 200), fetchIncidents(), fetchGeoDistribution()
+      ]);
       setStats(s);
       setEvents(e.data || []);
       setIncidents(i.data || []);
+      setGeo(g.data || []);
       setPulse(p => !p);
     } catch {}
     setLoading(false);
@@ -106,6 +116,24 @@ export default function DashboardPage() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}>
+            <label style={{ cursor: 'pointer', background: 'rgba(0,255,200,0.1)', border: '1px solid rgba(0,255,200,0.4)', color: '#00e5b0', padding: '6px 14px', borderRadius: 4, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: 1 }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,200,0.2)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,200,0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,255,200,0.1)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+              <span style={{ fontSize: 13 }}>📤</span> UPLOAD LOGS (CSV)
+              <input type="file" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
+                if (!e.target.files?.length) return;
+                const formData = new FormData();
+                formData.append('file', e.target.files[0]);
+                try {
+                  const res = await fetch('http://localhost:8000/api/ingest/csv', { method: 'POST', body: formData });
+                  if (res.ok) {
+                    const data = await res.json();
+                    alert(`✅ Real data uploaded! ${data.events_count} events queued for ML ingestion.`);
+                  } else alert('❌ Upload failed.');
+                } catch (err) { alert('❌ Network error during upload. Is the API running?'); }
+              }} />
+            </label>
+            <div style={{ height: 16, width: 1, background: 'rgba(0,255,200,0.3)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 8px #00e5b0', animation: 'pulse-live 1.5s ease-in-out infinite', display: 'inline-block' }}/>
               <span style={{ color: '#00e5b0' }}>LIVE</span>
@@ -190,10 +218,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Bottom Row: Active Incidents | Prediction | Live Feed ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      {/* ── Bottom Row ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
-        {/* Active Incidents */}
+        {/* Left: Active Incidents */}
         <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>Active Incidents</div>
@@ -203,9 +231,9 @@ export default function DashboardPage() {
             <div style={{ textAlign: 'center', padding: '30px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#2e5570' }}>NO ACTIVE INCIDENTS</div>
           ) : recentCritical.map(inc => (
             <div key={inc.id} onClick={() => navigate(`/incidents/${inc.id}`)}
-              style={{ padding: '12px 14px', background: '#101d2a', borderRadius: 8, marginBottom: 8, border: '1px solid rgba(0,255,200,0.06)', cursor: 'pointer', transition: 'border-color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,255,200,0.2)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(0,255,200,0.06)'}
+              style={{ padding: '12px 14px', background: '#101d2a', borderRadius: 8, marginBottom: 8, border: '1px solid rgba(0,255,200,0.06)', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,255,200,0.2)'; e.currentTarget.style.background = '#122030'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,255,200,0.06)'; e.currentTarget.style.background = '#101d2a'; }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                 <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#00e5b0' }}>INC-{String(inc.id).padStart(4, '0')}</span>
@@ -217,17 +245,50 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* AI Prediction Widget */}
-        <PredictionWidget />
+        {/* Right: Geo-Distribution + Prediction stacked */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Live Feed */}
-        <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(0,255,200,0.08)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 8px #00e5b0', display: 'inline-block', animation: 'pulse-live 1.5s ease-in-out infinite' }} />
-            Live Event Feed
+          {/* Geo Origin Panel */}
+          <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>🌐 Attack Origins</div>
+              <button className="btn btn-ghost" style={{ fontSize: 10, padding: '4px 10px' }} onClick={() => navigate('/threat-intel')}>INTEL MAP →</button>
+            </div>
+            {geo.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#2e5570' }}>NO GEO DATA YET</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {geo.slice(0, 6).map(({ country, count }) => {
+                  const maxCount = geo[0]?.count || 1;
+                  const pct = (count / maxCount) * 100;
+                  return (
+                    <div key={country} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14, minWidth: 22 }}>{flagEmoji(country)}</span>
+                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#6e9ab5', minWidth: 30 }}>{country}</span>
+                      <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #00e5b0, #4a9eff)', borderRadius: 2, boxShadow: '0 0 6px rgba(0,229,176,0.4)', transition: 'width 0.8s ease' }} />
+                      </div>
+                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', minWidth: 22, textAlign: 'right' }}>{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <LiveFeed />
+
+          {/* AI Prediction Widget */}
+          <PredictionWidget />
         </div>
+
+      </div>
+
+      {/* Live Feed (full width at bottom) */}
+      <div style={{ marginTop: 16, background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(0,255,200,0.08)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 8px #00e5b0', display: 'inline-block', animation: 'pulse-live 1.5s ease-in-out infinite' }} />
+          Live Event Feed
+        </div>
+        <LiveFeed />
       </div>
     </div>
   );

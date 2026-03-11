@@ -15,10 +15,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import pandas as pd
+import io
+import time
 
 from src.database import db
 from src.attack_graph import build_graph, graph_to_json, get_attack_chains
@@ -122,6 +125,17 @@ class StatusUpdate(BaseModel):
 class ResponseTrigger(BaseModel):
     force: Optional[bool] = False
 
+class LogEventSchema(BaseModel):
+    timestamp: str
+    user: str
+    ip: str
+    action: str
+    status: str
+    resource: str
+
+class LogBatchSchema(BaseModel):
+    events: List[LogEventSchema]
+
 # ─── Helper: serialize ORM event ─────────────────────────────────────────────
 
 def serialize_event(e) -> dict:
@@ -183,6 +197,47 @@ def get_events(
         "limit": limit,
         "pages": (total + limit - 1) // limit
     }
+
+# Real-world Data Ingestion
+@app.post("/api/ingest/csv")
+async def ingest_csv(file: UploadFile = File(...)):
+    """Accepts a CSV file of real logs and drops it into logs_ingest folder."""
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+    
+    content = await file.read()
+    try:
+        df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        required_cols = {'timestamp', 'user', 'ip', 'action', 'status', 'resource'}
+        if not required_cols.issubset(set(df.columns)):
+            raise HTTPException(status_code=400, detail=f"CSV must contain columns: {required_cols}")
+        
+        # Save to ingested folder
+        save_dir = os.path.join(os.path.dirname(__file__), '..', 'logs_ingest')
+        os.makedirs(save_dir, exist_ok=True)
+        filename = f"real_data_{int(time.time())}.csv"
+        filepath = os.path.join(save_dir, filename)
+        df.to_csv(filepath, index=False)
+        
+        return {"message": "CSV uploaded and queued for ingestion.", "events_count": len(df), "file": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process CSV: {str(e)}")
+
+@app.post("/api/ingest/json")
+def ingest_json(batch: LogBatchSchema):
+    """Accepts JSON events and writes them as a CSV for ingestion."""
+    if not batch.events:
+        raise HTTPException(status_code=400, detail="Empty event batch.")
+        
+    df = pd.DataFrame([e.dict() for e in batch.events])
+    
+    save_dir = os.path.join(os.path.dirname(__file__), '..', 'logs_ingest')
+    os.makedirs(save_dir, exist_ok=True)
+    filename = f"real_data_{int(time.time())}.csv"
+    filepath = os.path.join(save_dir, filename)
+    df.to_csv(filepath, index=False)
+    
+    return {"message": "Logs uploaded and queued for ingestion.", "events_count": len(df), "file": filename}
 
 # Stats / KPIs
 @app.get("/api/stats")

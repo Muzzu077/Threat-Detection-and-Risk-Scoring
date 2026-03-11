@@ -14,34 +14,34 @@
     "data": {
       "ip": "192.168.1.5",
       "abuse_score": 0,
-      "country": null,
-      "total_reports": 2,
+      "country": "UNKNOWN",
+      "total_reports": 0,
       "is_suspicious": false,
       "data_source": "cache"
     },
-    "timestamp": 1773077717.7650754
+    "timestamp": 1773230250.7985194
   },
   "172.16.0.5": {
     "data": {
       "ip": "172.16.0.5",
       "abuse_score": 0,
-      "country": null,
-      "total_reports": 52,
+      "country": "UNKNOWN",
+      "total_reports": 0,
       "is_suspicious": false,
       "data_source": "cache"
     },
-    "timestamp": 1773077735.4308298
+    "timestamp": 1773230263.8631067
   },
   "192.168.1.6": {
     "data": {
       "ip": "192.168.1.6",
       "abuse_score": 0,
-      "country": null,
-      "total_reports": 1,
+      "country": "UNKNOWN",
+      "total_reports": 0,
       "is_suspicious": false,
       "data_source": "cache"
     },
-    "timestamp": 1773077719.6265922
+    "timestamp": 1773230252.0673506
   },
   "182.21.4.9": {
     "data": {
@@ -14353,5 +14353,93 @@
       "data_source": "abuseipdb"
     },
     "timestamp": 1773078628.1501343
+  },
+  "104.199.171.87": {
+    "data": {
+      "ip": "104.199.171.87",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230252.015561
+  },
+  "52.206.120.172": {
+    "data": {
+      "ip": "52.206.120.172",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230255.7348309
+  },
+  "114.156.40.216": {
+    "data": {
+      "ip": "114.156.40.216",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230259.0785909
+  },
+  "5.66.112.84": {
+    "data": {
+      "ip": "5.66.112.84",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230266.7053516
+  },
+  "52.176.43.193": {
+    "data": {
+      "ip": "52.176.43.193",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230266.748766
+  },
+  "104.146.149.7": {
+    "data": {
+      "ip": "104.146.149.7",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230266.8020158
+  },
+  "212.116.231.210": {
+    "data": {
+      "ip": "212.116.231.210",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230271.2202501
+  },
+  "114.242.79.90": {
+    "data": {
+      "ip": "114.242.79.90",
+      "abuse_score": 0,
+      "country": "UNKNOWN",
+      "total_reports": 0,
+      "is_suspicious": false,
+      "data_source": "no_api_key"
+    },
+    "timestamp": 1773230279.138324
   }
 }

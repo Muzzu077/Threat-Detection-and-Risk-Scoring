@@ -8,8 +8,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 # Load env
 load_dotenv()
 
-def verify_gemini():
-    print("\n🔮 Verifying Gemini Integration...")
+def verify_openrouter():
+    print("\n🔮 Verifying OpenRouter (StepFun) Integration...")
     try:
         from utils.gemini_client import generate_security_summary
         test_event = {
@@ -27,13 +27,13 @@ def verify_gemini():
         with open("verification_result.txt", "w", encoding="utf-8") as f:
             f.write(summary)
             
-        print(f"   ✅ Gemini Response received and saved to verification_result.txt")
+        print(f"   ✅ OpenRouter Response received and saved to verification_result.txt")
         if "Error" in summary:
-            print("   ⚠️  Warning: Gemini returned an error message.")
+            print("   ⚠️  Warning: OpenRouter returned an error message.")
         else:
-            print("   ✅ Gemini Success confirmed.")
+            print("   ✅ OpenRouter Success confirmed.")
     except Exception as e:
-        print(f"   ❌ Gemini Verification Failed: {e}")
+        print(f"   ❌ OpenRouter Verification Failed: {e}")
 
 def verify_twilio():
     print("\n📱 Verifying Twilio WhatsApp Integration...")
@@ -56,5 +56,5 @@ def verify_twilio():
 
 if __name__ == "__main__":
     print("🚀 Starting Integration Verification")
-    verify_gemini()
+    verify_openrouter()
     verify_twilio()
