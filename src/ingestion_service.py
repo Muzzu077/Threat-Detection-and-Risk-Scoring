@@ -27,8 +27,9 @@ from src.threat_intel import check_ip
 from src.response_engine import execute_response
 from src.attack_graph import get_attack_chains, build_graph
 
-from utils.alerting import trigger_whatsapp_alert
+from utils.alert_dispatcher import dispatch_alert
 from utils.gemini_client import generate_security_summary
+from src.ueba import analyze_event_ueba
 
 WATCH_DIR = os.path.join(PROJECT_ROOT, 'logs_ingest')
 
@@ -88,6 +89,22 @@ class LogHandler(FileSystemEventHandler):
                 if ti_result.get("is_suspicious"):
                     total_risk = min(100, total_risk + 15)
 
+                # 7b. UEBA: User Behavior Analytics anomalies
+                ueba_event = {
+                    'user': str(row.get('user', '')),
+                    'ip':   str(row.get('ip', '')),
+                    'country': country,
+                    'action':  str(row.get('action', '')),
+                    'resource': str(row.get('resource', '')),
+                    'hour':    int(row['timestamp'].hour) if hasattr(row.get('timestamp'), 'hour') else 0,
+                    'timestamp': row['timestamp'].isoformat() if hasattr(row.get('timestamp'), 'isoformat') else '',
+                }
+                ueba_anomalies = analyze_event_ueba(ueba_event)
+                for anomaly in ueba_anomalies:
+                    boost = anomaly.get('risk_boost', 0)
+                    total_risk = min(100, total_risk + boost)
+                    print(f"  🔍 UEBA [{anomaly['type']}]: {anomaly['description']} (+{boost} risk)")
+
                 # 8. Save to DB
                 event_dict = {
                     'timestamp': row['timestamp'].to_pydatetime(),
@@ -126,6 +143,7 @@ class LogHandler(FileSystemEventHandler):
                         db.update_incident_note(incident_id, ai_summary)
 
                     # 10. NEW: SOAR Auto-Response for critical (>90)
+                    response_json = ""
                     if total_risk > 90:
                         print(f"🤖 SOAR: Triggering automated response for incident {incident_id}")
                         response = execute_response(event_dict, incident_id)
@@ -133,9 +151,11 @@ class LogHandler(FileSystemEventHandler):
                         if incident_id:
                             db.update_incident_response(incident_id, response_json)
                         print(f"   ✅ {response['actions_count']} automated action(s) taken.")
+                    else:
+                        response_json = ""
 
-                    # WhatsApp Alert
-                    trigger_whatsapp_alert(event_dict, incident_id)
+                    # Multi-channel alert: Telegram + WhatsApp + Email + Slack + Webhook
+                    dispatch_alert(event_dict, incident_id, response_json)
 
             print(f"✅ Processed {len(df)} events from {os.path.basename(filepath)}")
 
