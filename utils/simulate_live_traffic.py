@@ -2,11 +2,20 @@ import time
 import random
 import pandas as pd
 import os
+import sys
+import io
 from datetime import datetime
 import textwrap
 
+# Fix Windows console encoding for emoji/unicode characters
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+
 # Setup
-INGEST_DIR = 'logs_ingest'
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+INGEST_DIR = os.path.join(PROJECT_ROOT, 'logs_ingest')
 os.makedirs(INGEST_DIR, exist_ok=True)
 
 # Profiles

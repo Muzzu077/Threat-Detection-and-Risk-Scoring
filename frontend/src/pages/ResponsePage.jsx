@@ -41,7 +41,7 @@ export default function ResponsePage() {
   if (loading) return <div className="loading"><div className="spinner" /><div className="loading-text">Loading SOAR data...</div></div>;
 
   return (
-    <div className="fade-in">
+    <div className="page-enter">
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>

@@ -7,10 +7,18 @@ All credentials are read from .env at CALL TIME on every function invocation
 so that TELEGRAM_CHAT_ID / BOT_TOKEN set after startup are always picked up.
 """
 import os
+import sys
+import io
 import json
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+
+# Fix Windows console encoding for emoji/unicode characters
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _ENV_PATH    = os.path.join(PROJECT_ROOT, '.env')
@@ -91,25 +99,29 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
     explanation = event.get('explanation', '')
     inc_id_str = str(incident_id).zfill(4)
 
+    def esc(text):
+        """Escape HTML special characters."""
+        return str(text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
     message = (
-        f"🚨 *THREATPULSE SECURITY ALERT*\n"
+        f"🚨 <b>THREATPULSE SECURITY ALERT</b>\n"
         f"{'━' * 28}\n\n"
-        f"{sev_emoji} *Severity:* {sev.upper()}\n"
-        f"{atk_emoji} *Threat Type:* {atk_type.replace('_', ' ').title()}\n"
-        f"👤 *User:* `{user}`\n"
-        f"🌐 *Source IP:* `{ip}` ({country})\n"
-        f"⚡ *Action:* {action}\n"
-        f"📊 *Risk Score:* {risk:.0f}/100\n\n"
-        f"🛡️ *Actions Taken:*\n{_format_response_actions(response_actions)}\n"
+        f"{sev_emoji} <b>Severity:</b> {sev.upper()}\n"
+        f"{atk_emoji} <b>Threat Type:</b> {esc(atk_type.replace('_', ' ').title())}\n"
+        f"👤 <b>User:</b> <code>{esc(user)}</code>\n"
+        f"🌐 <b>Source IP:</b> <code>{esc(ip)}</code> ({esc(country)})\n"
+        f"⚡ <b>Action:</b> {esc(action)}\n"
+        f"📊 <b>Risk Score:</b> {risk:.0f}/100\n\n"
+        f"🛡️ <b>Actions Taken:</b>\n{_format_response_actions(response_actions)}\n"
     )
 
     if explanation:
         short_exp = explanation[:300] + '...' if len(explanation) > 300 else explanation
-        message += f"\n📝 *Analysis:*\n_{short_exp}_\n"
+        message += f"\n📝 <b>Analysis:</b>\n<i>{esc(short_exp)}</i>\n"
 
     message += (
         f"\n{'━' * 28}\n"
-        f"📋 Incident: `INC-{inc_id_str}`\n"
+        f"📋 Incident: <code>INC-{inc_id_str}</code>\n"
         f"🕐 {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
     )
 
@@ -132,7 +144,7 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
     payload = {
         "chat_id":    chat_id,
         "text":       message,
-        "parse_mode": "Markdown",
+        "parse_mode": "HTML",
         "reply_markup": json.dumps(inline_keyboard),
         "disable_web_page_preview": True,
     }

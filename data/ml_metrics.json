@@ -1,18 +1,38 @@
 {
-  "accuracy": 98.4,
-  "precision": 98.43,
-  "recall": 98.4,
-  "f1_score": 98.41,
+  "accuracy": 97.0,
+  "precision": 97.02,
+  "recall": 97.0,
+  "f1_score": 97.0,
   "classes": [
     "brute_force",
+    "command_injection",
+    "credential_stuffing",
     "data_exfiltration",
+    "directory_traversal",
+    "dos_attack",
+    "insider_threat",
+    "malware",
     "normal",
     "port_scan",
-    "sql_injection"
+    "privilege_escalation",
+    "session_hijacking",
+    "sql_injection",
+    "ssrf",
+    "xss"
   ],
   "confusion_matrix": [
     [
-      119,
+      156,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
       0,
       0,
       0,
@@ -20,77 +40,375 @@
     ],
     [
       0,
-      104,
+      62,
+      0,
       0,
       3,
-      3
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      11,
+      0,
+      1
+    ],
+    [
+      4,
+      0,
+      67,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
     ],
     [
       0,
       0,
-      549,
       0,
+      129,
+      0,
+      0,
+      3,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      73,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      93,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      78,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      59,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      680,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      136,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      78,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      72,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      11,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      115,
+      0,
+      2
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      53,
       0
     ],
     [
       0,
       1,
       0,
-      103,
-      5
-    ],
-    [
       0,
       0,
       0,
-      4,
-      109
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      7,
+      0,
+      89
     ]
   ],
   "classification_report": {
     "brute_force": {
+      "precision": 0.975,
+      "recall": 0.9873417721518988,
+      "f1-score": 0.9811320754716981,
+      "support": 158.0
+    },
+    "command_injection": {
+      "precision": 0.8378378378378378,
+      "recall": 0.8051948051948052,
+      "f1-score": 0.8211920529801324,
+      "support": 77.0
+    },
+    "credential_stuffing": {
+      "precision": 0.9710144927536232,
+      "recall": 0.9436619718309859,
+      "f1-score": 0.9571428571428572,
+      "support": 71.0
+    },
+    "data_exfiltration": {
+      "precision": 0.9555555555555556,
+      "recall": 0.9626865671641791,
+      "f1-score": 0.9591078066914498,
+      "support": 134.0
+    },
+    "directory_traversal": {
+      "precision": 0.9358974358974359,
+      "recall": 0.9733333333333334,
+      "f1-score": 0.954248366013072,
+      "support": 75.0
+    },
+    "dos_attack": {
       "precision": 1.0,
       "recall": 1.0,
       "f1-score": 1.0,
-      "support": 119.0
+      "support": 93.0
     },
-    "data_exfiltration": {
-      "precision": 0.9904761904761905,
-      "recall": 0.9454545454545454,
-      "f1-score": 0.9674418604651163,
-      "support": 110.0
+    "insider_threat": {
+      "precision": 0.9629629629629629,
+      "recall": 0.9397590361445783,
+      "f1-score": 0.9512195121951219,
+      "support": 83.0
+    },
+    "malware": {
+      "precision": 0.9833333333333333,
+      "recall": 0.9833333333333333,
+      "f1-score": 0.9833333333333333,
+      "support": 60.0
     },
     "normal": {
       "precision": 1.0,
       "recall": 1.0,
       "f1-score": 1.0,
-      "support": 549.0
+      "support": 680.0
     },
     "port_scan": {
-      "precision": 0.9363636363636364,
-      "recall": 0.944954128440367,
-      "f1-score": 0.9406392694063926,
-      "support": 109.0
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 136.0
+    },
+    "privilege_escalation": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 78.0
+    },
+    "session_hijacking": {
+      "precision": 0.972972972972973,
+      "recall": 1.0,
+      "f1-score": 0.9863013698630136,
+      "support": 72.0
     },
     "sql_injection": {
-      "precision": 0.9316239316239316,
-      "recall": 0.9646017699115044,
-      "f1-score": 0.9478260869565217,
-      "support": 113.0
+      "precision": 0.8518518518518519,
+      "recall": 0.8984375,
+      "f1-score": 0.8745247148288974,
+      "support": 128.0
     },
-    "accuracy": 0.984,
+    "ssrf": {
+      "precision": 0.9636363636363636,
+      "recall": 0.9298245614035088,
+      "f1-score": 0.9464285714285714,
+      "support": 57.0
+    },
+    "xss": {
+      "precision": 0.967391304347826,
+      "recall": 0.9081632653061225,
+      "f1-score": 0.9368421052631579,
+      "support": 98.0
+    },
+    "accuracy": 0.97,
     "macro avg": {
-      "precision": 0.9716927516927518,
-      "recall": 0.9710020887612834,
-      "f1-score": 0.9711814433656061,
-      "support": 1000.0
+      "precision": 0.9584969407433176,
+      "recall": 0.9554490763908495,
+      "f1-score": 0.956764851014087,
+      "support": 2000.0
     },
     "weighted avg": {
-      "precision": 0.9842895215895215,
-      "recall": 0.984,
-      "f1-score": 0.9840526328425466,
-      "support": 1000.0
+      "precision": 0.9702454661030749,
+      "recall": 0.97,
+      "f1-score": 0.9699789544682126,
+      "support": 2000.0
     }
   },
-  "model_type": "LightGBM"
+  "model_type": "LightGBM",
+  "dataset_info": {
+    "source": "CIC-IDS2017 compatible synthetic",
+    "total_samples": 10000,
+    "feature_count": 21,
+    "network_features": [
+      "flow_duration",
+      "total_fwd_packets",
+      "total_bwd_packets",
+      "flow_bytes_per_s",
+      "flow_packets_per_s",
+      "fwd_packet_length_mean",
+      "bwd_packet_length_mean",
+      "flow_iat_mean",
+      "fwd_psh_flags",
+      "syn_flag_count",
+      "rst_flag_count",
+      "ack_flag_count",
+      "down_up_ratio",
+      "active_mean",
+      "idle_mean"
+    ],
+    "compatible_datasets": [
+      "CIC-IDS2017",
+      "UNSW-NB15",
+      "KDD Cup 99"
+    ]
+  },
+  "training_date": "2026-03-15T05:24:21.516269"
 }

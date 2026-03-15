@@ -12,8 +12,16 @@ const MITRE_QUICK = {
   sql_injection:     { id: 'T1190', tactic: 'Initial Access',    color: '#ff8c00' },
   data_exfiltration: { id: 'T1041', tactic: 'Exfiltration',      color: '#f03250' },
   port_scan:         { id: 'T1046', tactic: 'Discovery',         color: '#ffb800' },
-  malware:           { id: 'T1059', tactic: 'Execution',         color: '#f03250' },
-  privilege_escalation: { id: 'T1068', tactic: 'Privilege Esc.', color: '#ff8c00' },
+  xss:                 { id: 'T1059.007', tactic: 'Execution',         color: '#ff8c00' },
+  privilege_escalation:{ id: 'T1068', tactic: 'Privilege Esc.',       color: '#f03250' },
+  dos_attack:          { id: 'T1498', tactic: 'Impact',               color: '#f03250' },
+  command_injection:   { id: 'T1059', tactic: 'Execution',            color: '#f03250' },
+  directory_traversal: { id: 'T1083', tactic: 'Discovery',            color: '#ffb800' },
+  session_hijacking:   { id: 'T1550', tactic: 'Lateral Movement',     color: '#ff8c00' },
+  credential_stuffing: { id: 'T1110.004', tactic: 'Credential Access', color: '#f03250' },
+  ssrf:                { id: 'T1090', tactic: 'Command & Control',     color: '#ff8c00' },
+  malware:             { id: 'T1204', tactic: 'Execution',            color: '#f03250' },
+  insider_threat:      { id: 'T1078', tactic: 'Defense Evasion',      color: '#ffb800' },
   lateral_movement:  { id: 'T1021', tactic: 'Lateral Movement', color: '#ffb800' },
   normal:            { id: '—',     tactic: 'Benign',            color: '#00e5b0' },
 };
@@ -151,7 +159,7 @@ export default function IncidentsPage() {
   const criticalCount = incidents.filter(i => (i.risk_score || 0) >= 80 && i.status === 'OPEN').length;
 
   return (
-    <div className="fade-in">
+    <div className="page-enter">
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>

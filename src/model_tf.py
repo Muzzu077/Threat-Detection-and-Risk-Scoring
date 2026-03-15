@@ -7,8 +7,9 @@ import joblib
 import pandas as pd
 import os
 
-MODEL_PATH = 'data/model_tf.keras'
-ENCODER_PATH = 'data/encoders_tf.pkl'
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+MODEL_PATH = os.path.join(_PROJECT_ROOT, 'data', 'model_tf.keras')
+ENCODER_PATH = os.path.join(_PROJECT_ROOT, 'data', 'encoders_tf.pkl')
 
 def build_autoencoder(input_dim):
     """
@@ -31,7 +32,7 @@ def build_autoencoder(input_dim):
     autoencoder.compile(optimizer='adam', loss='mse')
     return autoencoder
 
-def train_and_save_model(data_path='data/sample_logs.csv'):
+def train_and_save_model(data_path=os.path.join(_PROJECT_ROOT, 'data', 'sample_logs.csv')):
     """
     Trains the autoencoder on 'normal' data from the CSV.
     """

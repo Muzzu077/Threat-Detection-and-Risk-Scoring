@@ -19,20 +19,37 @@ FROM nginx:alpine
 # Override nginx config for SPA routing
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# nginx config to handle React Router (SPA fallback)
-RUN echo 'server { \
-    listen 80; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { try_files $uri $uri/ /index.html; } \
-    location /api/ { proxy_pass http://api:8000; proxy_set_header Host $host; } \
-    location /ws/ { \
-    proxy_pass http://api:8000; \
-    proxy_http_version 1.1; \
-    proxy_set_header Upgrade $http_upgrade; \
-    proxy_set_header Connection "upgrade"; \
-    } \
-    }' > /etc/nginx/conf.d/default.conf
+# Write proper nginx config with SPA fallback + API/WS proxy
+RUN cat > /etc/nginx/conf.d/default.conf <<'NGINX'
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA fallback — serve index.html for all frontend routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API calls to the FastAPI backend
+    location /api/ {
+        proxy_pass http://api:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Proxy WebSocket connections
+    location /ws/ {
+        proxy_pass http://api:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 86400;
+    }
+}
+NGINX
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

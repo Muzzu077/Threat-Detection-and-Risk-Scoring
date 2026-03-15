@@ -126,7 +126,7 @@ export default function AttackGraphPage() {
   );
 
   return (
-    <div className="fade-in">
+    <div className="page-enter">
       <div className="flex-between mb-24">
         <div>
           <div className="page-title">⬡ ATTACK GRAPH</div>

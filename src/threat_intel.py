@@ -9,8 +9,8 @@ import time
 import requests
 from typing import Optional, Dict
 
-ABUSEIPDB_API_KEY = os.getenv("ABUSEIPDB_API_KEY", "")
-CACHE_FILE = "data/threat_intel_cache.json"
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+CACHE_FILE = os.path.join(_PROJECT_ROOT, "data", "threat_intel_cache.json")
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
 # In-memory cache: { ip: { data: {...}, timestamp: float } }
@@ -30,7 +30,7 @@ def _load_cache_from_disk():
 
 def _save_cache_to_disk():
     """Persist cache to disk."""
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(os.path.join(_PROJECT_ROOT, "data"), exist_ok=True)
     try:
         with open(CACHE_FILE, "w") as f:
             json.dump(_cache, f, indent=2)
@@ -64,7 +64,8 @@ def check_ip(ip: Optional[str]) -> dict:
         return cached
 
     # No API key — return neutral result
-    if not ABUSEIPDB_API_KEY:
+    api_key = os.getenv("ABUSEIPDB_API_KEY", "")
+    if not api_key:
         result = _make_result(ip, 0, "UNKNOWN", 0, False, "no_api_key")
         _store_cache(ip, result)
         return result
@@ -75,7 +76,7 @@ def check_ip(ip: Optional[str]) -> dict:
             "https://api.abuseipdb.com/api/v2/check",
             headers={
                 "Accept": "application/json",
-                "Key": ABUSEIPDB_API_KEY
+                "Key": api_key
             },
             params={
                 "ipAddress": ip,

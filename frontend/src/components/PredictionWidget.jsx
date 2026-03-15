@@ -63,7 +63,7 @@ export default function PredictionWidget() {
           <span style={{ animation: prediction.pattern_detected ? 'pulse-live 1.5s infinite' : 'none' }}>⚡</span>
           THREAT PREDICTION
           <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
-            AI / LSTM ENGINE
+            PATTERN ENGINE
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

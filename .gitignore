@@ -10,3 +10,11 @@ frontend/dist/
 data/blocked_ips.txt
 data/disabled_accounts.txt
 data/rate_limits.json
+data/response_log.jsonl
+data/threat_intel_cache.json
+data/ueba_baselines.json
+data/analyst_feedback.jsonl
+data/model_drift.json
+data/adversarial_results.json
+data/osint_feeds_cache.json
+.venv/

@@ -56,3 +56,29 @@ export const fetchPrediction = () => api.get('/prediction').then(r => r.data);
 
 // Attack Timeline
 export const fetchTimeline = (incidentId) => api.get(`/timeline/${incidentId}`).then(r => r.data);
+
+// MTTD/MTTR Metrics
+export const fetchMttdMttr = () => api.get('/metrics/mttd-mttr').then(r => r.data);
+
+// Feedback Loop
+export const submitFeedback = (incidentId, label, analyst = 'Admin') =>
+  api.post(`/feedback/${incidentId}`, { label, analyst }).then(r => r.data);
+
+export const fetchFeedbackStats = () => api.get('/feedback/stats').then(r => r.data);
+export const fetchModelDrift = () => api.get('/model/drift').then(r => r.data);
+
+// Adversarial Testing
+export const fetchAdversarialResults = () => api.get('/adversarial/results').then(r => r.data);
+export const runAdversarialTests = () => api.post('/adversarial/run').then(r => r.data);
+
+// SOAR Playbooks
+export const fetchPlaybooks = () => api.get('/playbooks').then(r => r.data);
+export const previewPlaybook = (attackType, riskScore = 80) =>
+  api.get(`/playbooks/${attackType}`, { params: { risk_score: riskScore } }).then(r => r.data);
+export const executePlaybook = (incidentId) =>
+  api.post(`/playbooks/execute/${incidentId}`).then(r => r.data);
+
+// OSINT Feeds
+export const fetchOsintFeeds = () => api.get('/osint/feeds').then(r => r.data);
+export const checkIpOsint = (ip) => api.get(`/osint/check/${ip}`).then(r => r.data);
+export const fetchUrlhaus = () => api.get('/osint/urlhaus').then(r => r.data);

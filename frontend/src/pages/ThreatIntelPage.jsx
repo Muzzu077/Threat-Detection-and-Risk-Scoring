@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { fetchThreatIntel } from '../api/client';
+import { useState, useEffect } from 'react';
+import { fetchThreatIntel, fetchOsintFeeds } from '../api/client';
 
 const QUICK_IPS = ['45.33.22.11', '182.21.4.9', '185.220.101.3', '8.8.8.8', '1.1.1.1'];
 
@@ -33,6 +33,11 @@ export default function ThreatIntelPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [osint, setOsint] = useState(null);
+
+  useEffect(() => {
+    fetchOsintFeeds().then(setOsint).catch(() => {});
+  }, []);
 
   const handleCheck = async (e) => {
     e.preventDefault();
@@ -52,7 +57,7 @@ export default function ThreatIntelPage() {
   const scoreColor = result ? (result.abuse_score >= 75 ? '#f03250' : result.abuse_score >= 40 ? '#ff8c00' : result.abuse_score >= 15 ? '#ffb800' : '#00e5b0') : '#00e5b0';
 
   return (
-    <div className="fade-in">
+    <div className="page-enter">
 
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
@@ -195,6 +200,35 @@ export default function ThreatIntelPage() {
           </div>
         </div>
       )}
+
+      {/* OSINT Threat Feeds */}
+      <div style={{ marginTop: 24, background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>OSINT Threat Intelligence Feeds</div>
+          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#00e5b0' }}>
+            {osint?.total_indicators || 0} indicators loaded
+          </span>
+        </div>
+        {osint?.feeds?.map(feed => (
+          <div key={feed.name} style={{ padding: '12px 14px', background: '#101d2a', borderRadius: 8, marginBottom: 8, border: '1px solid rgba(0,255,200,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#e8f4f8', marginBottom: 4 }}>{feed.name}</div>
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570' }}>{feed.description}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 18, color: feed.cached ? '#00e5b0' : '#2e5570' }}>{feed.count || 0}</div>
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: feed.cached ? '#00e5b0' : '#ffb800' }}>
+                {feed.cached ? 'LOADED' : 'NOT CACHED'}
+              </div>
+            </div>
+          </div>
+        ))}
+        {!osint && (
+          <div style={{ textAlign: 'center', padding: '24px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#2e5570' }}>
+            Loading OSINT feeds...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

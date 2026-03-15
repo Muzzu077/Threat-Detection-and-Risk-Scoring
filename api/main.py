@@ -32,9 +32,14 @@ from src.mitre_mapping import get_mitre_mapping, get_all_techniques
 from src.explainability_shap import load_cached_shap, get_static_feature_importance
 from src.threat_predictor import get_prediction_from_db_events
 from src.ueba import analyze_event_ueba, get_user_profile, get_all_profiles
+from src.soar_playbooks import get_all_playbooks, evaluate_playbook, execute_playbook
+from src.osint_feeds import get_feed_summary, check_ip_osint, fetch_urlhaus_recent
+from src.feedback_loop import record_feedback, get_feedback_stats, get_drift_metrics
+from src.adversarial_test import run_adversarial_tests, get_cached_results
 from src.threat_intel_extended import extended_check_ip, check_domain_virustotal
 from utils.telegram_alerter import send_system_status, get_bot_info
 from utils.log_parsers import parse_log_file
+from utils.telegram_bot import start_polling_thread as start_telegram_bot
 
 # ─── WebSocket Connection Manager ────────────────────────────────────────────
 
@@ -100,6 +105,8 @@ async def broadcast_live_events():
 async def lifespan(app: FastAPI):
     # Start background broadcaster
     task = asyncio.create_task(broadcast_live_events())
+    # Start Telegram bot callback handler (for inline button clicks)
+    start_telegram_bot()
     yield
     task.cancel()
 
@@ -249,6 +256,11 @@ def get_stats():
     stats = db.get_stats()
     return stats
 
+@app.get("/api/metrics/mttd-mttr")
+def get_mttd_mttr():
+    """Get Mean Time to Detect and Mean Time to Respond metrics."""
+    return db.get_mttd_mttr_stats()
+
 # Incidents
 @app.get("/api/incidents")
 def get_incidents(status: Optional[str] = None):
@@ -331,14 +343,14 @@ def get_ml_metrics_endpoint():
     return metrics
 
 # Threat Intelligence
+@app.get("/api/threat-intel/known-bad")
+def get_known_bad():
+    return {"data": get_known_bad_ips()}
+
 @app.get("/api/threat-intel/{ip}")
 def get_threat_intel(ip: str):
     result = check_ip(ip)
     return result
-
-@app.get("/api/threat-intel/known-bad")
-def get_known_bad():
-    return {"data": get_known_bad_ips()}
 
 # Country Distribution (for world map)
 @app.get("/api/geo-distribution")
@@ -510,6 +522,63 @@ def check_domain(domain: str):
     return check_domain_virustotal(domain)
 
 
+# ── Feedback Loop / Online Learning ─────────────────────────────────────────
+
+@app.get("/api/feedback/stats")
+def get_feedback_statistics():
+    """Get analyst feedback statistics and false positive rates."""
+    return get_feedback_stats()
+
+@app.get("/api/model/drift")
+def get_model_drift():
+    """Get model drift metrics based on analyst feedback."""
+    return get_drift_metrics()
+
+@app.post("/api/feedback/{incident_id}")
+def submit_feedback(incident_id: int, body: dict):
+    """Record analyst feedback on a prediction (false_positive, confirmed_threat, etc.)."""
+    incident, log_event = db.get_incident_details(incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    label = body.get("label", "")
+    if label not in ("false_positive", "confirmed_threat", "escalated", "benign"):
+        raise HTTPException(status_code=400, detail="Invalid label. Use: false_positive, confirmed_threat, escalated, benign")
+
+    event_data = serialize_event(log_event) if log_event else {"attack_type": incident.attack_type}
+    entry = record_feedback(
+        incident_id=incident_id,
+        event_data=event_data,
+        analyst_label=label,
+        original_prediction=incident.attack_type or "unknown",
+        analyst=body.get("analyst", "Admin"),
+    )
+
+    # Also update incident status if marking as false positive
+    if label == "false_positive":
+        db.update_incident_status(incident_id, "FALSE_POSITIVE", body.get("analyst", "Admin"))
+
+    return {"success": True, "feedback": entry}
+
+
+# ── Adversarial Robustness ──────────────────────────────────────────────────
+
+@app.get("/api/adversarial/results")
+def get_adversarial_results():
+    """Get cached adversarial robustness test results."""
+    return get_cached_results()
+
+@app.post("/api/adversarial/run")
+def run_adversarial():
+    """Run adversarial robustness tests against the current ML model."""
+    from src.ml_engine import load_ml_engine
+    model, encoders = load_ml_engine()
+    if model is None:
+        raise HTTPException(status_code=400, detail="ML model not loaded. Train it first.")
+    results = run_adversarial_tests(model, encoders)
+    return results
+
+
 # ── Telegram Bot Endpoints ────────────────────────────────────────────────────
 
 @app.get("/api/telegram/status")
@@ -562,6 +631,55 @@ async def upload_real_log_file(file: UploadFile = File(...)):
         }
     except Exception as e:
         return {"error": f"Parse failed: {str(e)}"}
+
+
+# ── SOAR Playbooks ──────────────────────────────────────────────────────────
+
+@app.get("/api/playbooks")
+def list_playbooks():
+    """Get all SOAR playbook definitions."""
+    return {"data": get_all_playbooks()}
+
+@app.get("/api/playbooks/{attack_type}")
+def get_playbook_for_type(attack_type: str, risk_score: float = Query(80)):
+    """Preview what a playbook would do for a given attack type and risk score."""
+    return evaluate_playbook(attack_type, risk_score)
+
+@app.post("/api/playbooks/execute/{incident_id}")
+def execute_playbook_endpoint(incident_id: int):
+    """Execute the appropriate SOAR playbook for an incident."""
+    incident, log_event = db.get_incident_details(incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    event_dict = {
+        "user": incident.user,
+        "action": incident.action,
+        "ip": log_event.ip if log_event else "unknown",
+        "risk_score": incident.risk_score,
+        "attack_type": incident.attack_type or "unknown",
+    }
+    result = execute_playbook(event_dict, incident_id)
+    db.update_incident_response(incident_id, json.dumps([a.get("action", "") for a in result.get("actions_taken", [])]))
+    return result
+
+
+# ── OSINT Threat Feeds ──────────────────────────────────────────────────────
+
+@app.get("/api/osint/feeds")
+def get_osint_feeds():
+    """Get summary of all OSINT threat intelligence feeds."""
+    return get_feed_summary()
+
+@app.get("/api/osint/check/{ip}")
+def check_ip_osint_endpoint(ip: str):
+    """Check an IP against OSINT feeds (Tor, Emerging Threats)."""
+    return check_ip_osint(ip)
+
+@app.get("/api/osint/urlhaus")
+def get_urlhaus():
+    """Get recent malicious URLs from abuse.ch URLhaus."""
+    return {"data": fetch_urlhaus_recent()}
 
 
 if __name__ == "__main__":
