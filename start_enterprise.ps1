@@ -11,6 +11,16 @@ if (-not $root -or $root -eq '') {
 }
 Set-Location $root
 
+# ── load startup config from .env ───────────────────────────────────────────
+$enableSimulator = $true
+$envFile = Join-Path $root ".env"
+if (Test-Path $envFile) {
+    $simLine = Get-Content $envFile | Where-Object { $_ -match "^ENABLE_TRAFFIC_SIMULATOR\s*=" }
+    if ($simLine) {
+        if (($simLine -split "=", 2)[1].Trim().ToLower() -eq "false") { $enableSimulator = $false }
+    }
+}
+
 # ── Detect correct Python (the one that has our packages) ───────────────────
 $sysPythonCmd = Get-Command python -ErrorAction SilentlyContinue
 $sysPython = if ($sysPythonCmd) { $sysPythonCmd.Source } else { $null }
@@ -62,15 +72,19 @@ Write-Host "        PID: $($ingestion.Id)" -ForegroundColor DarkGray
 Start-Sleep -Seconds 2
 
 # ── 2. Start Traffic Simulator ───────────────────────────────────────────────
-Write-Host "  [2/4] Starting Traffic Simulator..." -ForegroundColor Green
-$simulator = Start-Process `
-    -FilePath $pyExe `
-    -ArgumentList @("utils/simulate_live_traffic.py") `
-    -WorkingDirectory $root `
-    -PassThru -NoNewWindow
-Write-Host "        PID: $($simulator.Id)" -ForegroundColor DarkGray
-
-Start-Sleep -Seconds 1
+if ($enableSimulator) {
+    Write-Host "  [2/4] Starting Traffic Simulator..." -ForegroundColor Green
+    $simulator = Start-Process `
+        -FilePath $pyExe `
+        -ArgumentList @("utils/simulate_live_traffic.py") `
+        -WorkingDirectory $root `
+        -PassThru -NoNewWindow
+    Write-Host "        PID: $($simulator.Id)" -ForegroundColor DarkGray
+    Start-Sleep -Seconds 1
+} else {
+    Write-Host "  [2/4] Traffic Simulator is DISABLED in .env" -ForegroundColor Yellow
+    $simulator = $null
+}
 
 # ── 3. Start FastAPI Backend ─────────────────────────────────────────────────
 Write-Host "  [3/4] Starting FastAPI Backend on port 8000..." -ForegroundColor Green
