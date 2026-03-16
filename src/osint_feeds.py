@@ -16,10 +16,14 @@ FEEDS_CACHE = os.path.join(_PROJECT_ROOT, 'data', 'osint_feeds_cache.json')
 FEED_TTL = 3600  # 1 hour cache
 
 _cache = {}
+_cache_loaded = False
 
 
 def _load_cache():
-    global _cache
+    global _cache, _cache_loaded
+    if _cache_loaded:
+        return
+    _cache_loaded = True
     if os.path.exists(FEEDS_CACHE):
         try:
             with open(FEEDS_CACHE, 'r') as f:
@@ -104,8 +108,7 @@ def fetch_emerging_threats_ips() -> list:
 
 def check_ip_osint(ip: str) -> dict:
     """Check an IP against all OSINT feeds."""
-    if not _cache:
-        _load_cache()
+    _load_cache()
 
     tor_nodes = fetch_tor_exit_nodes()
     et_ips = fetch_emerging_threats_ips()
@@ -136,8 +139,7 @@ def check_ip_osint(ip: str) -> dict:
 
 def get_feed_summary() -> dict:
     """Get summary of all loaded OSINT feeds."""
-    if not _cache:
-        _load_cache()
+    _load_cache()
 
     tor_data = _cache.get("tor_exit_nodes", {})
     et_data = _cache.get("et_compromised", {})

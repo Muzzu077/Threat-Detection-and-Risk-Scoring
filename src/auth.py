@@ -77,6 +77,13 @@ def get_current_user(request: Request) -> User:
     if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = auth_header[7:]
+    # Check if token was revoked via logout
+    try:
+        from api.main import _revoked_access_tokens
+        if token in _revoked_access_tokens:
+            raise HTTPException(status_code=401, detail="Token has been revoked")
+    except ImportError:
+        pass
     payload = decode_token(token)
     if payload.get("type") != "access":
         raise HTTPException(status_code=401, detail="Invalid token type")

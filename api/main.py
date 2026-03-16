@@ -7,7 +7,7 @@ import sys
 import os
 import json
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List
 from contextlib import asynccontextmanager
 
@@ -16,7 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, UploadFile, File, Depends, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, UploadFile, File, Depends, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
@@ -48,6 +48,9 @@ from src.threat_intel_extended import extended_check_ip, check_domain_virustotal
 from utils.telegram_alerter import send_system_status, get_bot_info
 from utils.log_parsers import parse_log_file
 from utils.telegram_bot import start_polling_thread as start_telegram_bot
+
+# ─── Access Token Blacklist (for logout) ─────────────────────────────────────
+_revoked_access_tokens: set = set()
 
 # ─── Helpers: tenant scoping ────────────────────────────────────────────────
 
@@ -288,8 +291,14 @@ def auth_refresh(body: RefreshRequest):
     return {"access_token": access_token, "refresh_token": new_refresh}
 
 @app.post("/api/auth/logout")
-def auth_logout(body: LogoutRequest):
-    revoke_refresh_token(body.refresh_token)
+def auth_logout(request: Request, body: LogoutRequest = Body(default=None)):
+    # Revoke refresh token if provided
+    if body and body.refresh_token:
+        revoke_refresh_token(body.refresh_token)
+    # Blacklist the access token so it can't be reused
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        _revoked_access_tokens.add(auth_header[7:])
     return {"success": True}
 
 @app.get("/api/auth/me")
@@ -405,13 +414,17 @@ _THREAT_PATTERNS = {
         "patterns": [r"<script", r"javascript:", r"onerror\s*=", r"onload\s*=", r"alert\(", r"document\.cookie", r"<img\s+src.*onerror"],
         "risk": 82, "confidence": 0.80,
     },
+    "command_injection": {
+        "patterns": [r";\s*cat\b", r";\s*ls\b", r"\|\s*cat\b", r"&&\s*rm\b", r"`whoami`", r"\$\(id\)", r"\|\s*nc\s", r";\s*wget\s", r";\s*curl\s", r";\s*python", r";\s*bash", r";\s*sh\b", r"\|\s*sh\b", r";\s*id\b"],
+        "risk": 90, "confidence": 0.88,
+    },
     "directory_traversal": {
-        "patterns": [r"\.\./", r"\.\.\\", r"/etc/passwd", r"/etc/shadow", r"\.\.%2[fF]", r"/proc/self"],
+        "patterns": [r"\.\./", r"\.\.\\", r"\.\.%2[fF]", r"/proc/self"],
         "risk": 78, "confidence": 0.82,
     },
-    "command_injection": {
-        "patterns": [r";\s*ls\b", r"\|\s*cat\b", r"&&\s*rm\b", r"`whoami`", r"\$\(id\)", r"\|\s*nc\s", r";\s*wget\s"],
-        "risk": 90, "confidence": 0.88,
+    "privilege_escalation": {
+        "patterns": [r"/admin/config", r"/api/users/role", r"/admin/users/role", r"/api/admin", r"/admin/settings", r"/sudo", r"/api/permissions", r"/admin/promote", r"/api/role", r"/users/role", r"/change.?role", r"/elevate", r"/api/users/admin"],
+        "risk": 85, "confidence": 0.78,
     },
     "port_scan": {
         "patterns": [r"/robots\.txt", r"/\.env", r"/\.git", r"/wp-admin", r"/phpinfo", r"/actuator", r"/\.htaccess", r"/server-status", r"/api-docs", r"/swagger", r"/wp-login", r"/xmlrpc"],
@@ -420,10 +433,6 @@ _THREAT_PATTERNS = {
     "data_exfiltration": {
         "patterns": [r"/export/all", r"/download/dump", r"/api/dump", r"/backup", r"/api/export.*all", r"/db/export"],
         "risk": 82, "confidence": 0.78,
-    },
-    "privilege_escalation": {
-        "patterns": [r"/admin/config", r"/api/users/role", r"/api/admin", r"/admin/settings", r"/sudo", r"/api/permissions"],
-        "risk": 75, "confidence": 0.72,
     },
     "malware_upload": {
         "patterns": [r"\.php$", r"\.jsp$", r"\.asp$", r"\.exe$", r"\.sh$", r"webshell", r"c99\.php", r"r57\.php"],
@@ -464,6 +473,16 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
                     "explanation": f"Suspicious pattern detected in {action_upper} {resource} from {ip} — possible {attack_type.replace('_', ' ')}",
                 }
 
+    # Privilege escalation heuristic: PUT/PATCH to role/admin/permission endpoints
+    priv_paths = ("/role", "/admin", "/permission", "/promote", "/elevate", "/users/role")
+    if action_upper in ("PUT", "PATCH", "POST") and any(p in resource_lower for p in priv_paths):
+        return {
+            "risk_score": 85.0,
+            "attack_type": "privilege_escalation",
+            "ml_confidence": 0.78,
+            "explanation": f"Potential privilege escalation: {action_upper} {resource} from {ip}",
+        }
+
     # Brute force heuristic: failed POST to auth endpoints
     auth_paths = ("/login", "/signin", "/auth", "/api/auth", "/oauth", "/token")
     if is_failure and action_upper == "POST" and any(p in resource_lower for p in auth_paths):
@@ -489,10 +508,37 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
     }
 
 
+def _ip_to_country(ip: str) -> str:
+    """Lightweight IP-to-country mapping using first octet heuristics + known ranges."""
+    if not ip or ip in ("unknown", "127.0.0.1", "::1"):
+        return "LOCAL"
+    parts = ip.split(".")
+    if len(parts) != 4:
+        return "UNKNOWN"
+    try:
+        o1, o2 = int(parts[0]), int(parts[1])
+    except ValueError:
+        return "UNKNOWN"
+    # Private ranges
+    if o1 == 10 or (o1 == 172 and 16 <= o2 <= 31) or (o1 == 192 and o2 == 168):
+        return "LOCAL"
+    # Common geo heuristics based on IP allocation blocks
+    _GEO_MAP = {
+        (1, 50): "US", (51, 80): "EU", (81, 95): "EU", (96, 120): "US",
+        (121, 130): "JP", (131, 145): "JP", (146, 160): "US", (161, 175): "US",
+        (176, 185): "RU", (186, 190): "BR", (191, 195): "EU", (196, 200): "ZA",
+        (201, 210): "CN", (211, 220): "KR", (221, 230): "CN", (231, 240): "US",
+    }
+    for (lo, hi), country in _GEO_MAP.items():
+        if lo <= o1 <= hi:
+            return country
+    return "US"
+
+
 @app.post("/api/v1/ingest")
 def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
     """SDK ingestion endpoint — saves events DIRECTLY to database for instant visibility.
-    Includes lightweight pattern-based threat detection.
+    Includes lightweight pattern-based threat detection + UEBA analysis.
     Auth via X-API-Key header.
     """
     if not batch.events or len(batch.events) == 0:
@@ -505,9 +551,29 @@ def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
     for ev in batch.events:
         status_normalized = _map_http_status(ev.status)
         analysis = _analyze_sdk_event(ev.action, status_normalized, ev.resource, ev.ip)
+        ts = _parse_sdk_timestamp(ev.timestamp)
+        country = _ip_to_country(ev.ip)
+        risk = analysis["risk_score"]
+
+        # UEBA analysis — build user profiles and detect anomalies
+        try:
+            ueba_event = {
+                "user": ev.user or "anonymous",
+                "ip": ev.ip or "unknown",
+                "country": country,
+                "action": ev.action or "unknown",
+                "resource": ev.resource or "/",
+                "hour": ts.hour if ts else 0,
+                "timestamp": ts.isoformat() if ts else "",
+            }
+            ueba_anomalies = analyze_event_ueba(ueba_event)
+            for anomaly in ueba_anomalies:
+                risk = min(100, risk + anomaly.get("risk_boost", 0))
+        except Exception:
+            pass
 
         event_dict = {
-            "timestamp": _parse_sdk_timestamp(ev.timestamp),
+            "timestamp": ts,
             "user": ev.user or "anonymous",
             "role": "sdk",
             "ip": ev.ip or "unknown",
@@ -515,14 +581,14 @@ def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
             "status": status_normalized,
             "resource": ev.resource or "/",
             "anomaly_score": 0.0,
-            "risk_score": analysis["risk_score"],
+            "risk_score": risk,
             "time_risk": 0.0,
             "role_risk": 0.0,
             "resource_risk": 0.0,
             "explanation": analysis["explanation"],
             "attack_type": analysis["attack_type"],
             "ml_confidence": analysis["ml_confidence"],
-            "country": "UNKNOWN",
+            "country": country,
             "threat_intel_score": 0.0,
             "threat_intel_reason": "",
             "response_actions": "",
@@ -654,13 +720,13 @@ def update_incident_status(incident_id: int, body: StatusUpdate, current_user: U
 
 # SOAR Response
 @app.post("/api/response/{incident_id}")
-def trigger_response(incident_id: int, body: ResponseTrigger, current_user: User = Depends(get_current_user)):
+def trigger_response(incident_id: int, body: ResponseTrigger = Body(default=None), current_user: User = Depends(get_current_user)):
     ta = _tenant_args(current_user)
     incident, log_event = db.get_incident_details(incident_id, **ta)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
 
-    if not body.force and incident.response_actions:
+    if body and not body.force and incident.response_actions:
         return {"message": "Response already executed", "actions": json.loads(incident.response_actions or "[]")}
 
     event_dict = {
@@ -677,7 +743,23 @@ def trigger_response(incident_id: int, body: ResponseTrigger, current_user: User
 
 @app.get("/api/response/log")
 def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user: User = Depends(get_current_user)):
-    return {"data": get_response_log(limit=limit)}
+    raw = get_response_log(limit=limit)
+    # Flatten: each action becomes its own entry with context
+    flat = []
+    for entry in raw:
+        for action_item in entry.get("actions_taken", []):
+            flat.append({
+                "timestamp": entry.get("timestamp"),
+                "incident_id": entry.get("incident_id"),
+                "user": entry.get("user"),
+                "ip": entry.get("ip"),
+                "risk_score": entry.get("risk_score"),
+                "action": action_item.get("action", "unknown"),
+                "target": action_item.get("ip") or action_item.get("user") or action_item.get("target", ""),
+                "status": action_item.get("status", "unknown"),
+                "message": action_item.get("message", ""),
+            })
+    return {"data": flat[:limit]}
 
 @app.get("/api/response/blocked-ips")
 def get_blocked_ips_endpoint(current_user: User = Depends(get_current_user)):
@@ -721,15 +803,44 @@ def get_known_bad(current_user: User = Depends(get_current_user)):
 def get_threat_intel(ip: str, current_user: User = Depends(get_current_user)):
     return check_ip(ip)
 
+# Hourly Risk Timeline
+@app.get("/api/risk-timeline")
+def get_risk_timeline(hours: int = Query(24, ge=1, le=168), current_user: User = Depends(get_current_user)):
+    ta = _tenant_args(current_user)
+    events, _ = db.fetch_events_paginated(page=1, limit=2000, min_risk=0, **ta)
+    from collections import defaultdict
+    hourly = defaultdict(lambda: {"count": 0, "total_risk": 0.0, "max_risk": 0.0, "attacks": 0})
+    now = datetime.utcnow()
+    cutoff = now - timedelta(hours=hours)
+    for e in events:
+        if e.timestamp and e.timestamp >= cutoff:
+            hour_key = e.timestamp.strftime("%Y-%m-%d %H:00")
+            hourly[hour_key]["count"] += 1
+            hourly[hour_key]["total_risk"] += (e.risk_score or 0)
+            hourly[hour_key]["max_risk"] = max(hourly[hour_key]["max_risk"], e.risk_score or 0)
+            if (e.attack_type or "normal") != "normal":
+                hourly[hour_key]["attacks"] += 1
+    result = []
+    for hour_key in sorted(hourly.keys()):
+        d = hourly[hour_key]
+        result.append({
+            "hour": hour_key,
+            "events": d["count"],
+            "avg_risk": round(d["total_risk"] / d["count"], 1) if d["count"] else 0,
+            "max_risk": round(d["max_risk"], 1),
+            "attacks": d["attacks"],
+        })
+    return {"data": result, "hours": hours}
+
 # Country Distribution
 @app.get("/api/geo-distribution")
 def get_geo_distribution(current_user: User = Depends(get_current_user)):
     ta = _tenant_args(current_user)
-    events, _ = db.fetch_events_paginated(page=1, limit=500, min_risk=50, **ta)
+    events, _ = db.fetch_events_paginated(page=1, limit=500, min_risk=0, **ta)
     country_counts = {}
     for e in events:
-        country = e.country or "UNKNOWN"
-        if country not in ("UNKNOWN", "LOCAL"):
+        country = e.country or _ip_to_country(e.ip or "")
+        if country and country not in ("UNKNOWN",):
             country_counts[country] = country_counts.get(country, 0) + 1
     return {
         "data": [
@@ -741,15 +852,36 @@ def get_geo_distribution(current_user: User = Depends(get_current_user)):
 # MITRE ATT&CK
 @app.get("/api/mitre/mapping")
 def get_mitre_for_event(
-    attack_type: str = Query("unknown"),
+    attack_type: str = Query(""),
     action: str = Query(""),
     current_user: User = Depends(get_current_user),
 ):
+    # If no attack_type specified, return all mappings
+    if not attack_type or attack_type == "all":
+        from src.mitre_mapping import MITRE_ATTACK_MAP
+        result = []
+        for at, mapping in MITRE_ATTACK_MAP.items():
+            if mapping.get("technique_id"):
+                result.append({"attack_type": at, **mapping})
+        return {"data": result, "count": len(result)}
     return get_mitre_mapping(attack_type, action)
 
 @app.get("/api/mitre/techniques")
 def list_mitre_techniques(current_user: User = Depends(get_current_user)):
     return {"data": get_all_techniques()}
+
+@app.get("/api/mitre/all-mappings")
+def get_all_mitre_mappings(current_user: User = Depends(get_current_user)):
+    """Return all attack_type -> MITRE ATT&CK mappings."""
+    from src.mitre_mapping import MITRE_ATTACK_MAP
+    result = []
+    for attack_type, mapping in MITRE_ATTACK_MAP.items():
+        if mapping.get("technique_id"):  # skip 'normal'
+            result.append({
+                "attack_type": attack_type,
+                **mapping,
+            })
+    return {"data": result, "count": len(result)}
 
 @app.get("/api/mitre/event/{event_id}")
 def get_event_mitre(event_id: int, current_user: User = Depends(get_current_user)):
@@ -769,6 +901,14 @@ def get_event_mitre(event_id: int, current_user: User = Depends(get_current_user
 # SHAP / Explainability
 @app.get("/api/explainability")
 def get_explainability(current_user: User = Depends(get_current_user)):
+    cached = load_cached_shap()
+    if cached.get("features"):
+        return cached
+    return get_static_feature_importance()
+
+@app.get("/api/shap")
+def get_shap_values(current_user: User = Depends(get_current_user)):
+    """Alias for /api/explainability — SHAP feature importance."""
     cached = load_cached_shap()
     if cached.get("features"):
         return cached
@@ -931,7 +1071,18 @@ def submit_feedback(incident_id: int, body: dict, current_user: User = Depends(g
 
 @app.get("/api/adversarial/results")
 def get_adversarial_results(current_user: User = Depends(get_current_user)):
-    return get_cached_results()
+    cached = get_cached_results()
+    if cached.get("tests") and len(cached["tests"]) > 0:
+        return cached
+    # Auto-run if no cached results exist
+    try:
+        from src.ml_engine import load_ml_engine
+        model, encoders = load_ml_engine()
+        if model is not None:
+            return run_adversarial_tests(model, encoders)
+    except Exception:
+        pass
+    return cached
 
 @app.post("/api/adversarial/run")
 def run_adversarial(current_user: User = Depends(get_current_user)):
@@ -971,13 +1122,34 @@ async def upload_real_log_file(file: UploadFile = File(...), current_user: User 
         f_out.write(content)
 
     try:
+        # First: try to detect standard CSV with known columns
+        if file.filename.endswith('.csv'):
+            try:
+                df = pd.read_csv(tmp_path)
+                required_cols = {'timestamp', 'user', 'ip', 'action', 'status', 'resource'}
+                if required_cols.issubset(set(df.columns)):
+                    df['_tenant_id'] = current_user.id
+                    csv_path = os.path.join(os.path.dirname(tmp_path), f"parsed_{int(time.time())}.csv")
+                    df.to_csv(csv_path, index=False)
+                    os.remove(tmp_path)
+                    events = df.head(3).to_dict('records')
+                    return {
+                        "message": f"{file.filename} parsed successfully (standard CSV format)",
+                        "events_count": len(df),
+                        "sample_events": events,
+                        "log_format": "standard_csv",
+                    }
+            except Exception:
+                pass
+
+        # Fallback: use log format parsers
         events = parse_log_file(tmp_path)
         if not events:
             return {"message": "File parsed but no events matched known log formats.", "events_count": 0}
 
         df = pd.DataFrame(events)
         df['_tenant_id'] = current_user.id
-        csv_path = tmp_path.replace(file.filename, f"parsed_{int(time.time())}.csv")
+        csv_path = os.path.join(os.path.dirname(tmp_path), f"parsed_{int(time.time())}.csv")
         df.to_csv(csv_path, index=False)
         os.remove(tmp_path)
         return {
@@ -994,7 +1166,12 @@ async def upload_real_log_file(file: UploadFile = File(...), current_user: User 
 
 @app.get("/api/playbooks")
 def list_playbooks(current_user: User = Depends(get_current_user)):
-    return {"data": get_all_playbooks()}
+    playbooks = get_all_playbooks()
+    # Enrich with actions count so frontend shows step counts
+    for pb in playbooks:
+        pb["actions"] = pb.get("steps", [])
+        pb["actions_count"] = len(pb.get("steps", []))
+    return {"data": playbooks}
 
 @app.get("/api/playbooks/{attack_type}")
 def get_playbook_for_type(attack_type: str, risk_score: float = Query(80), current_user: User = Depends(get_current_user)):
@@ -1023,6 +1200,14 @@ def execute_playbook_endpoint(incident_id: int, current_user: User = Depends(get
 
 @app.get("/api/osint/feeds")
 def get_osint_feeds(current_user: User = Depends(get_current_user)):
+    from src.osint_feeds import fetch_tor_exit_nodes, fetch_emerging_threats_ips, fetch_urlhaus_recent as fetch_urlhaus
+    # Trigger fetches if cache is empty
+    try:
+        fetch_tor_exit_nodes()
+        fetch_emerging_threats_ips()
+        fetch_urlhaus()
+    except Exception:
+        pass
     return get_feed_summary()
 
 @app.get("/api/osint/check/{ip}")

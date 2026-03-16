@@ -110,6 +110,14 @@ export default function MLMetricsPage() {
       )}
 
       {/* Summary KPIs */}
+      {/* KPI Explanations */}
+      <div style={{ marginBottom: 16, padding: '14px 18px', borderRadius: 8, background: 'rgba(74,158,255,0.04)', border: '1px solid rgba(74,158,255,0.12)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.8 }}>
+        <span style={{ color: '#4a9eff', fontWeight: 600 }}>What do these numbers mean?</span><br/>
+        <span style={{ color: '#00e5b0' }}>Accuracy</span> = Of all predictions, how many were correct? (97% = 97 out of 100 right)<br/>
+        <span style={{ color: '#4a9eff' }}>Precision</span> = When the model says "attack", how often is it really an attack? (High = few false alarms)<br/>
+        <span style={{ color: '#ffb800' }}>Recall</span> = Of all real attacks, how many did the model catch? (High = few missed attacks)<br/>
+        <span style={{ color: '#ff8c00' }}>F1 Score</span> = The balance between Precision and Recall. Best single number to judge model quality.
+      </div>
       <div className="grid-4 mb-24">
         {summaryMetrics.map(m => (
           <div key={m.name} className="metric-card">
@@ -126,6 +134,9 @@ export default function MLMetricsPage() {
         {/* Radar Chart */}
         <div className="chart-container">
           <div className="chart-title">Model Performance Radar</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, marginTop: -8 }}>
+            A perfect model fills the entire diamond. Dips show weaknesses.
+          </div>
           <ResponsiveContainer width="100%" height={240}>
             <RadarChart data={radarData}>
               <PolarGrid stroke="rgba(0,255,200,0.1)" />
@@ -138,6 +149,9 @@ export default function MLMetricsPage() {
         {/* Per-class F1 chart */}
         <div className="chart-container">
           <div className="chart-title">F1-Score by Attack Class</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 8, marginTop: -8 }}>
+            Shows how well the model detects each specific attack type. Longer bars = better detection.
+          </div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={classData} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
               <XAxis type="number" domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} />
@@ -155,6 +169,9 @@ export default function MLMetricsPage() {
       <div className="card mb-24">
         <div className="section-header">
           <div className="section-title">Classification Report — Per Class</div>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.7, padding: '0 0 12px', borderBottom: '1px solid var(--border-dim)' }}>
+          Each row = one attack type. <span style={{ color: '#4a9eff' }}>Precision</span> = "When I say it's this attack, am I right?" <span style={{ color: '#ffb800' }}>Recall</span> = "Of all real instances, how many did I catch?" <span style={{ color: '#00e5b0' }}>F1</span> = Balance of both. <span style={{ color: 'var(--text-secondary)' }}>Support</span> = Number of test samples for this class.
         </div>
         <table className="data-table">
           <thead>
@@ -185,6 +202,12 @@ export default function MLMetricsPage() {
         <div className="card">
           <div className="section-header">
             <div className="section-title">Confusion Matrix</div>
+          </div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.8, padding: '0 0 14px', borderBottom: '1px solid var(--border-dim)' }}>
+            <span style={{ color: '#4a9eff', fontWeight: 600 }}>How to read this:</span> Each <span style={{ color: 'var(--accent-amber)' }}>row</span> is the <strong>actual</strong> attack type. Each <span style={{ color: 'var(--accent-cyan)' }}>column</span> is what the model <strong>predicted</strong>.<br/>
+            <span style={{ color: '#00e5b0' }}>Green diagonal</span> = Correct predictions (model got it right).<br/>
+            <span style={{ color: '#ff6b6b' }}>Red off-diagonal</span> = Mistakes (model confused one attack for another).<br/>
+            A perfect model would have numbers ONLY on the green diagonal and zeros everywhere else.
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
@@ -235,9 +258,10 @@ export default function MLMetricsPage() {
               SOURCE: {(shap.source || 'static').toUpperCase()}
             </span>
           </div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 16 }}>
-            Top factors driving the ML threat detection model — based on
-            {shap.source === 'shap' ? ' SHAP TreeExplainer values' : ' model feature importances'}.
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.8 }}>
+            <span style={{ color: '#4a9eff', fontWeight: 600 }}>What is this?</span> SHAP (SHapley Additive exPlanations) shows <strong>which features matter most</strong> when the AI makes a decision.
+            Instead of a "black box" that just says "attack detected," this chart explains <em>why</em> the model thinks so.<br/>
+            <span style={{ color: '#00e5b0' }}>Longer bars = more important</span>. For example, if "Login Failure" is the top bar, it means failed login attempts are the strongest signal the model uses to detect attacks.
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart
@@ -278,7 +302,7 @@ export default function MLMetricsPage() {
               icon: '◉',
               lines: [
                 'Synthetic labeled dataset',
-                '5 attack class labels',
+                '15 attack class labels (OWASP Top 10)',
                 'Balanced class distribution',
                 'Generated via train_ml_engine.py',
               ],
@@ -350,6 +374,11 @@ export default function MLMetricsPage() {
               {advLoading ? 'TESTING...' : 'RUN TESTS'}
             </button>
           </div>
+        </div>
+
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.8 }}>
+          <span style={{ color: '#4a9eff', fontWeight: 600 }}>What is this?</span> We attack our own AI model with 5 different evasion techniques to test if hackers can bypass detection.
+          A <span style={{ color: '#00e5b0' }}>ROBUST</span> verdict means the model catches attacks even when they're disguised. If the evasion rate is high, the model needs improvement.
         </div>
 
         {adversarial?.overall_detection_rate !== undefined && (

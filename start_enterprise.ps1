@@ -48,14 +48,13 @@ if (-not $pyExe) {
     exit 1
 }
 
-# ── Detect npm ──────────────────────────────────────────────────────────────
-$sysNpmCmd = Get-Command npm -ErrorAction SilentlyContinue
-$npmCmd = if ($sysNpmCmd) { $sysNpmCmd.Source } else { $null }
-
+# ── Detect npm.cmd (must be .cmd for cmd.exe launch) ──────────────────────
+$npmCmd = $null
+$npmCmdPaths = @("C:\Program Files\nodejs\npm.cmd", "$env:APPDATA\npm\npm.cmd")
+foreach ($p in $npmCmdPaths) { if (Test-Path $p) { $npmCmd = $p; break } }
 if (-not $npmCmd) {
-    # Common locations
-    if (Test-Path "C:\Program Files\nodejs\npm.cmd") { $npmCmd = "C:\Program Files\nodejs\npm.cmd" }
-    elseif (Test-Path "$env:APPDATA\npm\npm.cmd") { $npmCmd = "$env:APPDATA\npm\npm.cmd" }
+    $npmExe = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($npmExe) { $npmCmd = $npmExe.Source }
 }
 Write-Host "  npm:    $npmCmd" -ForegroundColor DarkGray
 
@@ -107,10 +106,10 @@ Write-Host "  [4/4] Starting React Frontend on port 5173..." -ForegroundColor Gr
 $frontendDir = Join-Path $root "frontend"
 
 if ($npmCmd) {
-    # npm.cmd must be launched via cmd.exe. We use 'npm' directly so cmd.exe resolves to npm.cmd and not npm.ps1
+    # npm.cmd must be launched via cmd.exe with the full path to npm.cmd
     $frontend = Start-Process `
         -FilePath "cmd.exe" `
-        -ArgumentList "/c", "npm run dev -- --host 127.0.0.1" `
+        -ArgumentList "/c `"$npmCmd`" run dev -- --host 127.0.0.1" `
         -WorkingDirectory $frontendDir `
         -PassThru -NoNewWindow
     Write-Host "        PID: $($frontend.Id)" -ForegroundColor DarkGray

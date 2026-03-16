@@ -15,10 +15,18 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(PROJECT_ROOT, '.env'), override=True)
+_ENV_PATH = os.path.join(PROJECT_ROOT, '.env')
+load_dotenv(_ENV_PATH, override=True)
 
-OTX_API_KEY        = os.getenv("OTX_API_KEY", "")
-VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "")
+
+def _get_otx_key():
+    load_dotenv(_ENV_PATH, override=True)
+    return os.getenv("OTX_API_KEY", "")
+
+
+def _get_vt_key():
+    load_dotenv(_ENV_PATH, override=True)
+    return os.getenv("VIRUSTOTAL_API_KEY", "")
 
 OTX_BASE        = "https://otx.alienvault.com/api/v1"
 VIRUSTOTAL_BASE = "https://www.virustotal.com/api/v3"
@@ -43,11 +51,11 @@ def _store_cache(ip: str, result: dict):
 # ── AlienVault OTX ────────────────────────────────────────────────────────────
 def check_otx(ip: str) -> dict:
     """Check IP reputation via AlienVault OTX."""
-    if not OTX_API_KEY:
+    if not _get_otx_key():
         return {"source": "otx", "error": "OTX_API_KEY not set"}
 
     try:
-        headers = {"X-OTX-API-KEY": OTX_API_KEY}
+        headers = {"X-OTX-API-KEY": _get_otx_key()}
         url     = f"{OTX_BASE}/indicators/IPv4/{ip}/general"
         resp    = requests.get(url, headers=headers, timeout=10)
 
@@ -81,11 +89,11 @@ def check_otx(ip: str) -> dict:
 # ── VirusTotal ────────────────────────────────────────────────────────────────
 def check_virustotal(ip: str) -> dict:
     """Check IP reputation via VirusTotal API v3."""
-    if not VIRUSTOTAL_API_KEY:
+    if not _get_vt_key():
         return {"source": "virustotal", "error": "VIRUSTOTAL_API_KEY not set"}
 
     try:
-        headers = {"x-apikey": VIRUSTOTAL_API_KEY}
+        headers = {"x-apikey": _get_vt_key()}
         url     = f"{VIRUSTOTAL_BASE}/ip_addresses/{ip}"
         resp    = requests.get(url, headers=headers, timeout=10)
 
@@ -136,14 +144,14 @@ def extended_check_ip(ip: str) -> dict:
     sources_used = []
 
     # AlienVault OTX
-    if OTX_API_KEY:
+    if _get_otx_key():
         otx = check_otx(ip)
         if "error" not in otx:
             results["otx"] = otx
             sources_used.append("OTX")
 
     # VirusTotal
-    if VIRUSTOTAL_API_KEY:
+    if _get_vt_key():
         vt = check_virustotal(ip)
         if "error" not in vt:
             results["virustotal"] = vt
@@ -176,10 +184,10 @@ def extended_check_ip(ip: str) -> dict:
 
 def check_domain_virustotal(domain: str) -> dict:
     """Check a domain's reputation on VirusTotal."""
-    if not VIRUSTOTAL_API_KEY:
+    if not _get_vt_key():
         return {"error": "VIRUSTOTAL_API_KEY not set"}
     try:
-        headers = {"x-apikey": VIRUSTOTAL_API_KEY}
+        headers = {"x-apikey": _get_vt_key()}
         url     = f"{VIRUSTOTAL_BASE}/domains/{domain}"
         resp    = requests.get(url, headers=headers, timeout=10)
         if resp.status_code != 200:

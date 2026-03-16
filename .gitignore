@@ -18,3 +18,5 @@ data/model_drift.json
 data/adversarial_results.json
 data/osint_feeds_cache.json
 .venv/
+.claude/
+dvwa-stack/.env
