@@ -113,18 +113,21 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
         f"🕐 {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
     )
 
+    # Inline keyboard — Telegram only allows public HTTPS URLs in 'url' buttons.
+    # Use callback_data for all local/incident actions.
     inline_keyboard = {
         "inline_keyboard": [
             [
-                {"text": "🔍 View Incident", "url": f"http://localhost:5173/incidents/{incident_id}"},
-                {"text": "⚡ API Docs",       "url": "http://localhost:8000/docs"},
+                {"text": "🔒 Block IP",      "callback_data": f"block_ip:{ip}:{incident_id}"},
+                {"text": "✅ Mark Resolved", "callback_data": f"resolve:{incident_id}"},
             ],
             [
-                {"text": "🔒 Block IP",          "callback_data": f"block_ip:{ip}:{incident_id}"},
-                {"text": "🖥️ Dashboard",         "url": "http://localhost:5173"},
+                {"text": "📊 Details",       "callback_data": f"details:{incident_id}"},
+                {"text": "🤖 Run SOAR",      "callback_data": f"soar:{incident_id}"},
             ]
         ]
     }
+
 
     payload = {
         "chat_id":    chat_id,
