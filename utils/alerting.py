@@ -1,65 +1,54 @@
-import requests
 import os
-import sys
+import json
 from dotenv import load_dotenv
 
-# 1️⃣ Load environment variables from Project Root
+# Load environment variables from Project Root
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env_path = os.path.join(PROJECT_ROOT, '.env')
 
 if os.path.exists(env_path):
-    load_dotenv(env_path)
+    load_dotenv(env_path, override=True)
 
-# 2️⃣ Configuration & Validation (Using your provided keys as defaults)
-
+# Configuration — set all credentials in .env file
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
+TO_WHATSAPP = os.getenv("TO_WHATSAPP", "")
 
 def trigger_whatsapp_alert(event, incident_id):
-    """
-    Sends a WhatsApp alert using direct API calls (requests) to avoid
-    Windows 'MAX_PATH' issues with the official SDK.
-    """
-    message = f"""
-🚨 CRITICAL SECURITY ALERT
+    """Sends a WhatsApp alert via Twilio SDK."""
+    message = (
+        f"🚨 *THREAT PULSE ALERT* 🚨\n\n"
+        f"👤 User: {event['user']}\n"
+        f"⚡ Action: {event['action']}\n"
+        f"🔴 Risk Score: {event['risk_score']:.0f}/100\n\n"
+        f"📝 Reason:\n{event['explanation']}\n\n"
+        f"📋 Incident ID: {incident_id}\n\n"
+        f"🛡️ Immediate investigation recommended."
+    )
 
-User/IP: {event['user']}
-Action: {event['action']}
-Risk Score: {event['risk_score']:.1f}
-
-Reason:
-{event['explanation']}
-
-Incident ID: {incident_id}
-"""
-    
     try:
-        # Strip potential whitespace from keys
         sid = TWILIO_ACCOUNT_SID.strip() if TWILIO_ACCOUNT_SID else ""
         token = TWILIO_AUTH_TOKEN.strip() if TWILIO_AUTH_TOKEN else ""
-        
-        if not sid or not token:
-             print("❌ Alert Skipped: Twilio Credentials not set.")
-             return None
 
-        url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
-        
-        payload = {
-            "From": TWILIO_WHATSAPP_FROM,
-            "To": TO_WHATSAPP,
-            "Body": message
-        }
-        
-        response = requests.post(url, data=payload, auth=(sid, token), timeout=10)
-        
-        if response.status_code == 201:
-            res_data = response.json()
-            print(f"✅ WhatsApp Alert sent! Incident: {incident_id} | SID: {res_data.get('sid')}")
-            return res_data.get('sid')
-        else:
-            print(f"❌ Failed to reach WhatsApp: {response.status_code} - {response.text}")
+        if not sid or not token:
+            print("❌ Alert Skipped: Twilio Credentials not set.")
             return None
-            
+
+        from twilio.rest import Client
+        client = Client(sid, token)
+
+        twilio_msg = client.messages.create(
+            from_=TWILIO_WHATSAPP_FROM,
+            body=message,
+            to=TO_WHATSAPP
+        )
+
+        print(f"✅ WhatsApp Alert sent! Incident: {incident_id} | SID: {twilio_msg.sid}")
+        return twilio_msg.sid
+
     except Exception as e:
-        print(f"❌ Error in trigger_whatsapp_alert: {e}")
+        print(f"❌ Failed to send WhatsApp: {e}")
         return None
 
 # For backward compatibility

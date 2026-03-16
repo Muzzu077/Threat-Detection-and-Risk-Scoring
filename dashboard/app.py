@@ -177,8 +177,12 @@ def investigation_page(incident_id):
             st.markdown(f"**ROLE:** `{log_event.role}`")
             st.markdown(f"**RESOURCE:** `{log_event.resource}`")
             
-            st.subheader("💡 AI EXPLANATION")
-            st.info(log_event.explanation)
+            st.subheader("💡 RULE EXPLANATION")
+            st.code(log_event.explanation, language="text")
+            
+            if incident.note:
+                st.subheader("🤖 GEMINI AI SUMMARY")
+                st.success(incident.note)
         else:
             st.warning("Raw log event details unavailable.")
             

@@ -66,29 +66,52 @@ def generate_traffic_stream():
                     resource = 'login_page'
 
                 elif scenario == 'suspicious_activity': # Medium Risk
-                    user = random.choice(['customer_101', 'customer_102'])
+                    user = random.choice(['customer_101', 'customer_102', 'finance_user'])
                     action = 'download_report'
                     status = 'success'
                     resource = 'sensitive_data' # Contextual anomaly potential
                     
                 elif scenario == 'attack_attempt':
-                    user = 'hacker_xyz'
-                    action = random.choice(['failed_login', 'sql_inject_attempt'])
+                    hacker_num = random.randint(1000, 9999)
+                    user = f'EXT_USER_{hacker_num}'
+                    
+                    # Professional attack actions
+                    action = random.choice([
+                        'failed_login', 'sql_inject_attempt', 'xss_payload_detected', 
+                        'port_scan', 'directory_traversal_attempt', 'credential_stuffing',
+                        'command_injection', 'malicious_file_upload'
+                    ])
                     status = 'failed'
-                    resource = 'admin_panel' # High risk
+                    resource = random.choice([
+                        '/api/v1/admin/auth', '/db/backup.sql', '/etc/passwd', 
+                        '/var/www/html/config.php', '/api/users/export'
+                    ])
                     
                 elif scenario == 'bot_scan':
-                    user = 'bot_crawler'
-                    action = 'api_call'
+                    bot_num = random.randint(100, 999)
+                    user = f'botnet_node_{bot_num}'
+                    action = 'unauthorized_api_call'
                     status = '403_forbidden'
-                    resource = 'user_settings' # Accessing restricted
+                    resource = random.choice(['/api/v2/metrics', '/.git/config', '/wp-admin/login.php', '/.env'])
+
+                # Generate highly dynamic IPs for attackers
+                if 'EXT_USER' in user or 'hacker' in user:
+                    current_role = 'external_threat'
+                    # Realistic public IPs (avoiding 10.x, 192.168.x, 172.16.x)
+                    current_ip = f"{random.choice([45, 82, 114, 185, 203, 212])}.{random.randint(1, 254)}.{random.randint(1, 254)}.{random.randint(1, 254)}"
+                elif 'botnet' in user:
+                    current_role = 'automated_scanner'
+                    current_ip = f"{random.choice([5, 34, 52, 104, 167])}.{random.randint(1, 254)}.{random.randint(1, 254)}.{random.randint(1, 254)}"
+                else:
+                    current_role = ROLES.get(user, 'standard_user')
+                    current_ip = IPS.get(user, '192.168.1.100')
 
                 # Build Row
                 batch_events.append({
                     'timestamp': timestamp,
                     'user': user,
-                    'role': ROLES[user],
-                    'ip': IPS[user],
+                    'role': current_role,
+                    'ip': current_ip,
                     'action': action,
                     'status': status,
                     'resource': resource
