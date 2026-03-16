@@ -4,6 +4,7 @@ import './index.css';
 
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import IncidentsPage from './pages/IncidentsPage';
 import InvestigationPage from './pages/InvestigationPage';
@@ -12,42 +13,71 @@ import MLMetricsPage from './pages/MLMetricsPage';
 import ThreatIntelPage from './pages/ThreatIntelPage';
 import ResponsePage from './pages/ResponsePage';
 import PlaybooksPage from './pages/PlaybooksPage';
+import ApiKeysPage from './pages/ApiKeysPage';
+import IntegrationGuidePage from './pages/IntegrationGuidePage';
+import LandingPage from './pages/LandingPage';
+import { authMe, authLogout } from './api/client';
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('tp_auth');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const age = Date.now() - parsed.ts;
-        if (age < 8 * 60 * 60 * 1000) { // 8-hour session
+    const tokens = localStorage.getItem('tp_tokens');
+    if (tokens) {
+      authMe()
+        .then((data) => {
+          setUser(data.user);
           setAuthenticated(true);
-          setUser(parsed.user);
-        } else {
-          localStorage.removeItem('tp_auth');
-        }
-      } catch {}
+        })
+        .catch(() => {
+          localStorage.removeItem('tp_tokens');
+          localStorage.removeItem('tp_user');
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
   }, []);
 
-  const handleLogin = (username) => {
+  const handleLogin = (userData) => {
     setAuthenticated(true);
-    setUser(username);
+    setUser(userData);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('tp_auth');
+    const tokens = JSON.parse(localStorage.getItem('tp_tokens') || '{}');
+    if (tokens.refresh_token) {
+      authLogout(tokens.refresh_token).catch(() => {});
+    }
+    localStorage.removeItem('tp_tokens');
+    localStorage.removeItem('tp_user');
     setAuthenticated(false);
     setUser(null);
   };
 
+  if (loading) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg-dark)', color: '#00e5b0',
+        fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
+      }}>
+        INITIALIZING THREATPULSE...
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       {!authenticated ? (
-        <LoginPage onLogin={handleLogin} />
+        <Routes>
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
       ) : (
         <div className="app-layout">
         <Sidebar />
@@ -59,7 +89,12 @@ function App() {
             borderBottom: '1px solid var(--border-dim)'
           }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginRight: 12 }}>
-              OPERATOR: <span style={{ color: 'var(--accent-cyan)' }}>{user?.toUpperCase()}</span>
+              OPERATOR: <span style={{ color: 'var(--accent-cyan)' }}>{(user?.display_name || user?.email || '').toUpperCase()}</span>
+              {user?.role === 'admin' && (
+                <span style={{ marginLeft: 8, padding: '2px 6px', background: 'rgba(240,50,80,0.15)', border: '1px solid rgba(240,50,80,0.3)', borderRadius: 3, fontSize: 8, color: '#f03250' }}>
+                  ADMIN
+                </span>
+              )}
             </span>
             <button className="btn btn-ghost" style={{ fontSize: 10 }} onClick={handleLogout}>
               DISCONNECT
@@ -75,6 +110,8 @@ function App() {
             <Route path="/threat-intel" element={<ThreatIntelPage />} />
             <Route path="/response" element={<ResponsePage />} />
             <Route path="/playbooks" element={<PlaybooksPage />} />
+            <Route path="/api-keys" element={<ApiKeysPage />} />
+            <Route path="/integration" element={<IntegrationGuidePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

@@ -15,8 +15,20 @@ if sys.stderr.encoding != 'utf-8':
 
 # Setup
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, PROJECT_ROOT)
 INGEST_DIR = os.path.join(PROJECT_ROOT, 'logs_ingest')
 os.makedirs(INGEST_DIR, exist_ok=True)
+
+# Auto-detect demo tenant — events will be scoped to this user's dashboard
+DEMO_TENANT_ID = None
+try:
+    from src.database import db
+    demo_user = db.get_user_by_email("demo@threatpulse.com")
+    if demo_user:
+        DEMO_TENANT_ID = demo_user.id
+        print(f"  Tagging events for demo account (tenant_id={DEMO_TENANT_ID})")
+except Exception:
+    pass
 
 # Profiles
 EMPLOYEES = ['james_wilson', 'sarah_connor', 'michael_chang', 'emily_davis', 'admin_mark', 'finance_julia']
@@ -123,9 +135,14 @@ def generate_traffic_stream():
             
             # Write Batch
             df = pd.DataFrame(batch_events)
+
+            # Tag with demo tenant so events appear in the demo dashboard
+            if DEMO_TENANT_ID:
+                df['_tenant_id'] = DEMO_TENANT_ID
+
             filename = f"stream_{batch_id}_{int(time.time())}.csv"
             filepath = os.path.join(INGEST_DIR, filename)
-            
+
             df.to_csv(filepath, index=False)
             print(f"➡️ Sent batch {batch_id}: {num_events} events -> {filename}")
             

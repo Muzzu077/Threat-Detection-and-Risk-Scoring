@@ -11,11 +11,36 @@ if (-not $root -or $root -eq '') {
 Set-Location $root
 
 Write-Host "  1. Deleting SQLite Databases..." -ForegroundColor Cyan
-Remove-Item -Path "security_events.db", "dashboard\security_events.db", "data\threatpulse.db" -Force -ErrorAction SilentlyContinue
+
+# Kill python processes to release file locks
+Write-Host "  [Safety] Stopping any background Python or Node processes..."
+Stop-Process -Name "python*" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "uvicorn" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
+
+Start-Sleep -Seconds 1
+
+$dbFiles = @("security_events.db", "dashboard\security_events.db", "data\threatpulse.db")
+foreach ($f in $dbFiles) {
+    if (Test-Path $f) {
+        try {
+            Remove-Item -Path $f -Force -ErrorAction Stop
+            Write-Host "     Deleted: $f" -ForegroundColor DarkGray
+        } catch {
+            Write-Host "     ❌ WARN: Could not delete $f. File is likely LOCKED by a running process." -ForegroundColor Red
+            Write-Host "     Please fully CLOSE your start_enterprise terminal before resetting." -ForegroundColor Yellow
+        }
+    }
+}
 
 Write-Host "  2. Clearing Ingestion Logs..." -ForegroundColor Cyan
 if (Test-Path "logs_ingest") {
-    Remove-Item -Path "logs_ingest\*.csv" -Force -ErrorAction SilentlyContinue
+    try {
+        Remove-Item -Path "logs_ingest\*.csv" -Force -ErrorAction Stop
+        Write-Host "     Cleared CSV feeds." -ForegroundColor DarkGray
+    } catch {
+        Write-Host "     ⚠️  Partially cleared logs_ingest\ (some might be locked)." -ForegroundColor Yellow
+    }
 }
 
 Write-Host "  3. Clearing SOAR Action Logs..." -ForegroundColor Cyan

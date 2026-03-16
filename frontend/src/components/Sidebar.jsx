@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const NAV = [
-  { path: '/', label: 'Operations', sub: 'Dashboard', icon: '◈' },
-  { path: '/incidents', label: 'Incidents', sub: 'Active Threats', icon: '⚠' },
-  { path: '/attack-graph', label: 'Kill Chain', sub: 'Attack Graph', icon: '⬡' },
-  { path: '/ml-metrics', label: 'ML Engine', sub: 'Model Metrics', icon: '◎' },
-  { path: '/threat-intel', label: 'Threat Intel', sub: 'IP Reputation', icon: '◉' },
-  { path: '/response', label: 'SOAR', sub: 'Auto Response', icon: '⚡' },
-  { path: '/playbooks', label: 'Playbooks', sub: 'SOAR Flows', icon: '▶' },
+  { path: '/', label: 'Operations', sub: 'Dashboard', icon: '\u25C8' },
+  { path: '/incidents', label: 'Incidents', sub: 'Active Threats', icon: '\u26A0' },
+  { path: '/attack-graph', label: 'Kill Chain', sub: 'Attack Graph', icon: '\u2B21' },
+  { path: '/ml-metrics', label: 'ML Engine', sub: 'Model Metrics', icon: '\u25CE' },
+  { path: '/threat-intel', label: 'Threat Intel', sub: 'IP Reputation', icon: '\u25C9' },
+  { path: '/response', label: 'SOAR', sub: 'Auto Response', icon: '\u26A1' },
+  { path: '/playbooks', label: 'Playbooks', sub: 'SOAR Flows', icon: '\u25B6' },
+  { path: '/api-keys', label: 'API Keys', sub: 'Key Management', icon: '\u26BF' },
+  { path: '/integration', label: 'Integration', sub: 'SDK Setup Guide', icon: '\u25C7' },
 ];
 
 export default function Sidebar() {
@@ -27,7 +29,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="logo-icon" style={{ fontSize: 18 }}>🛡</div>
+        <div className="logo-icon" style={{ fontSize: 18 }}>&#128737;</div>
         <div>
           <div className="logo-text">THREATPULSE</div>
           <div className="logo-sub">SOC Platform v3.0</div>
@@ -48,9 +50,33 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="sidebar-nav">
         <div className="nav-section-label">Operations</div>
-        {NAV.map(item => {
+        {NAV.slice(0, 7).map(item => {
           const isActive = location.pathname === item.path ||
             (item.path !== '/' && location.pathname.startsWith(item.path));
+          return (
+            <div
+              key={item.path}
+              className={`nav-item ${isActive ? 'active' : ''}`}
+              onClick={() => navigate(item.path)}
+              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '10px 16px' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                <span className="nav-icon" style={{ fontSize: 14 }}>{item.icon}</span>
+                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>{item.label}</span>
+                {isActive && (
+                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 6px #00e5b0' }} />
+                )}
+              </div>
+              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(0,255,200,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
+                {item.sub}
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="nav-section-label" style={{ marginTop: 12 }}>Developer</div>
+        {NAV.slice(7).map(item => {
+          const isActive = location.pathname === item.path;
           return (
             <div
               key={item.path}

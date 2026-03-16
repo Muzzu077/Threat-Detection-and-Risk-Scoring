@@ -1,9 +1,54 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, JSON
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 import os
 
 Base = declarative_base()
+
+
+# ─── Auth Models ─────────────────────────────────────────────────────────────
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    display_name = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+    role = Column(String, default="user")  # "user" | "admin"
+
+    api_keys = relationship("ApiKey", back_populates="owner")
+
+
+class ApiKey(Base):
+    __tablename__ = 'api_keys'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    name = Column(String, default="Default")
+    prefix = Column(String, nullable=False)
+    key_hash = Column(String, unique=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_used_at = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    owner = relationship("User", back_populates="api_keys")
+
+
+class RefreshToken(Base):
+    __tablename__ = 'refresh_tokens'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    token_hash = Column(String, unique=True, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    revoked = Column(Boolean, default=False)
+
+
+# ─── Core Models ─────────────────────────────────────────────────────────────
 
 class LogEvent(Base):
     __tablename__ = 'log_events'
@@ -25,17 +70,20 @@ class LogEvent(Base):
     resource_risk = Column(Float)
     explanation = Column(Text)
 
-    # NEW: ML Engine
+    # ML Engine
     attack_type = Column(String, default="unknown")
     ml_confidence = Column(Float, default=0.0)
 
-    # NEW: Threat Intelligence
+    # Threat Intelligence
     country = Column(String, default="UNKNOWN")
     threat_intel_score = Column(Float, default=0.0)
     threat_intel_reason = Column(Text, default="")
 
-    # NEW: SOAR
-    response_actions = Column(Text, default="")  # JSON string
+    # SOAR
+    response_actions = Column(Text, default="")
+
+    # Multi-tenant
+    tenant_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
 
 class Incident(Base):
     __tablename__ = 'incidents'
@@ -43,20 +91,20 @@ class Incident(Base):
     id = Column(Integer, primary_key=True)
     log_event_id = Column(Integer)
     timestamp = Column(DateTime, default=datetime.utcnow)
-    status = Column(String, default="OPEN")  # OPEN, INVESTIGATING, RESOLVED, FALSE_POSITIVE
+    status = Column(String, default="OPEN")
     owner = Column(String, default="Unassigned")
     note = Column(Text, default="")
     risk_score = Column(Float)
     user = Column(String)
     action = Column(String)
-    # NEW: SOAR response summary
     response_actions = Column(Text, default="")
-    # NEW: Attack type from ML engine
     attack_type = Column(String, default="unknown")
-    # MTTD/MTTR tracking
-    detected_at = Column(DateTime, default=datetime.utcnow)  # When ML detected
-    responded_at = Column(DateTime, nullable=True)  # When SOAR responded
-    resolved_at = Column(DateTime, nullable=True)  # When analyst resolved
+    detected_at = Column(DateTime, default=datetime.utcnow)
+    responded_at = Column(DateTime, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+
+    # Multi-tenant
+    tenant_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
 
 class AttackChain(Base):
     """Groups related high-risk events into kill chains."""
@@ -67,20 +115,22 @@ class AttackChain(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     max_risk = Column(Float)
     severity = Column(String)
-    involved_ips = Column(Text, default="")    # comma-separated
-    involved_users = Column(Text, default="")  # comma-separated
-    event_ids = Column(Text, default="")       # comma-separated JSON
+    involved_ips = Column(Text, default="")
+    involved_users = Column(Text, default="")
+    event_ids = Column(Text, default="")
     start_time = Column(DateTime)
     end_time = Column(DateTime)
+
+    # Multi-tenant
+    tenant_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
 
 
 class Database:
     def __init__(self):
-        # Support PostgreSQL via DATABASE_URL, fall back to SQLite
         db_url = os.getenv("DATABASE_URL")
         if db_url:
             self.engine = create_engine(db_url, echo=False)
-            print(f"🐘 Connected to PostgreSQL database.")
+            print(f"Connected to PostgreSQL database.")
         else:
             project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
             db_path = os.path.join(project_root, 'security_events.db')
@@ -89,8 +139,38 @@ class Database:
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
+        # Migrate existing tables — add tenant_id if missing
+        self._migrate_tenant_columns()
+
+    def _migrate_tenant_columns(self):
+        """Add tenant_id column to existing tables if missing (SQLite compat)."""
+        from sqlalchemy import text, inspect
+        inspector = inspect(self.engine)
+        migrations = [
+            ("log_events", "tenant_id", "INTEGER"),
+            ("incidents", "tenant_id", "INTEGER"),
+            ("attack_chains", "tenant_id", "INTEGER"),
+        ]
+        with self.engine.connect() as conn:
+            for table, column, col_type in migrations:
+                if table in inspector.get_table_names():
+                    existing_cols = [c["name"] for c in inspector.get_columns(table)]
+                    if column not in existing_cols:
+                        try:
+                            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+                            conn.commit()
+                            print(f"  Migrated: {table}.{column}")
+                        except Exception:
+                            pass
+
     def get_session(self):
         return self.Session()
+
+    def _apply_tenant_filter(self, query, model, tenant_id, user_role=None):
+        """Apply tenant scoping. Admins see all data, users see only their own."""
+        if user_role == "admin" or tenant_id is None:
+            return query
+        return query.filter(model.tenant_id == tenant_id)
 
     def insert_event(self, event_dict):
         session = self.Session()
@@ -108,7 +188,8 @@ class Database:
                     action=event_dict.get('action', ''),
                     timestamp=event.timestamp,
                     attack_type=event_dict.get('attack_type', 'unknown'),
-                    detected_at=datetime.utcnow()
+                    detected_at=datetime.utcnow(),
+                    tenant_id=event_dict.get('tenant_id'),
                 )
                 session.add(incident)
                 session.flush()
@@ -123,17 +204,20 @@ class Database:
         finally:
             session.close()
 
-    def fetch_all_events(self, limit=500):
-        session = self.Session()
-        try:
-            return session.query(LogEvent).order_by(LogEvent.timestamp.desc()).limit(limit).all()
-        finally:
-            session.close()
-
-    def fetch_events_paginated(self, page=1, limit=50, min_risk=0):
+    def fetch_all_events(self, limit=500, tenant_id=None, user_role=None):
         session = self.Session()
         try:
             query = session.query(LogEvent)
+            query = self._apply_tenant_filter(query, LogEvent, tenant_id, user_role)
+            return query.order_by(LogEvent.timestamp.desc()).limit(limit).all()
+        finally:
+            session.close()
+
+    def fetch_events_paginated(self, page=1, limit=50, min_risk=0, tenant_id=None, user_role=None):
+        session = self.Session()
+        try:
+            query = session.query(LogEvent)
+            query = self._apply_tenant_filter(query, LogEvent, tenant_id, user_role)
             if min_risk > 0:
                 query = query.filter(LogEvent.risk_score >= min_risk)
             total = query.count()
@@ -142,20 +226,23 @@ class Database:
         finally:
             session.close()
 
-    def fetch_incidents(self, status=None):
+    def fetch_incidents(self, status=None, tenant_id=None, user_role=None):
         session = self.Session()
         try:
             q = session.query(Incident)
+            q = self._apply_tenant_filter(q, Incident, tenant_id, user_role)
             if status:
                 q = q.filter(Incident.status == status)
             return q.order_by(Incident.timestamp.desc()).all()
         finally:
             session.close()
 
-    def update_incident_status(self, incident_id, new_status, owner=None):
+    def update_incident_status(self, incident_id, new_status, owner=None, tenant_id=None, user_role=None):
         session = self.Session()
         try:
-            inc = session.query(Incident).filter(Incident.id == incident_id).first()
+            q = session.query(Incident).filter(Incident.id == incident_id)
+            q = self._apply_tenant_filter(q, Incident, tenant_id, user_role)
+            inc = q.first()
             if inc:
                 inc.status = new_status
                 if owner:
@@ -177,7 +264,6 @@ class Database:
             session.close()
 
     def update_incident_response(self, incident_id, response_json: str):
-        """Store SOAR response actions on the incident."""
         session = self.Session()
         try:
             inc = session.query(Incident).filter(Incident.id == incident_id).first()
@@ -188,10 +274,12 @@ class Database:
         finally:
             session.close()
 
-    def get_incident_details(self, incident_id):
+    def get_incident_details(self, incident_id, tenant_id=None, user_role=None):
         session = self.Session()
         try:
-            incident = session.query(Incident).filter(Incident.id == incident_id).first()
+            q = session.query(Incident).filter(Incident.id == incident_id)
+            q = self._apply_tenant_filter(q, Incident, tenant_id, user_role)
+            incident = q.first()
             if incident:
                 log_event = session.query(LogEvent).filter(LogEvent.id == incident.log_event_id).first()
                 return incident, log_event
@@ -199,23 +287,27 @@ class Database:
         finally:
             session.close()
 
-    def get_stats(self):
-        """Return aggregate KPIs."""
+    def get_stats(self, tenant_id=None, user_role=None):
         session = self.Session()
         try:
-            total_events = session.query(LogEvent).count()
-            open_incidents = session.query(Incident).filter(
-                Incident.status.in_(["OPEN", "INVESTIGATING"])
-            ).count()
-            critical_events = session.query(LogEvent).filter(LogEvent.risk_score >= 85).count()
-            high_events = session.query(LogEvent).filter(
-                LogEvent.risk_score >= 61, LogEvent.risk_score < 85
-            ).count()
-
-            # Average risk
             from sqlalchemy import func
-            avg_risk_result = session.query(func.avg(LogEvent.risk_score)).scalar()
+
+            eq = session.query(LogEvent)
+            eq = self._apply_tenant_filter(eq, LogEvent, tenant_id, user_role)
+
+            iq = session.query(Incident)
+            iq = self._apply_tenant_filter(iq, Incident, tenant_id, user_role)
+
+            total_events = eq.count()
+            open_incidents = iq.filter(Incident.status.in_(["OPEN", "INVESTIGATING"])).count()
+            critical_events = eq.filter(LogEvent.risk_score >= 85).count()
+            high_events = eq.filter(LogEvent.risk_score >= 61, LogEvent.risk_score < 85).count()
+
+            avg_risk_result = session.query(func.avg(LogEvent.risk_score))
+            avg_risk_result = self._apply_tenant_filter(avg_risk_result, LogEvent, tenant_id, user_role).scalar()
             avg_risk = round(float(avg_risk_result or 0), 1)
+
+            resolved_q = iq.filter(Incident.status == "RESOLVED")
 
             return {
                 "total_events": total_events,
@@ -223,19 +315,19 @@ class Database:
                 "critical_events": critical_events,
                 "high_events": high_events,
                 "avg_risk": avg_risk,
-                "resolved_incidents": session.query(Incident).filter(Incident.status == "RESOLVED").count()
+                "resolved_incidents": resolved_q.count()
             }
         finally:
             session.close()
 
-    def get_mttd_mttr_stats(self):
-        """Calculate MTTD, MTTR, and resolution time metrics."""
-        from sqlalchemy import func
+    def get_mttd_mttr_stats(self, tenant_id=None, user_role=None):
         from datetime import timedelta
         session = self.Session()
         try:
-            # MTTD: average time from event timestamp to detected_at
-            incidents_with_detect = session.query(Incident).filter(
+            base_q = session.query(Incident)
+            base_q = self._apply_tenant_filter(base_q, Incident, tenant_id, user_role)
+
+            incidents_with_detect = base_q.filter(
                 Incident.detected_at.isnot(None),
                 Incident.timestamp.isnot(None)
             ).all()
@@ -249,11 +341,7 @@ class Database:
 
             mttd_avg = round(sum(mttd_values) / len(mttd_values), 2) if mttd_values else 0
 
-            # MTTR: average time from detected_at to responded_at
-            incidents_with_response = session.query(Incident).filter(
-                Incident.detected_at.isnot(None),
-                Incident.responded_at.isnot(None)
-            ).all()
+            incidents_with_response = [i for i in incidents_with_detect if i.responded_at]
 
             mttr_values = []
             for inc in incidents_with_response:
@@ -264,11 +352,7 @@ class Database:
 
             mttr_avg = round(sum(mttr_values) / len(mttr_values), 2) if mttr_values else 0
 
-            # Resolution: average time from detected_at to resolved_at
-            incidents_resolved = session.query(Incident).filter(
-                Incident.detected_at.isnot(None),
-                Incident.resolved_at.isnot(None)
-            ).all()
+            incidents_resolved = [i for i in incidents_with_detect if i.resolved_at]
 
             resolution_values = []
             for inc in incidents_resolved:
@@ -279,7 +363,6 @@ class Database:
 
             resolution_avg = round(sum(resolution_values) / len(resolution_values), 2) if resolution_values else 0
 
-            # Trends for last 7 days
             now = datetime.utcnow()
             mttd_trend = []
             mttr_trend = []
@@ -288,7 +371,6 @@ class Database:
                 day_end = day_start + timedelta(days=1)
                 date_str = day_start.strftime("%Y-%m-%d")
 
-                # MTTD trend
                 day_incidents = [inc for inc in incidents_with_detect
                                  if inc.detected_at and day_start <= inc.detected_at < day_end]
                 day_mttd = []
@@ -302,7 +384,6 @@ class Database:
                     "mttd_seconds": round(sum(day_mttd) / len(day_mttd), 2) if day_mttd else 0
                 })
 
-                # MTTR trend
                 day_resp = [inc for inc in incidents_with_response
                             if inc.responded_at and day_start <= inc.responded_at < day_end]
                 day_mttr = []
@@ -329,24 +410,22 @@ class Database:
         finally:
             session.close()
 
-    def get_recent_events_for_graph(self, limit=200):
-        """Fetch recent high-risk events for attack graph."""
+    def get_recent_events_for_graph(self, limit=200, tenant_id=None, user_role=None):
         session = self.Session()
         try:
-            return session.query(LogEvent).filter(
-                LogEvent.risk_score >= 50
-            ).order_by(LogEvent.timestamp.desc()).limit(limit).all()
+            query = session.query(LogEvent).filter(LogEvent.risk_score >= 50)
+            query = self._apply_tenant_filter(query, LogEvent, tenant_id, user_role)
+            return query.order_by(LogEvent.timestamp.desc()).limit(limit).all()
         finally:
             session.close()
 
     def save_attack_chain(self, chain: dict):
-        """Persist an attack chain to the DB."""
         import json as _json
         session = self.Session()
         try:
             existing = session.query(AttackChain).filter(AttackChain.chain_id == chain["chain_id"]).first()
             if existing:
-                return  # Already saved
+                return
 
             from datetime import datetime as dt
             ac = AttackChain(
@@ -358,12 +437,55 @@ class Database:
                 event_ids=_json.dumps([e.get("id", 0) for e in chain.get("events", [])]),
                 start_time=dt.fromisoformat(chain["start_time"]) if chain.get("start_time") else None,
                 end_time=dt.fromisoformat(chain["end_time"]) if chain.get("end_time") else None,
+                tenant_id=chain.get("tenant_id"),
             )
             session.add(ac)
             session.commit()
         except Exception as e:
             print(f"Error saving attack chain: {e}")
             session.rollback()
+        finally:
+            session.close()
+
+    # ─── User Management ─────────────────────────────────────────────────────
+
+    def create_user(self, email: str, password_hash: str, display_name: str = "", role: str = "user"):
+        session = self.Session()
+        try:
+            user = User(
+                email=email,
+                password_hash=password_hash,
+                display_name=display_name,
+                role=role,
+            )
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            session.expunge(user)
+            return user
+        except Exception as e:
+            session.rollback()
+            raise e
+        finally:
+            session.close()
+
+    def get_user_by_email(self, email: str):
+        session = self.Session()
+        try:
+            user = session.query(User).filter(User.email == email).first()
+            if user:
+                session.expunge(user)
+            return user
+        finally:
+            session.close()
+
+    def get_user_by_id(self, user_id: int):
+        session = self.Session()
+        try:
+            user = session.query(User).filter(User.id == user_id).first()
+            if user:
+                session.expunge(user)
+            return user
         finally:
             session.close()
 

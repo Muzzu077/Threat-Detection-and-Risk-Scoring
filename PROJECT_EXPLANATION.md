@@ -1,68 +1,74 @@
 # ThreatPulse - Complete Project Explanation (Plain English)
 
-> **One-line summary:** ThreatPulse is an AI-powered security system that watches your network traffic in real-time, detects 15 types of cyber attacks, and automatically fights back.
+> **One-line summary:** ThreatPulse is an AI-powered security system that
+> watches your network traffic in real-time, detects 15 types of cyber attacks,
+> and automatically fights back.
 
 ---
 
 ## What Does This Project Do? (The Big Picture)
 
 Imagine you own a building with 100 doors. You need:
+
 1. **Cameras** on every door (to see who's coming in)
 2. **A smart guard** who can tell the difference between a visitor and a burglar
 3. **Automatic locks** that slam shut when a burglar is detected
 4. **A control room** where you see everything on screens
 
 ThreatPulse does exactly this, but for computer networks:
+
 - **Cameras** = Log Ingestion (watches every network request)
 - **Smart Guard** = ML Engine (AI that classifies attacks with 97% accuracy)
-- **Automatic Locks** = SOAR Playbooks (blocks IPs, disables accounts automatically)
+- **Automatic Locks** = SOAR Playbooks (blocks IPs, disables accounts
+  automatically)
 - **Control Room** = React Dashboard (beautiful real-time UI)
 
 ---
 
 ## The 15 Types of Cyber Attacks We Detect
 
-Based on **OWASP Top 10 (2021 + 2023 API Security)** - the global standard for web security threats:
+Based on **OWASP Top 10 (2021 + 2023 API Security)** - the global standard for
+web security threats:
 
 ### Category 1: Injection Attacks (Someone puts bad code into your system)
 
-| # | Attack | Plain English | Real-World Example | OWASP |
-|---|--------|--------------|-------------------|-------|
-| 1 | **SQL Injection** | Attacker types database commands into a login form to steal all user data | The 2017 Equifax breach that exposed 147 million people | 2021 #3 |
-| 2 | **XSS (Cross-Site Scripting)** | Attacker plants a hidden script on your website that steals cookies from visitors | Hackers injecting fake login popups on banking sites | 2021 #3 |
-| 3 | **Command Injection** | Attacker sends OS commands through your website to take over the server | Typing `; rm -rf /` in a search box to delete the server | 2021 #3 |
+| # | Attack                         | Plain English                                                                     | Real-World Example                                       | OWASP   |
+| - | ------------------------------ | --------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- |
+| 1 | **SQL Injection**              | Attacker types database commands into a login form to steal all user data         | The 2017 Equifax breach that exposed 147 million people  | 2021 #3 |
+| 2 | **XSS (Cross-Site Scripting)** | Attacker plants a hidden script on your website that steals cookies from visitors | Hackers injecting fake login popups on banking sites     | 2021 #3 |
+| 3 | **Command Injection**          | Attacker sends OS commands through your website to take over the server           | Typing `; rm -rf /` in a search box to delete the server | 2021 #3 |
 
 ### Category 2: Broken Access Control (Someone goes where they shouldn't)
 
-| # | Attack | Plain English | Real-World Example | OWASP |
-|---|--------|--------------|-------------------|-------|
-| 4 | **Privilege Escalation** | A normal user tricks the system into giving them admin powers | A bank teller giving themselves manager access | 2021 #1 |
-| 5 | **Directory Traversal** | Attacker navigates to secret files by manipulating file paths (../../../etc/passwd) | Reading server config files that contain passwords | 2021 #1 |
-| 6 | **Insider Threat** | A trusted employee secretly steals company data | Edward Snowden-type scenarios, but malicious | 2021 #1 |
+| # | Attack                   | Plain English                                                                       | Real-World Example                                 | OWASP   |
+| - | ------------------------ | ----------------------------------------------------------------------------------- | -------------------------------------------------- | ------- |
+| 4 | **Privilege Escalation** | A normal user tricks the system into giving them admin powers                       | A bank teller giving themselves manager access     | 2021 #1 |
+| 5 | **Directory Traversal**  | Attacker navigates to secret files by manipulating file paths (../../../etc/passwd) | Reading server config files that contain passwords | 2021 #1 |
+| 6 | **Insider Threat**       | A trusted employee secretly steals company data                                     | Edward Snowden-type scenarios, but malicious       | 2021 #1 |
 
 ### Category 3: Authentication Attacks (Someone steals your keys)
 
-| # | Attack | Plain English | Real-World Example | OWASP |
-|---|--------|--------------|-------------------|-------|
-| 7 | **Brute Force** | Trying thousands of passwords until one works | Like trying every combination on a padlock | 2021 #7 |
+| # | Attack                  | Plain English                                            | Real-World Example                                        | OWASP   |
+| - | ----------------------- | -------------------------------------------------------- | --------------------------------------------------------- | ------- |
+| 7 | **Brute Force**         | Trying thousands of passwords until one works            | Like trying every combination on a padlock                | 2021 #7 |
 | 8 | **Credential Stuffing** | Using leaked passwords from one site to log into another | If your Netflix password leaked, they try it on your bank | 2021 #7 |
-| 9 | **Session Hijacking** | Stealing someone's logged-in session to impersonate them | Stealing someone's boarding pass after they checked in | 2021 #7 |
+| 9 | **Session Hijacking**   | Stealing someone's logged-in session to impersonate them | Stealing someone's boarding pass after they checked in    | 2021 #7 |
 
 ### Category 4: Infrastructure Attacks (Attacking the building itself)
 
-| # | Attack | Plain English | Real-World Example | OWASP |
-|---|--------|--------------|-------------------|-------|
-| 10 | **DoS Attack** | Flooding a server with so many requests it crashes | Like 1 million people calling a pizza shop at once | 2023 API #4 |
-| 11 | **Port Scan** | Scanning all "doors" of a server to find open ones | A burglar checking every window and door of a house | Discovery |
-| 12 | **SSRF** | Tricking the server into attacking its own internal network | Telling a security guard to open the vault for you | 2021 #10 |
+| #  | Attack         | Plain English                                               | Real-World Example                                  | OWASP       |
+| -- | -------------- | ----------------------------------------------------------- | --------------------------------------------------- | ----------- |
+| 10 | **DoS Attack** | Flooding a server with so many requests it crashes          | Like 1 million people calling a pizza shop at once  | 2023 API #4 |
+| 11 | **Port Scan**  | Scanning all "doors" of a server to find open ones          | A burglar checking every window and door of a house | Discovery   |
+| 12 | **SSRF**       | Tricking the server into attacking its own internal network | Telling a security guard to open the vault for you  | 2021 #10    |
 
 ### Category 5: Malware & Data Theft
 
-| # | Attack | Plain English | Real-World Example | OWASP |
-|---|--------|--------------|-------------------|-------|
-| 13 | **Malware Upload** | Uploading a virus/backdoor to the server | Emailing a trojan horse disguised as a PDF | 2021 #8 |
+| #  | Attack                | Plain English                                         | Real-World Example                                  | OWASP        |
+| -- | --------------------- | ----------------------------------------------------- | --------------------------------------------------- | ------------ |
+| 13 | **Malware Upload**    | Uploading a virus/backdoor to the server              | Emailing a trojan horse disguised as a PDF          | 2021 #8      |
 | 14 | **Data Exfiltration** | Secretly copying and sending data outside the company | Uploading the company database to a hacker's server | Exfiltration |
-| 15 | **Normal** | Not an attack. Regular user activity. | You browsing a website normally | N/A |
+| 15 | **Normal**            | Not an attack. Regular user activity.                 | You browsing a website normally                     | N/A          |
 
 ---
 
@@ -70,9 +76,11 @@ Based on **OWASP Top 10 (2021 + 2023 API Security)** - the global standard for w
 
 ### 1. ML Engine (The Brain)
 
-**What it is:** An AI model (LightGBM) that looks at every network request and says "this is an attack" or "this is normal."
+**What it is:** An AI model (LightGBM) that looks at every network request and
+says "this is an attack" or "this is normal."
 
 **How it works (like a doctor):**
+
 ```
 Patient walks in (network request arrives)
     |
@@ -86,11 +94,13 @@ Prescribes treatment (triggers SOAR playbook)
 ```
 
 **The 21 features it looks at:**
+
 - **Who**: username, role (admin/user/guest)
 - **What**: action (login, download, api_call), resource accessed
 - **When**: hour of day (3 AM login = suspicious)
 - **Where**: IP address, country
-- **Network fingerprint**: 15 CIC-IDS2017 features (packet sizes, flow duration, flag counts, etc.)
+- **Network fingerprint**: 15 CIC-IDS2017 features (packet sizes, flow duration,
+  flag counts, etc.)
 
 **Accuracy:** 97% across all 15 attack types
 
@@ -98,13 +108,17 @@ Prescribes treatment (triggers SOAR playbook)
 
 ### 2. MITRE ATT&CK Mapping (The Universal Language)
 
-**What it is:** A global encyclopedia of hacker techniques maintained by the US government (MITRE Corporation). Every attack has a "T-number" ID.
+**What it is:** A global encyclopedia of hacker techniques maintained by the US
+government (MITRE Corporation). Every attack has a "T-number" ID.
 
 **Why it matters:**
+
 - Without MITRE: "We detected something bad"
-- With MITRE: "We detected T1110.004 (Credential Stuffing) - Credential Access tactic"
+- With MITRE: "We detected T1110.004 (Credential Stuffing) - Credential Access
+  tactic"
 
 **How it works in ThreatPulse:**
+
 ```
 ML Engine says: "This is a brute_force attack"
     |
@@ -119,7 +133,9 @@ Returns:
   - Kill Chain Phase: Where this fits in the attack lifecycle
 ```
 
-**Think of it as:** A common medical coding system. Instead of doctors saying "the patient has a bad heart," they say "ICD-10: I21.9 (Acute Myocardial Infarction)." Now every doctor worldwide understands exactly what happened.
+**Think of it as:** A common medical coding system. Instead of doctors saying
+"the patient has a bad heart," they say "ICD-10: I21.9 (Acute Myocardial
+Infarction)." Now every doctor worldwide understands exactly what happened.
 
 ---
 
@@ -127,9 +143,11 @@ Returns:
 
 **What SOAR stands for:** Security Orchestration, Automation, and Response
 
-**What it does:** When an attack is detected, it automatically runs a pre-defined "recipe" of countermeasures.
+**What it does:** When an attack is detected, it automatically runs a
+pre-defined "recipe" of countermeasures.
 
 **How it works (like a fire alarm system):**
+
 ```
 BEFORE (Old approach):
   Fire detected -> Guard calls manager -> Manager calls fire dept -> 20 min delay
@@ -140,6 +158,7 @@ AFTER (SOAR):
 ```
 
 **Example: SQL Injection Playbook (risk score = 85)**
+
 ```
 Step 1: [ALWAYS]     Block attacker IP          -> EXECUTED
 Step 2: [ALWAYS]     Deploy WAF SQL filter      -> EXECUTED
@@ -149,6 +168,7 @@ Result: 4/4 actions taken in < 1 second
 ```
 
 **Example: Port Scan Playbook (risk score = 45)**
+
 ```
 Step 1: [ALWAYS]      Rate limit scanner IP     -> EXECUTED
 Step 2: [risk >= 80]  Block persistent scanners -> SKIPPED (risk only 45)
@@ -163,9 +183,11 @@ Result: 1/4 actions taken (low risk = gentle response)
 
 ### 4. UEBA (User Behavior Analytics)
 
-**What it is:** Learns what "normal" looks like for each employee, then flags anything unusual.
+**What it is:** Learns what "normal" looks like for each employee, then flags
+anything unusual.
 
 **How it works (like a parent who knows their child):**
+
 ```
 Learning Phase (first 10 events per user):
   "Alice usually logs in at 9 AM from IP 192.168.1.5"
@@ -183,23 +205,27 @@ Detection Phase:
   Result: Risk score boosted by +25
 ```
 
-**Key concept - Z-Score:** Measures how many "standard deviations" away something is from normal. A z-score > 2.5 means "this is extremely unusual" (happens less than 1% of the time).
+**Key concept - Z-Score:** Measures how many "standard deviations" away
+something is from normal. A z-score > 2.5 means "this is extremely unusual"
+(happens less than 1% of the time).
 
 ---
 
 ### 5. Threat Intelligence (Checking Criminal Records)
 
-**What it is:** Before processing any IP, we check it against global databases of known bad IPs.
+**What it is:** Before processing any IP, we check it against global databases
+of known bad IPs.
 
 **Three sources we check:**
 
-| Source | What it Contains | Think of it As |
-|--------|-----------------|----------------|
-| **AbuseIPDB** | Crowd-reported malicious IPs (API lookup) | A "most wanted" list for IP addresses |
-| **Tor Exit Nodes** | IPs belonging to the Tor anonymity network | People wearing masks (not always bad, but suspicious) |
-| **Emerging Threats** | Compromised/malicious IPs from security researchers | FBI's criminal database for computers |
+| Source               | What it Contains                                    | Think of it As                                        |
+| -------------------- | --------------------------------------------------- | ----------------------------------------------------- |
+| **AbuseIPDB**        | Crowd-reported malicious IPs (API lookup)           | A "most wanted" list for IP addresses                 |
+| **Tor Exit Nodes**   | IPs belonging to the Tor anonymity network          | People wearing masks (not always bad, but suspicious) |
+| **Emerging Threats** | Compromised/malicious IPs from security researchers | FBI's criminal database for computers                 |
 
 **How it works:**
+
 ```
 New request from IP 185.220.101.3
     |
@@ -214,32 +240,38 @@ Result: Risk boost = +20 (Tor) + +25 (ET) = +45 added to risk score
 
 ### 6. OSINT Feeds (Open Source Intelligence)
 
-**What it is:** Free, real-time threat data feeds from the global security community.
+**What it is:** Free, real-time threat data feeds from the global security
+community.
 
 **Our 3 feeds:**
+
 1. **Tor Exit Nodes** (check.torproject.org) - ~1,000 IPs of Tor exit relays
 2. **Emerging Threats** (rules.emergingthreats.net) - ~800 compromised IPs
 3. **URLhaus** (abuse.ch) - Recently discovered malicious URLs
 
-**How it differs from Threat Intel:** Threat Intel = checking one specific IP. OSINT = bulk downloading lists of ALL known bad IPs and checking incoming traffic against them automatically.
+**How it differs from Threat Intel:** Threat Intel = checking one specific IP.
+OSINT = bulk downloading lists of ALL known bad IPs and checking incoming
+traffic against them automatically.
 
 ---
 
 ### 7. Adversarial Robustness Testing (Testing Our Own Defenses)
 
-**What it is:** We attack our own ML model with tricky evasion techniques to see if it can still detect them.
+**What it is:** We attack our own ML model with tricky evasion techniques to see
+if it can still detect them.
 
-**Why it matters:** Smart hackers don't just attack - they disguise their attacks to look normal. We need to know if our AI can see through disguises.
+**Why it matters:** Smart hackers don't just attack - they disguise their
+attacks to look normal. We need to know if our AI can see through disguises.
 
 **The 5 evasion tests:**
 
-| Test | What the Attacker Does | Think of it As |
-|------|----------------------|----------------|
-| **Slow Brute Force** | Spreads login attempts over hours instead of seconds | A pickpocket who works slowly over days |
-| **Mimicry Attack** | Makes attack traffic look like normal user behavior | A spy wearing a company uniform |
-| **IP Rotation** | Scans from thousands of different IPs | A criminal who changes cars after every robbery |
-| **Insider Exfil** | Uses legitimate credentials for data theft | An employee stealing one file per day |
-| **Encoded SQLi** | Obfuscates SQL injection with URL encoding | Writing a threat note in code |
+| Test                 | What the Attacker Does                               | Think of it As                                  |
+| -------------------- | ---------------------------------------------------- | ----------------------------------------------- |
+| **Slow Brute Force** | Spreads login attempts over hours instead of seconds | A pickpocket who works slowly over days         |
+| **Mimicry Attack**   | Makes attack traffic look like normal user behavior  | A spy wearing a company uniform                 |
+| **IP Rotation**      | Scans from thousands of different IPs                | A criminal who changes cars after every robbery |
+| **Insider Exfil**    | Uses legitimate credentials for data theft           | An employee stealing one file per day           |
+| **Encoded SQLi**     | Obfuscates SQL injection with URL encoding           | Writing a threat note in code                   |
 
 **Our result:** 100% detection rate (ROBUST verdict)
 
@@ -247,9 +279,11 @@ Result: Risk boost = +20 (Tor) + +25 (ET) = +45 added to risk score
 
 ### 8. Online Learning / Feedback Loop (Getting Smarter Over Time)
 
-**What it is:** When a security analyst reviews an alert and says "this was actually a false alarm," that feedback is stored and used to improve the model.
+**What it is:** When a security analyst reviews an alert and says "this was
+actually a false alarm," that feedback is stored and used to improve the model.
 
 **How it works:**
+
 ```
 Day 1: ML flags Alice's bulk download as "data_exfiltration" (risk: 82)
     |
@@ -271,10 +305,13 @@ Drift Monitor: "FP rate is 8.3% - model is performing well"
 ### 9. MTTD / MTTR Metrics (How Fast Are We?)
 
 **What these mean:**
+
 - **MTTD (Mean Time To Detect)** = How quickly we spot an attack after it starts
-- **MTTR (Mean Time To Respond)** = How quickly we take action after detecting it
+- **MTTR (Mean Time To Respond)** = How quickly we take action after detecting
+  it
 
 **Why it matters:**
+
 ```
 Industry averages (without AI):
   MTTD: 197 days (IBM 2023 report)
@@ -285,15 +322,18 @@ ThreatPulse:
   MTTR: < 1 second (automated SOAR playbooks)
 ```
 
-**These are SLA-grade metrics** that enterprises use to measure their security team's effectiveness.
+**These are SLA-grade metrics** that enterprises use to measure their security
+team's effectiveness.
 
 ---
 
 ### 10. Attack Graph / Kill Chain Visualization
 
-**What it is:** A visual network diagram showing how attacks flow through your system.
+**What it is:** A visual network diagram showing how attacks flow through your
+system.
 
 **Kill Chain concept:**
+
 ```
 Step 1: Reconnaissance    (Attacker scans your ports)
 Step 2: Initial Access    (Attacker finds a way in - SQL injection)
@@ -303,27 +343,36 @@ Step 5: Discovery         (Attacker maps your internal network)
 Step 6: Exfiltration      (Attacker steals your data)
 ```
 
-**Our D3.js graph** shows this visually: nodes are IPs/users/resources, edges are attack relationships, colored by severity.
+**Our D3.js graph** shows this visually: nodes are IPs/users/resources, edges
+are attack relationships, colored by severity.
 
 ---
 
 ### 11. AI-Powered Analysis (Gemini Integration)
 
-**What it is:** For every high-risk incident, Google's Gemini AI writes a human-readable summary explaining:
+**What it is:** For every high-risk incident, Google's Gemini AI writes a
+human-readable summary explaining:
+
 - What happened
 - Why it's dangerous
 - What you should do
 
 **Example output:**
-> "User `apt29_cozybear` attempted credential stuffing from IP 185.220.101.3 (Tor exit node) targeting the admin login page. 47 failed attempts detected in 2 minutes. This matches APT29 (Cozy Bear) tactics. Recommend: Block IP range, enforce MFA on admin accounts, check for successful logins."
+
+> "User `apt29_cozybear` attempted credential stuffing from IP 185.220.101.3
+> (Tor exit node) targeting the admin login page. 47 failed attempts detected in
+> 2 minutes. This matches APT29 (Cozy Bear) tactics. Recommend: Block IP range,
+> enforce MFA on admin accounts, check for successful logins."
 
 ---
 
 ### 12. Telegram Alerts (Instant Notification)
 
-**What it is:** When a critical threat is detected, ThreatPulse sends an instant Telegram message to the security team's phone.
+**What it is:** When a critical threat is detected, ThreatPulse sends an instant
+Telegram message to the security team's phone.
 
 **What the alert contains:**
+
 - Incident ID and severity
 - Attacker IP and username
 - Attack type with MITRE ID
@@ -335,64 +384,190 @@ Step 6: Exfiltration      (Attacker steals your data)
 ## System Architecture (How It All Connects)
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │            REACT DASHBOARD               │
-                    │  (8 pages: Dashboard, Incidents, ML,     │
-                    │   Threat Intel, SOAR, Playbooks,         │
-                    │   Attack Graph, Investigation)           │
-                    └──────────────────┬──────────────────────┘
-                                       │ HTTP/REST API
-                    ┌──────────────────▼──────────────────────┐
-                    │           FASTAPI BACKEND                │
-                    │  (45 API endpoints, Python)              │
-                    └────┬─────┬──────┬──────┬──────┬────────┘
-                         │     │      │      │      │
-            ┌────────────▼─┐ ┌─▼────┐ │  ┌───▼──┐ ┌─▼────────┐
-            │  ML ENGINE   │ │ UEBA │ │  │ SOAR │ │  THREAT   │
-            │  (LightGBM)  │ │      │ │  │      │ │  INTEL    │
-            │  15 classes   │ │Z-score│ │  │ 15   │ │ AbuseIPDB│
-            │  97% accuracy │ │anomaly│ │  │plays │ │ OSINT    │
-            └──────────────┘ └──────┘ │  └──────┘ └──────────┘
-                                      │
-                              ┌───────▼───────┐
-                              │   SQLITE DB   │
-                              │ Events + INC  │
-                              └───────────────┘
+        ┌─────────────────────────────────────────┐
+        │            REACT DASHBOARD               │
+        │  (8 pages: Dashboard, Incidents, ML,     │
+        │   Threat Intel, SOAR, Playbooks,         │
+        │   Attack Graph, Investigation)           │
+        └──────────────────┬──────────────────────┘
+                           │ HTTP/REST API
+        ┌──────────────────▼──────────────────────┐
+        │           FASTAPI BACKEND                │
+        │  (45 API endpoints, Python)              │
+        └────┬─────┬──────┬──────┬──────┬────────┘
+             │     │      │      │      │
+┌────────────▼─┐ ┌─▼────┐ │  ┌───▼──┐ ┌─▼────────┐
+│  ML ENGINE   │ │ UEBA │ │  │ SOAR │ │  THREAT   │
+│  (LightGBM)  │ │      │ │  │      │ │  INTEL    │
+│  15 classes   │ │Z-score│ │  │ 15   │ │ AbuseIPDB│
+│  97% accuracy │ │anomaly│ │  │plays │ │ OSINT    │
+└──────────────┘ └──────┘ │  └──────┘ └──────────┘
+                          │
+                  ┌───────▼───────┐
+                  │   SQLITE DB   │
+                  │ Events + INC  │
+                  └───────────────┘
 ```
 
 ---
 
 ## Tech Stack Summary
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| Frontend | React + Vite + Recharts + D3.js | Fast, interactive, beautiful charts |
-| Backend | FastAPI (Python) | Fastest Python web framework, auto-docs |
-| ML Model | LightGBM | Best accuracy for tabular data, fast inference |
-| Database | SQLite + SQLAlchemy | Simple, no setup needed, good for demos |
-| Alerts | Telegram Bot API | Free, instant, mobile-friendly |
-| AI Summary | Google Gemini API | Best free AI for text generation |
-| Deployment | Docker Compose | One-command deployment |
+| Layer      | Technology                      | Why                                            |
+| ---------- | ------------------------------- | ---------------------------------------------- |
+| Frontend   | React + Vite + Recharts + D3.js | Fast, interactive, beautiful charts            |
+| Backend    | FastAPI (Python)                | Fastest Python web framework, auto-docs        |
+| ML Model   | LightGBM                        | Best accuracy for tabular data, fast inference |
+| Database   | SQLite + SQLAlchemy             | Simple, no setup needed, good for demos        |
+| Alerts     | Telegram Bot API                | Free, instant, mobile-friendly                 |
+| AI Summary | Google Gemini API               | Best free AI for text generation               |
+| Deployment | Docker Compose                  | One-command deployment                         |
 
 ---
 
 ## How to Explain This to a Non-Technical Person
 
-> "ThreatPulse is like a smart security guard for computer networks. It watches every request that comes into your system - who's asking, what they want, and when. Using AI (like facial recognition but for network traffic), it can identify 15 different types of cyber attacks with 97% accuracy. When it spots an attack, it doesn't just ring an alarm - it automatically blocks the attacker, locks compromised accounts, and notifies the security team on their phone within seconds. It uses the same threat classification system (MITRE ATT&CK) that the FBI and Pentagon use. And it gets smarter over time - when security analysts correct a mistake, the system learns from it."
+> "ThreatPulse is like a smart security guard for computer networks. It watches
+> every request that comes into your system - who's asking, what they want, and
+> when. Using AI (like facial recognition but for network traffic), it can
+> identify 15 different types of cyber attacks with 97% accuracy. When it spots
+> an attack, it doesn't just ring an alarm - it automatically blocks the
+> attacker, locks compromised accounts, and notifies the security team on their
+> phone within seconds. It uses the same threat classification system (MITRE
+> ATT&CK) that the FBI and Pentagon use. And it gets smarter over time - when
+> security analysts correct a mistake, the system learns from it."
 
 ---
 
 ## Numbers That Matter
 
-| Metric | Value |
-|--------|-------|
-| Attack types detected | **15** (based on OWASP Top 10) |
-| ML model accuracy | **97%** |
-| Automated playbooks | **15** (one per attack type) |
-| API endpoints | **45** |
-| OSINT indicators loaded | **1,849+** |
-| Response time (SOAR) | **< 1 second** |
-| MITRE techniques mapped | **15+** |
-| Frontend pages | **8** |
-| Network features analyzed | **21** per request |
-| Adversarial robustness | **100%** detection rate |
+| Metric                    | Value                          |
+| ------------------------- | ------------------------------ |
+| Attack types detected     | **15** (based on OWASP Top 10) |
+| ML model accuracy         | **97%**                        |
+| Automated playbooks       | **15** (one per attack type)   |
+| API endpoints             | **45**                         |
+| OSINT indicators loaded   | **1,849+**                     |
+| Response time (SOAR)      | **< 1 second**                 |
+| MITRE techniques mapped   | **15+**                        |
+| Frontend pages            | **8**                          |
+| Network features analyzed | **21** per request             |
+| Adversarial robustness    | **100%** detection rate        |
+
+
+
+Who Would Actually Use ThreatPulse?
+
+1. Small & Medium Businesses (SMBs)
+
+The Problem: They can't afford Splunk
+($15,000+/year) or CrowdStrike ($25,000+/year). They have a website, some
+servers, maybe 50-500 employees, but zero security monitoring.
+
+How ThreatPulse helps: A restaurant chain with an online ordering system could
+deploy this to watch their web server logs. When someone tries SQL injection on
+their order form, ThreatPulse catches it, blocks the IP, and sends a Telegram
+alert to the owner — all for free.
+
+---
+
+2. Startup SOC Teams (1-3 person security teams)
+
+The Problem: They have one security person who can't watch logs 24/7. They need
+automation.
+
+How ThreatPulse helps: Instead of the security engineer manually reading through
+10,000 log entries every morning, ThreatPulse classifies them automatically.
+They just open the dashboard, see "3 critical incidents overnight," click into
+each one, and the AI summary tells them exactly what happened.
+
+---
+
+3. Universities & Educational Institutions
+
+The Problem: University networks are constantly attacked (students
+experimenting, external hackers targeting research data), but IT budgets are
+tight.
+
+How ThreatPulse helps: Deploy on the university network to monitor login
+attempts to student portals, research databases, and admin systems. When someone
+tries credential stuffing against the student email system at 3 AM, it catches
+it immediately.
+
+---
+
+4. E-Commerce Websites
+
+The Problem: Online stores face constant attacks — SQL injection on search bars,
+credential stuffing on customer accounts, DDoS during sales events.
+
+How ThreatPulse helps: Plug server access logs into ThreatPulse. It detects all
+15 attack types in real-time. During a Black Friday sale, if a DDoS attack
+starts, SOAR automatically rate-limits the attackers before the site goes down.
+
+---
+
+5. Government Agencies (Developing Countries)
+
+The Problem: Many government departments in developing nations have websites
+(tax portals, citizen services) but zero cybersecurity budget. They're sitting
+ducks.
+
+How ThreatPulse helps: Free, open-source, self-hosted. A government IT team can
+deploy it on their existing servers without paying for licenses. It gives them
+enterprise-grade threat detection without the enterprise price tag.
+
+---
+
+6. Managed Security Service Providers (MSSPs)
+
+The Problem: Small MSSPs that manage security for 10-50 clients need a platform
+to monitor all of them. Commercial SIEM tools charge per-client.
+
+How ThreatPulse helps: An MSSP could deploy one instance per client (or
+multi-tenant it), get the ML-powered detection, SOAR automation, and MITRE
+mapping — then sell it as a managed service. Their cost is near-zero, their
+value proposition is high.
+
+---
+
+7. Bug Bounty / Penetration Testing Labs
+
+The Problem: Pentesters need a "defender" system to test against. Security
+students need a realistic SOC environment to learn.
+
+How ThreatPulse helps: Set up ThreatPulse as the defensive system, run the
+traffic simulator to generate attacks, and practice incident response in a safe
+environment. The MITRE mapping teaches students real-world threat
+classification.
+
+---
+
+Real-World Deployment Scenario
+
+Here's exactly how someone would deploy this today:
+
+Company: "QuickBuy" — an online store with 200 daily orders
+
+Step 1: Install ThreatPulse on their server (Docker Compose = 1 command)
+
+Step 2: Configure their web server (Nginx/Apache) to pipe access logs into the
+logs_ingest/ folder
+
+Step 3: ThreatPulse automatically: - Reads every log line - ML classifies it
+(97% accuracy, 15 attack types) - Checks IP against OSINT feeds (Tor, Emerging
+Threats) - Runs UEBA to spot unusual employee behavior - If threat detected →
+SOAR blocks the IP automatically - Sends Telegram alert to the CTO's phone
+
+Step 4: CTO opens dashboard next morning, sees: "2 SQL injection attempts
+blocked from Russia" "1 credential stuffing attempt from Tor exit node —
+blocked" "All SOAR playbooks executed successfully"
+
+Result: Zero downtime, zero data breaches, zero cost.
+
+The Bottom Line
+
+ThreatPulse fills a gap in the market: companies that need security but can't
+afford $50K/year SIEM tools. It's not competing with CrowdStrike or Splunk for
+Fortune 500 companies — it's serving the 99% of businesses that currently have
+no security monitoring at all.

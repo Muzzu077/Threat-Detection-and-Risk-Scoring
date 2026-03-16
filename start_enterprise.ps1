@@ -2,7 +2,7 @@
 # Fixed: Uses system Python (not venv), uses cmd.exe for npm.cmd
 
 Write-Host ""
-Write-Host "  THREATPULSE ENTERPRISE v2.0 STARTING..." -ForegroundColor Cyan
+Write-Host "  THREATPULSE ENTERPRISE v3.0 STARTING..." -ForegroundColor Cyan
 Write-Host "  ================================================" -ForegroundColor DarkCyan
 
 $root = $PSScriptRoot
@@ -59,6 +59,11 @@ if (-not $npmCmd) {
 }
 Write-Host "  npm:    $npmCmd" -ForegroundColor DarkGray
 
+# ── 0. Seed demo account ──────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "  [0/4] Seeding demo account..." -ForegroundColor Cyan
+& $pyExe "utils/seed_demo_account.py" 2>&1 | ForEach-Object { Write-Host "       $_" -ForegroundColor DarkGray }
+
 # ── 1. Start Ingestion Service ───────────────────────────────────────────────
 Write-Host ""
 Write-Host "  [1/4] Starting Log Ingestion Service..." -ForegroundColor Green
@@ -95,7 +100,7 @@ $fastapi = Start-Process `
     -PassThru -NoNewWindow
 Write-Host "        PID: $($fastapi.Id)" -ForegroundColor DarkGray
 
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 8
 
 # ── 4. Start React Frontend ──────────────────────────────────────────────────
 Write-Host "  [4/4] Starting React Frontend on port 5173..." -ForegroundColor Green
@@ -126,7 +131,7 @@ Write-Host "  React Dashboard   :  http://localhost:5173" -ForegroundColor White
 Write-Host "  FastAPI API       :  http://localhost:8000" -ForegroundColor White
 Write-Host "  API Docs (Swagger):  http://localhost:8000/docs" -ForegroundColor White
 Write-Host ""
-Write-Host "  Login: admin / threatpulse" -ForegroundColor Yellow
+Write-Host "  Login: demo@threatpulse.com / ThreatPulse2025" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  Press Ctrl+C to stop all services." -ForegroundColor DarkGray
 Write-Host ""

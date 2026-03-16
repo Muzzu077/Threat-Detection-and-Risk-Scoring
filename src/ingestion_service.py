@@ -60,6 +60,9 @@ class LogHandler(FileSystemEventHandler):
             if df.empty:
                 return
 
+            # Check for tenant_id column (SDK-ingested data)
+            has_tenant_id = '_tenant_id' in df.columns
+
             # 1. TF Autoencoder anomaly scores
             df['anomaly_score'] = detect_anomalies_tf(df, self.tf_model, self.tf_encoders)
 
@@ -144,7 +147,8 @@ class LogHandler(FileSystemEventHandler):
                     'country': country,
                     'threat_intel_score': threat_intel_score,
                     'threat_intel_reason': threat_intel_reason,
-                    'response_actions': ""
+                    'response_actions': "",
+                    'tenant_id': int(row['_tenant_id']) if has_tenant_id and pd.notna(row.get('_tenant_id')) else None,
                 }
 
                 event_id, incident_id = db.insert_event(event_dict)

@@ -1,0 +1,35 @@
+{
+  "name": "threatpulse-sdk",
+  "version": "1.0.0",
+  "description": "ThreatPulse SDK for Node.js — ship HTTP logs to your ThreatPulse threat detection dashboard. Zero dependencies.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./express": "./src/middleware.js"
+  },
+  "files": [
+    "src/",
+    "README.md"
+  ],
+  "keywords": [
+    "threatpulse",
+    "security",
+    "threat-detection",
+    "logging",
+    "soc",
+    "siem",
+    "cybersecurity",
+    "express-middleware",
+    "http-logging",
+    "risk-scoring"
+  ],
+  "author": "Muzammil",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Muzammil-Threat-Detection-and-Risk-Scoring"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -4,7 +4,68 @@ const BASE = '/api';
 
 export const api = axios.create({ baseURL: BASE });
 
-// Events
+// ─── JWT Interceptors ────────────────────────────────────────────────────────
+
+api.interceptors.request.use((config) => {
+  const tokens = localStorage.getItem('tp_tokens');
+  if (tokens) {
+    try {
+      const { access_token } = JSON.parse(tokens);
+      if (access_token) {
+        config.headers.Authorization = `Bearer ${access_token}`;
+      }
+    } catch {}
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const tokens = JSON.parse(localStorage.getItem('tp_tokens') || '{}');
+        if (tokens.refresh_token) {
+          const res = await axios.post(`${BASE}/auth/refresh`, {
+            refresh_token: tokens.refresh_token,
+          });
+          localStorage.setItem('tp_tokens', JSON.stringify(res.data));
+          originalRequest.headers.Authorization = `Bearer ${res.data.access_token}`;
+          return api(originalRequest);
+        }
+      } catch {
+        localStorage.removeItem('tp_tokens');
+        localStorage.removeItem('tp_user');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+export const authRegister = (email, password, display_name) =>
+  api.post('/auth/register', { email, password, display_name }).then(r => r.data);
+
+export const authLogin = (email, password) =>
+  api.post('/auth/login', { email, password }).then(r => r.data);
+
+export const authMe = () => api.get('/auth/me').then(r => r.data);
+
+export const authLogout = (refresh_token) =>
+  api.post('/auth/logout', { refresh_token }).then(r => r.data);
+
+// ─── API Keys ────────────────────────────────────────────────────────────────
+
+export const fetchApiKeys = () => api.get('/keys').then(r => r.data);
+export const createApiKey = (name) => api.post('/keys', { name }).then(r => r.data);
+export const revokeApiKey = (id) => api.delete(`/keys/${id}`).then(r => r.data);
+
+// ─── Events ──────────────────────────────────────────────────────────────────
+
 export const fetchEvents = (page = 1, limit = 50, minRisk = 0) =>
   api.get('/events', { params: { page, limit, min_risk: minRisk } }).then(r => r.data);
 
