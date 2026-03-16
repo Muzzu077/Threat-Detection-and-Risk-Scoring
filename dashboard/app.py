@@ -23,34 +23,101 @@ st.set_page_config(page_title="ThreatPulse", layout="wide", page_icon="🛡️")
 # Custom SOC CSS
 st.markdown("""
 <style>
-    .reportview-container { background: #000000; }
-    .main { background: #000000; color: #00ff41; font-family: 'Courier New', monospace; }
-    h1, h2, h3 { color: #00ff41 !important; text-transform: uppercase; }
-    .stButton>button { color: black; background-color: #00ff41; border: 1px solid #00ff41; font-weight: bold; }
-    
-    /* Metrics */
-    .metric-container { background-color: #111; padding: 15px; border: 1px solid #333; }
-    
-    /* Status Banner */
-    .status-banner {
-        padding: 15px;
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 20px;
-        border: 2px solid;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap');
+
+    /* Global Theme */
+    .stApp {
+        background-color: #09090b; /* Zinc 950 */
+        font-family: 'Inter', sans-serif;
+        color: #e4e4e7; /* Zinc 200 */
     }
-    .status-safe { background-color: #0b3d0b; color: #00ff41; border-color: #00ff41; }
-    .status-critical { background-color: #3d0b0b; color: #ff4b4b; border-color: #ff4b4b; animation: blink 2s infinite; }
-    
-    @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.7;} 100% {opacity: 1;} }
-    
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Inter', sans-serif !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        text-transform: none !important;
+    }
+
+    /* Streamlit Components Override */
+    .stButton>button {
+        color: #09090b;
+        background-color: #ffffff;
+        border: none;
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .stButton>button:hover {
+        background-color: #d4d4d8; /* Zinc 300 */
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Card / Container Styling */
+    div[data-testid="stMetric"] {
+        background-color: #18181b; /* Zinc 900 */
+        padding: 20px;
+        border: 1px solid #27272a; /* Zinc 800 */
+        border-radius: 8px;
+    }
+    div[data-testid="stMetricLabel"] {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: #a1a1aa; /* Zinc 400 */
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+    div[data-testid="stMetricValue"] {
+        font-family: 'Inter', sans-serif;
+        font-weight: 300;
+        color: #ffffff;
+    }
+
     /* Incident Card */
     .incident-card {
-        background-color: #1a1a1a;
-        border-left: 5px solid #ff4b4b;
-        padding: 15px;
-        margin-bottom: 10px;
+        background-color: #18181b;
+        border: 1px solid #27272a;
+        border-left: 3px solid #ef4444; /* Red 500 */
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 12px;
+        transition: transform 0.2s;
+    }
+    .incident-card:hover {
+        border-color: #3f3f46;
+        transform: translateX(4px);
+    }
+    .incident-card h4 {
+        font-size: 16px;
+        margin-bottom: 8px;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+    .incident-card p {
+        font-size: 13px;
+        color: #a1a1aa;
+        margin: 2px 0;
+    }
+    
+    /* Stats Banner */
+    .status-banner {
+        background: linear-gradient(90deg, #18181b 0%, #09090b 100%);
+        border: 1px solid #27272a;
+        border-radius: 8px;
+        padding: 16px;
+        text-align: center;
+        margin-bottom: 32px;
+    }
+    .status-critical { border-color: #ef4444; color: #f87171; }
+    .status-safe { border-color: #10b981; color: #34d399; }
+
+    /* Dataframe */
+    [data-testid="stDataFrame"] {
+        border: 1px solid #27272a;
+        border-radius: 8px;
+        overflow: hidden;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -171,7 +238,7 @@ def main_dashboard():
     st.subheader("📊 THREAT ANALYTICS")
     c1, c2 = st.columns(2)
     
-    # Data Prep for charts
+    # Data Prep
     df_events = pd.DataFrame([{
         'Risk Score': e.risk_score,
         'hour': e.timestamp.hour
@@ -179,14 +246,70 @@ def main_dashboard():
     
     if not df_events.empty:
         with c1:
-            fig_hist = px.histogram(df_events, x="Risk Score", nbins=20, title="Event Frequency by Risk Score", color_discrete_sequence=['#ff4b4b'])
-            fig_hist.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", font_color="#00ff41")
-            st.plotly_chart(fig_hist, width="stretch")
+            # Chart 1: Event Frequency Distribution by Risk Severity
+            # Create buckets
+            def get_bucket(score):
+                if score >= 85: return "Critical"
+                if score >= 61: return "High"
+                if score >= 31: return "Medium"
+                return "Low"
+            
+            df_events['Severity'] = df_events['Risk Score'].apply(get_bucket)
+            df_severity = df_events['Severity'].value_counts().reindex(["Low", "Medium", "High", "Critical"], fill_value=0).reset_index()
+            df_severity.columns = ["Severity", "Count"]
+            
+            # Colors: Low=Blue, Med=Amber, High=Orange, Crit=Red
+            sev_colors = {"Low": "#2563EB", "Medium": "#F59E0B", "High": "#F97316", "Critical": "#DC2626"}
+            
+            fig_bar = px.bar(
+                df_severity, 
+                x="Severity", 
+                y="Count", 
+                color="Severity",
+                color_discrete_map=sev_colors,
+                title="Event Frequency Distribution by Risk Severity",
+                text="Count"
+            )
+            fig_bar.update_traces(marker_line_width=0)
+            fig_bar.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)", 
+                paper_bgcolor="rgba(0,0,0,0)", 
+                font_color="#e4e4e7",
+                showlegend=False,
+                xaxis_title="Risk Severity Level",
+                yaxis_title="Number of Events",
+                yaxis=dict(showgrid=True, gridcolor="#27272a")
+            )
+            st.plotly_chart(fig_bar, width="stretch")
             
         with c2:
+            # Chart 2: Hourly Average Risk Trend
             hourly_risk = df_events.groupby('hour')['Risk Score'].mean().reset_index()
-            fig_line = px.line(hourly_risk, x='hour', y='Risk Score', title="Average Risk vs Hour", markers=True, color_discrete_sequence=['#00ff41'])
-            fig_line.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", font_color="#00ff41")
+            # Ensure all hours 0-23 exist for correct trending
+            full_hours = pd.DataFrame({'hour': range(24)})
+            hourly_risk = full_hours.merge(hourly_risk, on='hour', how='left').fillna(0)
+
+            fig_line = px.line(
+                hourly_risk, 
+                x='hour', 
+                y='Risk Score', 
+                title="Hourly Average Risk Trend", 
+                markers=True
+            )
+            fig_line.update_traces(line_color="#ffffff", line_shape="spline", marker_color="#ffffff")
+            
+            # Critical Threshold Line
+            fig_line.add_hline(y=85, line_dash="dash", line_color="#DC2626", annotation_text="Critical Alert Threshold", annotation_position="bottom right", annotation_font_color="#DC2626")
+            
+            fig_line.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)", 
+                paper_bgcolor="rgba(0,0,0,0)", 
+                font_color="#e4e4e7",
+                xaxis_title="Hour of Day (0-23)",
+                yaxis_title="Average Risk Score",
+                yaxis=dict(range=[0, 100], showgrid=True, gridcolor="#27272a"),
+                xaxis=dict(showgrid=False)
+            )
             st.plotly_chart(fig_line, width="stretch")
     
     st.markdown("---")
@@ -212,7 +335,7 @@ def main_dashboard():
                 
                 # Management Actions
                 c_a, c_b = st.columns(2)
-                if st.button("INVESTIGATE", key=f"inv_{inc.id}"):
+                if c_a.button("INVESTIGATE", key=f"inv_{inc.id}"):
                     if inc.status == "OPEN":
                         db.update_incident_status(inc.id, "INVESTIGATING", owner="Admin")
                     st.session_state.selected_incident = inc.id
@@ -240,11 +363,11 @@ def main_dashboard():
             
             def highlight_row(row):
                 if int(row['RISK']) > 80:
-                    return ['background-color: #3d0b0b; color: #ff4b4b']*len(row)
+                    return ['background-color: #3f1818; color: #fca5a5']*len(row) # Dark Red bg / Light Red text
                 elif int(row['RISK']) > 50:
-                    return ['background-color: #3d2f0b; color: orange']*len(row)
+                    return ['background-color: #27272a; color: #fcd34d']*len(row) # Zinc 800 bg / Amber text
                 else:
-                    return ['color: #00ff41']*len(row)
+                    return ['color: #e4e4e7']*len(row) # Zinc 200 text
 
             st.dataframe(
                 df_feed.style.apply(highlight_row, axis=1),

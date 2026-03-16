@@ -1,4 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 12:24:33.568348,hacker_xyz,unknown,182.21.4.9,failed_login,failed,admin_panel
-2025-12-18 12:24:33.568348,public_guest,guest,172.16.0.5,view_page,success,products
-2025-12-18 12:24:33.568348,customer_101,user,192.168.1.5,view_page,success,about

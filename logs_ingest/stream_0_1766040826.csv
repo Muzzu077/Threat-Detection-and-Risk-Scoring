@@ -1,3 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 12:23:46.384846,customer_101,user,192.168.1.5,view_page,success,about
-2025-12-18 12:23:46.384846,customer_101,user,192.168.1.5,login,success,login_page
