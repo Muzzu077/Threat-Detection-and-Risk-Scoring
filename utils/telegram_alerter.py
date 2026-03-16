@@ -149,17 +149,26 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
         "disable_web_page_preview": True,
     }
 
-    try:
-        resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=10)
-        if resp.status_code == 200:
-            print(f"✅ Telegram Alert sent! INC-{inc_id_str} → chat {chat_id}")
-            return True
-        else:
-            print(f"❌ Telegram send failed: {resp.status_code} — {resp.text[:200]}")
-            return False
-    except Exception as e:
-        print(f"❌ Telegram exception: {e}")
-        return False
+    import time
+    for attempt in range(3):
+        try:
+            resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=15)
+            if resp.status_code == 200:
+                print(f"✅ Telegram Alert sent! INC-{inc_id_str} → chat {chat_id}")
+                return True
+            else:
+                print(f"❌ Telegram send failed (Attempt {attempt+1}/3): {resp.status_code} — {resp.text[:200]}")
+                if resp.status_code < 500:  # 4xx errors (like 400 Bad Request) are invalid payloads; don't retry
+                    return False
+        except Exception as e:
+            print(f"⚠️ Telegram send attempt {attempt+1}/3 failed: {e}")
+            if attempt < 2:
+                time.sleep(3)  # Wait with backoff before retrying
+                continue
+            else:
+                print(f"❌ Telegram send ultimately failed after 3 attempts.")
+                return False
+    return False
 
 
 def send_system_status(message: str) -> bool:
@@ -172,11 +181,17 @@ def send_system_status(message: str) -> bool:
         "text":       f"ℹ️ *ThreatPulse System*\n\n{message}",
         "parse_mode": "Markdown",
     }
-    try:
-        resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=10)
-        return resp.status_code == 200
-    except Exception:
-        return False
+    import time
+    for attempt in range(3):
+        try:
+            resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=15)
+            if resp.status_code == 200:
+                return True
+        except Exception:
+            if attempt < 2:
+                time.sleep(3)
+                continue
+    return False
 
 
 def send_daily_summary(stats: dict) -> bool:
@@ -201,15 +216,20 @@ def send_daily_summary(stats: dict) -> bool:
         "text":       message,
         "parse_mode": "Markdown",
     }
-    try:
-        resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=10)
-        result = resp.status_code == 200
-        if result:
-            print("✅ Telegram daily summary sent!")
-        return result
-    except Exception as e:
-        print(f"❌ Telegram summary failed: {e}")
-        return False
+    import time
+    for attempt in range(3):
+        try:
+            resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=15)
+            if resp.status_code == 200:
+                print("✅ Telegram daily summary sent!")
+                return True
+        except Exception as e:
+            if attempt < 2:
+                time.sleep(3)
+                continue
+            else:
+                print(f"❌ Telegram summary failed after 3 attempts: {e}")
+    return False
 
 
 def get_bot_info() -> dict:
