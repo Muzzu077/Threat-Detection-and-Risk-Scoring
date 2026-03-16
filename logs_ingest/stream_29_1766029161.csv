@@ -1,3 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 09:09:21.096967,bot_crawler,impersonator,45.33.22.11,api_call,403_forbidden,user_settings
-2025-12-18 09:09:21.096967,customer_102,user,192.168.1.6,view_page,success,home

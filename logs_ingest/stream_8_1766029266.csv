@@ -1,3 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 09:11:06.548038,hacker_xyz,unknown,182.21.4.9,sql_inject_attempt,failed,admin_panel
-2025-12-18 09:11:06.548038,public_guest,guest,172.16.0.5,view_page,success,about

@@ -1,4 +1,0 @@
-timestamp,user,role,ip,action,status,resource
-2025-12-18 09:08:07.788593,public_guest,guest,172.16.0.5,view_page,success,about
-2025-12-18 09:08:07.788593,public_guest,guest,172.16.0.5,view_page,success,about
-2025-12-18 09:08:07.788593,customer_102,user,192.168.1.6,view_page,success,home
