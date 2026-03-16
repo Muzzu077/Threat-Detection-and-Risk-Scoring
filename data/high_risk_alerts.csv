@@ -1,0 +1,6 @@
+timestamp,user,role,ip,action,status,resource
+2025-12-18 10:00:00.123456,hacker_01,unknown,45.33.22.11,sql_injection_attempt,failed,login_page
+2025-12-18 10:00:05.654321,hacker_01,unknown,45.33.22.11,brute_force_login,failed,admin_panel
+2025-12-18 10:00:15.987654,insider_threat,user,192.168.1.50,unauthorized_access,success,payroll_db
+2025-12-18 10:00:30.112233,botnet_xyz,unknown,103.22.15.99,ddos_simulation,failed,api_gateway
+2025-12-18 10:01:00.000000,root_user,admin,10.0.0.1,system_shutdown_attempt,failed,core_server
