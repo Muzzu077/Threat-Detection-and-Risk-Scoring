@@ -135,27 +135,39 @@ class LogHandler(FileSystemEventHandler):
                 if total_risk > 80:
                     print(f"🚨 CRITICAL [{attack_type.upper()}] | {row['user']} (Score: {total_risk:.1f}) from {country}")
 
-                    # AI Summary
-                    event_dict['attack_type'] = attack_type
-                    ai_summary = generate_security_summary(event_dict)
+                    # ── Step A: AI Summary (safe — failure does NOT block alerts) ──
+                    ai_summary = ""
+                    try:
+                        event_dict['attack_type'] = attack_type
+                        ai_summary = generate_security_summary(event_dict)
+                        if incident_id and ai_summary:
+                            db.update_incident_note(incident_id, ai_summary)
+                        print(f"   ✅ AI summary generated ({len(ai_summary)} chars)")
+                    except Exception as ai_err:
+                        print(f"   ⚠️ AI summary skipped: {ai_err}")
 
-                    if incident_id:
-                        db.update_incident_note(incident_id, ai_summary)
-
-                    # 10. NEW: SOAR Auto-Response for critical (>90)
+                    # ── Step B: SOAR Auto-Response (risk > 90) ──
                     response_json = ""
                     if total_risk > 90:
-                        print(f"🤖 SOAR: Triggering automated response for incident {incident_id}")
-                        response = execute_response(event_dict, incident_id)
-                        response_json = json.dumps([a.get("action", "") for a in response.get("actions_taken", [])])
-                        if incident_id:
-                            db.update_incident_response(incident_id, response_json)
-                        print(f"   ✅ {response['actions_count']} automated action(s) taken.")
-                    else:
-                        response_json = ""
+                        try:
+                            print(f"   🤖 SOAR: Triggering automated response for incident {incident_id}")
+                            response = execute_response(event_dict, incident_id)
+                            response_json = json.dumps([a.get("action", "") for a in response.get("actions_taken", [])])
+                            if incident_id:
+                                db.update_incident_response(incident_id, response_json)
+                            print(f"   ✅ {response['actions_count']} SOAR action(s) taken.")
+                        except Exception as soar_err:
+                            print(f"   ⚠️ SOAR response error: {soar_err}")
 
-                    # Multi-channel alert: Telegram + WhatsApp + Email + Slack + Webhook
-                    dispatch_alert(event_dict, incident_id, response_json)
+                    # ── Step C: Multi-channel alerts (ALWAYS runs, regardless of A or B) ──
+                    try:
+                        event_dict['explanation'] = ai_summary or event_dict.get('explanation', '')
+                        alert_results = dispatch_alert(event_dict, incident_id, response_json)
+                        for channel, success in alert_results.items():
+                            status = "✅" if success else "❌"
+                            print(f"   {status} Alert → {channel.upper()}")
+                    except Exception as alert_err:
+                        print(f"   ❌ Alert dispatch error: {alert_err}")
 
             print(f"✅ Processed {len(df)} events from {os.path.basename(filepath)}")
 
