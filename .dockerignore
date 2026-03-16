@@ -1,0 +1,48 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Frontend (built separately in its own Dockerfile)
+frontend/node_modules/
+frontend/dist/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+security_events.db
+
+# Environment
+.env
+
+# Logs (generated at runtime)
+logs_ingest/*.csv
+
+# Docker files (not needed inside container)
+docker-compose.yml
+Dockerfile.backend
+frontend/Dockerfile.frontend
+
+# Docs
+*.md
+LICENSE

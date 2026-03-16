@@ -53,6 +53,10 @@ class Incident(Base):
     response_actions = Column(Text, default="")
     # NEW: Attack type from ML engine
     attack_type = Column(String, default="unknown")
+    # MTTD/MTTR tracking
+    detected_at = Column(DateTime, default=datetime.utcnow)  # When ML detected
+    responded_at = Column(DateTime, nullable=True)  # When SOAR responded
+    resolved_at = Column(DateTime, nullable=True)  # When analyst resolved
 
 class AttackChain(Base):
     """Groups related high-risk events into kill chains."""
@@ -103,7 +107,8 @@ class Database:
                     user=event_dict.get('user', ''),
                     action=event_dict.get('action', ''),
                     timestamp=event.timestamp,
-                    attack_type=event_dict.get('attack_type', 'unknown')
+                    attack_type=event_dict.get('attack_type', 'unknown'),
+                    detected_at=datetime.utcnow()
                 )
                 session.add(incident)
                 session.flush()
@@ -155,6 +160,8 @@ class Database:
                 inc.status = new_status
                 if owner:
                     inc.owner = owner
+                if new_status == "RESOLVED":
+                    inc.resolved_at = datetime.utcnow()
                 session.commit()
         finally:
             session.close()
@@ -176,6 +183,7 @@ class Database:
             inc = session.query(Incident).filter(Incident.id == incident_id).first()
             if inc:
                 inc.response_actions = response_json
+                inc.responded_at = datetime.utcnow()
                 session.commit()
         finally:
             session.close()
@@ -216,6 +224,107 @@ class Database:
                 "high_events": high_events,
                 "avg_risk": avg_risk,
                 "resolved_incidents": session.query(Incident).filter(Incident.status == "RESOLVED").count()
+            }
+        finally:
+            session.close()
+
+    def get_mttd_mttr_stats(self):
+        """Calculate MTTD, MTTR, and resolution time metrics."""
+        from sqlalchemy import func
+        from datetime import timedelta
+        session = self.Session()
+        try:
+            # MTTD: average time from event timestamp to detected_at
+            incidents_with_detect = session.query(Incident).filter(
+                Incident.detected_at.isnot(None),
+                Incident.timestamp.isnot(None)
+            ).all()
+
+            mttd_values = []
+            for inc in incidents_with_detect:
+                if inc.detected_at and inc.timestamp:
+                    diff = (inc.detected_at - inc.timestamp).total_seconds()
+                    if diff >= 0:
+                        mttd_values.append(diff)
+
+            mttd_avg = round(sum(mttd_values) / len(mttd_values), 2) if mttd_values else 0
+
+            # MTTR: average time from detected_at to responded_at
+            incidents_with_response = session.query(Incident).filter(
+                Incident.detected_at.isnot(None),
+                Incident.responded_at.isnot(None)
+            ).all()
+
+            mttr_values = []
+            for inc in incidents_with_response:
+                if inc.responded_at and inc.detected_at:
+                    diff = (inc.responded_at - inc.detected_at).total_seconds()
+                    if diff >= 0:
+                        mttr_values.append(diff)
+
+            mttr_avg = round(sum(mttr_values) / len(mttr_values), 2) if mttr_values else 0
+
+            # Resolution: average time from detected_at to resolved_at
+            incidents_resolved = session.query(Incident).filter(
+                Incident.detected_at.isnot(None),
+                Incident.resolved_at.isnot(None)
+            ).all()
+
+            resolution_values = []
+            for inc in incidents_resolved:
+                if inc.resolved_at and inc.detected_at:
+                    diff = (inc.resolved_at - inc.detected_at).total_seconds()
+                    if diff >= 0:
+                        resolution_values.append(diff)
+
+            resolution_avg = round(sum(resolution_values) / len(resolution_values), 2) if resolution_values else 0
+
+            # Trends for last 7 days
+            now = datetime.utcnow()
+            mttd_trend = []
+            mttr_trend = []
+            for days_ago in range(6, -1, -1):
+                day_start = (now - timedelta(days=days_ago)).replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+                date_str = day_start.strftime("%Y-%m-%d")
+
+                # MTTD trend
+                day_incidents = [inc for inc in incidents_with_detect
+                                 if inc.detected_at and day_start <= inc.detected_at < day_end]
+                day_mttd = []
+                for inc in day_incidents:
+                    if inc.timestamp:
+                        diff = (inc.detected_at - inc.timestamp).total_seconds()
+                        if diff >= 0:
+                            day_mttd.append(diff)
+                mttd_trend.append({
+                    "date": date_str,
+                    "mttd_seconds": round(sum(day_mttd) / len(day_mttd), 2) if day_mttd else 0
+                })
+
+                # MTTR trend
+                day_resp = [inc for inc in incidents_with_response
+                            if inc.responded_at and day_start <= inc.responded_at < day_end]
+                day_mttr = []
+                for inc in day_resp:
+                    if inc.detected_at:
+                        diff = (inc.responded_at - inc.detected_at).total_seconds()
+                        if diff >= 0:
+                            day_mttr.append(diff)
+                mttr_trend.append({
+                    "date": date_str,
+                    "mttr_seconds": round(sum(day_mttr) / len(day_mttr), 2) if day_mttr else 0
+                })
+
+            return {
+                "mttd_avg_seconds": mttd_avg,
+                "mttr_avg_seconds": mttr_avg,
+                "resolution_avg_seconds": resolution_avg,
+                "mttd_trend": mttd_trend,
+                "mttr_trend": mttr_trend,
+                "total_incidents_analyzed": len(incidents_with_detect),
+                "incidents_with_response": len(incidents_with_response),
+                "incidents_resolved": len(incidents_resolved),
             }
         finally:
             session.close()

@@ -8,6 +8,7 @@ import json
 import numpy as np
 import pandas as pd
 import joblib
+from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
@@ -23,12 +24,21 @@ try:
 except ImportError:
     LGBM_AVAILABLE = False
 
-ML_MODEL_PATH = "data/ml_model.pkl"
-ML_ENCODERS_PATH = "data/ml_encoders.pkl"
-ML_METRICS_PATH = "data/ml_metrics.json"
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+ML_MODEL_PATH = os.path.join(_PROJECT_ROOT, "data", "ml_model.pkl")
+ML_ENCODERS_PATH = os.path.join(_PROJECT_ROOT, "data", "ml_encoders.pkl")
+ML_METRICS_PATH = os.path.join(_PROJECT_ROOT, "data", "ml_metrics.json")
 
 ATTACK_CLASSES = ["normal", "brute_force", "sql_injection", "data_exfiltration", "port_scan"]
 CATEGORICAL_COLS = ["user", "role", "action", "status", "resource"]
+NETWORK_FEATURES = [
+    'flow_duration', 'total_fwd_packets', 'total_bwd_packets',
+    'flow_bytes_per_s', 'flow_packets_per_s',
+    'fwd_packet_length_mean', 'bwd_packet_length_mean',
+    'flow_iat_mean', 'fwd_psh_flags', 'syn_flag_count',
+    'rst_flag_count', 'ack_flag_count', 'down_up_ratio',
+    'active_mean', 'idle_mean'
+]
 
 
 def _build_features(df: pd.DataFrame, encoders: dict) -> np.ndarray:
@@ -49,13 +59,18 @@ def _build_features(df: pd.DataFrame, encoders: dict) -> np.ndarray:
     else:
         X["hour"] = 0
 
+    # Network features (optional — skip if not present in data)
+    for feat in NETWORK_FEATURES:
+        if feat in df.columns:
+            X[feat] = df[feat].fillna(0)
+
     scaler: StandardScaler = encoders.get("scaler")
     if scaler:
         return scaler.transform(X)
     return X.values
 
 
-def train_ml_engine(data_path: str = "data/labeled_logs.csv") -> dict:
+def train_ml_engine(data_path: str = os.path.join(_PROJECT_ROOT, "data", "labeled_logs.csv")) -> dict:
     """
     Train a LightGBM (or RandomForest) classifier on labeled log data.
     Returns a metrics dict with Accuracy, Precision, Recall, F1.
@@ -83,6 +98,11 @@ def train_ml_engine(data_path: str = "data/labeled_logs.csv") -> dict:
         X["hour"] = df["hour"].fillna(0)
     else:
         X["hour"] = 0
+
+    # Network features (optional — include if present in training data)
+    for feat in NETWORK_FEATURES:
+        if feat in df.columns:
+            X[feat] = df[feat].fillna(0)
 
     # Scale
     scaler = StandardScaler()
@@ -125,7 +145,15 @@ def train_ml_engine(data_path: str = "data/labeled_logs.csv") -> dict:
             target_names=label_encoder.classes_,
             output_dict=True
         ),
-        "model_type": "LightGBM" if LGBM_AVAILABLE else "RandomForest"
+        "model_type": "LightGBM" if LGBM_AVAILABLE else "RandomForest",
+        "dataset_info": {
+            "source": "CIC-IDS2017 compatible synthetic",
+            "total_samples": len(df),
+            "feature_count": X.shape[1],
+            "network_features": [f for f in NETWORK_FEATURES if f in df.columns],
+            "compatible_datasets": ["CIC-IDS2017", "UNSW-NB15", "KDD Cup 99"],
+        },
+        "training_date": datetime.now().isoformat(),
     }
 
     print(f"\n✅ Model Training Complete — {metrics['model_type']}")
@@ -135,7 +163,7 @@ def train_ml_engine(data_path: str = "data/labeled_logs.csv") -> dict:
     print(f"   F1-Score:  {metrics['f1_score']}%")
 
     # Save
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(os.path.join(_PROJECT_ROOT, "data"), exist_ok=True)
     joblib.dump(model, ML_MODEL_PATH)
     joblib.dump(encoders, ML_ENCODERS_PATH)
     with open(ML_METRICS_PATH, "w") as f:

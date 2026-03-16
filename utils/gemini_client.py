@@ -1,19 +1,34 @@
+"""
+ThreatPulse — AI Security Summary Generator
+Uses OpenRouter API with fallback model chain.
+"""
 import os
 import requests
 from dotenv import load_dotenv
 
-# Load env variables
-load_dotenv()
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(PROJECT_ROOT, '.env'), override=True)
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-def generate_security_summary(event_details):
+# Models to try in order — first success wins (verified free on OpenRouter)
+MODELS = [
+    "google/gemma-3n-e4b-it:free",
+    "nvidia/nemotron-nano-9b-v2:free",
+    "qwen/qwen3-coder:free",
+    "z-ai/glm-4.5-air:free",
+    "openai/gpt-oss-20b:free",
+]
+
+
+def generate_security_summary(event_details: dict) -> str:
     """
     Generates a concise security summary using OpenRouter AI.
+    Tries multiple free models as fallbacks.
     """
-    if not OPENROUTER_API_KEY:
-        return "⚠️ OpenRouter API Key not found. AI summary unavailable."
+    api_key = os.getenv("OPENROUTER_API_KEY", "")
+    if not api_key:
+        return "AI summary unavailable — OPENROUTER_API_KEY not set."
 
     prompt = f"""You are a Cyber Security Analyst looking at a high-risk event.
 Summarize the following security log into a short, actionable explanation for a SOC team.
@@ -23,6 +38,7 @@ Event Details:
 - Action: {event_details.get('action')}
 - Status: {event_details.get('status')}
 - Resource: {event_details.get('resource')}
+- Attack Type: {event_details.get('attack_type', 'unknown')}
 - Risk Score: {event_details.get('risk_score')}
 - Context: {event_details.get('explanation')}
 
@@ -33,39 +49,47 @@ Explain:
 
 Keep it brief (max 3-4 sentences)."""
 
-    try:
-        headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            "HTTP-Referer": "https://github.com/Muzzu077/Threat-Detection-and-Risk-Scoring", # OpenRouter specific
-            "X-Title": "ThreatPulse SOC", # OpenRouter specific
-            "Content-Type": "application/json"
-        }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "HTTP-Referer": "https://github.com/threatpulse",
+        "X-Title": "ThreatPulse SOC",
+        "Content-Type": "application/json",
+    }
 
-        payload = {
-            "model": "stepfun/step-1-flash", # Fallback if 3.5 doesn't exist, we'll try 3.5 flash
-            "messages": [
-                {"role": "system", "content": "You are a cybersecurity SOC analyst. Be concise and actionable."},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.3,
-            "top_p": 0.1
-        }
-        
-        # Using step-3.5-flash as requested
-        payload["model"] = "stepfun/step-3.5-flash"
+    for model in MODELS:
+        try:
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "user", "content": "You are a cybersecurity SOC analyst. Be concise and actionable.\n\n" + prompt},
+                ],
+                "temperature": 0.3,
+                "max_tokens": 300,
+            }
 
-        response = requests.post(
-            f"{OPENROUTER_BASE_URL}/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=15
-        )
+            response = requests.post(
+                f"{OPENROUTER_BASE_URL}/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=15,
+            )
 
-        if response.status_code == 200:
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-        else:
-            return f"⚠️ AI Summary Error ({response.status_code}): {response.text[:150]}"
+            if response.status_code == 200:
+                data = response.json()
+                content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if content:
+                    return content
 
-    except Exception as e:
-        return f"⚠️ Error generating AI summary: {str(e)}"
+            # 405/429/503 = try next model
+            if response.status_code in (405, 429, 503):
+                continue
+
+            # Other errors — return the error but don't crash
+            return f"AI Summary Error ({response.status_code}): {response.text[:150]}"
+
+        except requests.exceptions.Timeout:
+            continue
+        except Exception as e:
+            continue
+
+    return "AI summary unavailable — all models failed. Check your OpenRouter API key."

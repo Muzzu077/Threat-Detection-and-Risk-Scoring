@@ -85,7 +85,7 @@ services:
       - ./data:/app/data
       - ./logs_ingest:/app/logs_ingest
       - ./models:/app/models
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

@@ -9,12 +9,15 @@ import time
 from datetime import datetime
 from typing import Optional
 
-BLOCKED_IPS_FILE = "data/blocked_ips.txt"
-DISABLED_ACCOUNTS_FILE = "data/disabled_accounts.txt"
-RATE_LIMITS_FILE = "data/rate_limits.json"
-RESPONSE_LOG_FILE = "data/response_log.jsonl"
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+_DATA_DIR = os.path.join(_PROJECT_ROOT, 'data')
 
-os.makedirs("data", exist_ok=True)
+BLOCKED_IPS_FILE = os.path.join(_DATA_DIR, "blocked_ips.txt")
+DISABLED_ACCOUNTS_FILE = os.path.join(_DATA_DIR, "disabled_accounts.txt")
+RATE_LIMITS_FILE = os.path.join(_DATA_DIR, "rate_limits.json")
+RESPONSE_LOG_FILE = os.path.join(_DATA_DIR, "response_log.jsonl")
+
+os.makedirs(_DATA_DIR, exist_ok=True)
 
 
 def _log_response(incident_id: Optional[int], actions: list, event: dict):
@@ -196,7 +199,7 @@ def get_response_log(limit: int = 50) -> list:
                     entries.append(json.loads(line))
                 except Exception:
                     pass
-    return list(reversed(entries))[-limit:]
+    return list(reversed(entries))[:limit]
 
 
 def get_blocked_ips() -> list:

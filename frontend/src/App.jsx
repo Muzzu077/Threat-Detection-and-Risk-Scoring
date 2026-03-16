@@ -11,6 +11,7 @@ import AttackGraphPage from './pages/AttackGraphPage';
 import MLMetricsPage from './pages/MLMetricsPage';
 import ThreatIntelPage from './pages/ThreatIntelPage';
 import ResponsePage from './pages/ResponsePage';
+import PlaybooksPage from './pages/PlaybooksPage';
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -73,6 +74,7 @@ function App() {
             <Route path="/ml-metrics" element={<MLMetricsPage />} />
             <Route path="/threat-intel" element={<ThreatIntelPage />} />
             <Route path="/response" element={<ResponsePage />} />
+            <Route path="/playbooks" element={<PlaybooksPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

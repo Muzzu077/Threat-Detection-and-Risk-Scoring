@@ -8,6 +8,7 @@ const NAV = [
   { path: '/ml-metrics', label: 'ML Engine', sub: 'Model Metrics', icon: '◎' },
   { path: '/threat-intel', label: 'Threat Intel', sub: 'IP Reputation', icon: '◉' },
   { path: '/response', label: 'SOAR', sub: 'Auto Response', icon: '⚡' },
+  { path: '/playbooks', label: 'Playbooks', sub: 'SOAR Flows', icon: '▶' },
 ];
 
 export default function Sidebar() {
@@ -29,7 +30,7 @@ export default function Sidebar() {
         <div className="logo-icon" style={{ fontSize: 18 }}>🛡</div>
         <div>
           <div className="logo-text">THREATPULSE</div>
-          <div className="logo-sub">SOC Platform v2.0</div>
+          <div className="logo-sub">SOC Platform v3.0</div>
         </div>
       </div>
 
@@ -77,7 +78,7 @@ export default function Sidebar() {
         <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: '0.12em', lineHeight: 1.8 }}>
           AUTONOMOUS AI DEFENSE<br />
           <span style={{ color: 'rgba(0,255,200,0.35)' }}>// THREAT DETECTION ACTIVE</span><br />
-          <span style={{ color: '#1a3a50' }}>// v2.0.0-enterprise</span>
+          <span style={{ color: '#1a3a50' }}>// v3.0.0-enterprise</span>
         </div>
       </div>
     </aside>

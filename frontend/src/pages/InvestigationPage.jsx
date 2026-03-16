@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchIncident, updateIncidentStatus, triggerResponse, fetchMitreMapping } from '../api/client';
+import { fetchIncident, updateIncidentStatus, triggerResponse, fetchMitreMapping, submitFeedback } from '../api/client';
 import { formatDateTime } from '../utils/helpers';
 import { RiskBadge, AttackTypeBadge, StatusBadge, RiskBar } from '../components/Badges';
 import AttackTimeline from '../components/AttackTimeline';
@@ -77,7 +77,7 @@ export default function InvestigationPage() {
   ];
 
   return (
-    <div className="fade-in">
+    <div className="page-enter">
       {/* Header */}
       <div className="flex-between mb-24">
         <div>
@@ -196,6 +196,38 @@ export default function InvestigationPage() {
                 </select>
                 <button className="btn btn-primary" onClick={handleStatusUpdate}>UPDATE STATUS</button>
                 {statusMsg && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-cyan)' }}>{statusMsg}</div>}
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="section-header"><div className="section-title">Analyst Feedback</div></div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
+                Provide feedback to improve ML model accuracy over time.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {[
+                  { label: 'FALSE POSITIVE', value: 'false_positive', color: '#ffb800', desc: 'Not a real threat' },
+                  { label: 'CONFIRMED THREAT', value: 'confirmed_threat', color: '#f03250', desc: 'Real attack' },
+                  { label: 'ESCALATE', value: 'escalated', color: '#a855f7', desc: 'Needs further review' },
+                  { label: 'BENIGN', value: 'benign', color: '#00e5b0', desc: 'Normal activity' },
+                ].map(fb => (
+                  <button key={fb.value} onClick={async () => {
+                    try {
+                      await submitFeedback(id, fb.value);
+                      setStatusMsg(`Feedback recorded: ${fb.label}`);
+                      setTimeout(() => setStatusMsg(''), 3000);
+                      load();
+                    } catch {}
+                  }} style={{
+                    padding: '10px 12px', borderRadius: 6, border: `1px solid ${fb.color}30`,
+                    background: `${fb.color}10`, color: fb.color, cursor: 'pointer',
+                    fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.05em',
+                    transition: 'all 0.2s',
+                  }}>
+                    {fb.label}
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 4 }}>{fb.desc}</div>
+                  </button>
+                ))}
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchMLMetrics, fetchExplainability } from '../api/client';
+import { fetchMLMetrics, fetchExplainability, fetchModelDrift, fetchAdversarialResults, runAdversarialTests } from '../api/client';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 const METRIC_COLOR = { Accuracy: '#00e5b0', Precision: '#4a9eff', Recall: '#ffb800', 'F1 Score': '#ff8c00' };
@@ -7,12 +7,22 @@ const METRIC_COLOR = { Accuracy: '#00e5b0', Precision: '#4a9eff', Recall: '#ffb8
 export default function MLMetricsPage() {
   const [metrics, setMetrics] = useState(null);
   const [shap, setShap] = useState(null);
+  const [drift, setDrift] = useState(null);
+  const [adversarial, setAdversarial] = useState(null);
+  const [advLoading, setAdvLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchMLMetrics(), fetchExplainability()]).then(([m, s]) => {
+    Promise.all([
+      fetchMLMetrics(),
+      fetchExplainability(),
+      fetchModelDrift().catch(() => null),
+      fetchAdversarialResults().catch(() => null),
+    ]).then(([m, s, d, a]) => {
       setMetrics(m);
       setShap(s);
+      setDrift(d);
+      setAdversarial(a);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
@@ -20,7 +30,7 @@ export default function MLMetricsPage() {
   if (loading) return <div className="loading"><div className="spinner"/><div className="loading-text">Loading ML metrics...</div></div>;
 
   if (!metrics || metrics.message) return (
-    <div className="fade-in">
+    <div className="page-enter">
       <div className="page-title mb-24">◎ ML METRICS</div>
       <div className="card p-empty">
         <div>No ML metrics found.</div>
@@ -54,7 +64,7 @@ export default function MLMetricsPage() {
   const confMatrix = metrics.confusion_matrix || [];
 
   return (
-    <div className="fade-in">
+    <div className="page-enter">
       <div className="flex-between mb-24">
         <div>
           <div className="page-title">◎ ML METRICS</div>
@@ -64,6 +74,40 @@ export default function MLMetricsPage() {
           {metrics.model_type?.toUpperCase()}
         </div>
       </div>
+
+      {/* Model Health / Drift */}
+      {drift && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 24 }}>
+          <div className="metric-card">
+            <div className="metric-label">Model Drift Score</div>
+            <div className="metric-value" style={{ color: drift.drift_score > 30 ? '#f03250' : drift.drift_score > 10 ? '#ffb800' : '#00e5b0' }}>
+              {drift.drift_score || 0}%
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">False Positive Rate</div>
+            <div className="metric-value" style={{ color: drift.fp_rate > 15 ? '#f03250' : '#00e5b0' }}>
+              {drift.fp_rate || 0}%
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Total Feedback</div>
+            <div className="metric-value cyan">{drift.total_feedback || 0}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Status</div>
+            <div className="metric-value" style={{ fontSize: 14, color: drift.needs_retraining ? '#f03250' : '#00e5b0' }}>
+              {drift.needs_retraining ? 'RETRAIN NEEDED' : 'HEALTHY'}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {drift && drift.recommendation && (
+        <div style={{ marginBottom: 24, padding: '12px 18px', borderRadius: 8, background: drift.needs_retraining ? 'rgba(255,45,45,0.07)' : 'rgba(0,255,200,0.04)', border: `1px solid ${drift.needs_retraining ? 'rgba(255,45,45,0.3)' : 'rgba(0,255,200,0.15)'}`, fontFamily: 'var(--font-mono)', fontSize: 11, color: drift.needs_retraining ? '#ff6b6b' : '#00e5b0' }}>
+          {drift.needs_retraining ? '\u26A0' : '\u2713'} {drift.recommendation}
+        </div>
+      )}
 
       {/* Summary KPIs */}
       <div className="grid-4 mb-24">
@@ -279,6 +323,93 @@ export default function MLMetricsPage() {
         <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(74,158,255,0.05)', borderRadius: 6, border: '1px solid rgba(74,158,255,0.15)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
           💡 <span style={{ color: '#4a9eff' }}>Production note:</span> To train on a real-world dataset, replace the CSV in <span style={{ color: 'var(--accent-cyan)' }}>data/labeled_logs.csv</span> with CIC-IDS2017 or UNSW-NB15 data and re-run <span style={{ color: 'var(--accent-cyan)' }}>python utils/train_ml_engine.py</span>.
         </div>
+      </div>
+
+      {/* Adversarial Robustness Testing */}
+      <div className="card" style={{ marginTop: 24, borderColor: adversarial?.verdict === 'VULNERABLE' ? 'rgba(255,45,45,0.3)' : adversarial?.verdict === 'ROBUST' ? 'rgba(0,255,200,0.2)' : 'rgba(255,184,0,0.2)' }}>
+        <div className="section-header flex-between">
+          <div className="section-title">Adversarial Robustness Testing</div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {adversarial?.verdict && (
+              <span style={{
+                padding: '4px 12px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 11,
+                background: adversarial.verdict === 'ROBUST' ? 'rgba(0,255,200,0.1)' : adversarial.verdict === 'MODERATE' ? 'rgba(255,184,0,0.1)' : 'rgba(255,45,45,0.1)',
+                color: adversarial.verdict === 'ROBUST' ? '#00e5b0' : adversarial.verdict === 'MODERATE' ? '#ffb800' : '#f03250',
+                border: `1px solid ${adversarial.verdict === 'ROBUST' ? 'rgba(0,255,200,0.3)' : adversarial.verdict === 'MODERATE' ? 'rgba(255,184,0,0.3)' : 'rgba(255,45,45,0.3)'}`,
+              }}>
+                {adversarial.verdict}
+              </span>
+            )}
+            <button className="btn btn-primary" style={{ fontSize: 10, padding: '6px 14px' }}
+              disabled={advLoading}
+              onClick={async () => {
+                setAdvLoading(true);
+                try { const r = await runAdversarialTests(); setAdversarial(r); } catch {}
+                setAdvLoading(false);
+              }}>
+              {advLoading ? 'TESTING...' : 'RUN TESTS'}
+            </button>
+          </div>
+        </div>
+
+        {adversarial?.overall_detection_rate !== undefined && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
+            <div className="metric-card">
+              <div className="metric-label">Detection Rate</div>
+              <div className="metric-value" style={{ color: adversarial.overall_detection_rate >= 80 ? '#00e5b0' : '#ffb800' }}>
+                {adversarial.overall_detection_rate}%
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">Evasion Rate</div>
+              <div className="metric-value" style={{ color: adversarial.overall_evasion_rate > 20 ? '#f03250' : '#00e5b0' }}>
+                {adversarial.overall_evasion_rate}%
+              </div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">Samples Tested</div>
+              <div className="metric-value cyan">{adversarial.total_adversarial_samples}</div>
+            </div>
+          </div>
+        )}
+
+        {adversarial?.tests?.length > 0 && (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Evasion Technique</th>
+                <th>MITRE ID</th>
+                <th>Method</th>
+                <th>Samples</th>
+                <th>Detected</th>
+                <th>Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {adversarial.tests.map((t, i) => (
+                <tr key={i}>
+                  <td style={{ color: 'var(--text-primary)' }}>{t.name}</td>
+                  <td style={{ color: '#4a9eff', fontFamily: 'var(--font-mono)', fontSize: 10 }}>{t.technique?.split(' - ')[0]}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{t.evasion_method}</td>
+                  <td>{t.total_samples}</td>
+                  <td style={{ color: t.detected === t.total_samples ? '#00e5b0' : '#ffb800' }}>{t.detected}</td>
+                  <td style={{
+                    color: t.detection_rate >= 80 ? '#00e5b0' : t.detection_rate >= 50 ? '#ffb800' : '#f03250',
+                    fontFamily: 'var(--font-mono)',
+                  }}>
+                    {t.detection_rate}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {(!adversarial || !adversarial.tests?.length) && (
+          <div className="p-empty" style={{ padding: 30 }}>
+            Click "RUN TESTS" to evaluate model robustness against adversarial evasion techniques.
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,13 @@ import time
 import os
 import sys
 import json
+import io
+
+# Fix Windows console encoding for emoji/unicode characters
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -89,6 +96,17 @@ class LogHandler(FileSystemEventHandler):
                 if ti_result.get("is_suspicious"):
                     total_risk = min(100, total_risk + 15)
 
+                # 7c. OSINT Feed check
+                try:
+                    from src.osint_feeds import check_ip_osint
+                    osint = check_ip_osint(str(row.get('ip', '')))
+                    if osint.get('risk_boost', 0) > 0:
+                        total_risk = min(100, total_risk + osint['risk_boost'])
+                        for threat in osint.get('threats', []):
+                            print(f"  [OSINT] {threat} detected for {row.get('ip', '')}")
+                except Exception:
+                    pass
+
                 # 7b. UEBA: User Behavior Analytics anomalies
                 ueba_event = {
                     'user': str(row.get('user', '')),
@@ -151,7 +169,8 @@ class LogHandler(FileSystemEventHandler):
                     if total_risk > 90:
                         try:
                             print(f"   🤖 SOAR: Triggering automated response for incident {incident_id}")
-                            response = execute_response(event_dict, incident_id)
+                            from src.soar_playbooks import execute_playbook
+                            response = execute_playbook(event_dict, incident_id)
                             response_json = json.dumps([a.get("action", "") for a in response.get("actions_taken", [])])
                             if incident_id:
                                 db.update_incident_response(incident_id, response_json)

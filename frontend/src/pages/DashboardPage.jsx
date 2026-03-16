@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar
 } from 'recharts';
-import { fetchStats, fetchEvents, fetchIncidents, fetchGeoDistribution } from '../api/client';
+import { fetchStats, fetchEvents, fetchIncidents, fetchGeoDistribution, fetchMttdMttr } from '../api/client';
 import { getSeverity, formatDateTime } from '../utils/helpers';
 import { RiskBadge, AttackTypeBadge } from '../components/Badges';
 import LiveFeed from '../components/LiveFeed';
@@ -14,6 +14,13 @@ import PredictionWidget from '../components/PredictionWidget';
 function flagEmoji(code) {
   if (!code || code.length !== 2) return '🌐';
   return String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1F1A5 + c.charCodeAt(0)));
+}
+
+function formatDuration(seconds) {
+  if (!seconds || seconds <= 0) return '\u2014';
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 }
 
 const SEV_COLORS = { critical: '#f03250', high: '#ff8c00', medium: '#ffb800', low: '#00e5b0' };
@@ -55,19 +62,21 @@ export default function DashboardPage() {
   const [events, setEvents] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [geo, setGeo] = useState([]);
+  const [mttd, setMttd] = useState({});
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(false);
   const navigate = useNavigate();
 
   const load = async () => {
     try {
-      const [s, e, i, g] = await Promise.all([
-        fetchStats(), fetchEvents(1, 200), fetchIncidents(), fetchGeoDistribution()
+      const [s, e, i, g, m] = await Promise.all([
+        fetchStats(), fetchEvents(1, 200), fetchIncidents(), fetchGeoDistribution(), fetchMttdMttr()
       ]);
       setStats(s);
       setEvents(e.data || []);
       setIncidents(i.data || []);
       setGeo(g.data || []);
+      setMttd(m || {});
       setPulse(p => !p);
     } catch {}
     setLoading(false);
@@ -95,14 +104,14 @@ export default function DashboardPage() {
   events.forEach(e => { const t = e.attack_type || 'unknown'; attackMap[t] = (attackMap[t] || 0) + 1; });
   const radarData = Object.entries(attackMap).slice(0, 6).map(([type, count]) => ({ type: type.replace('_', ' ').toUpperCase(), count }));
 
-  const criticalCount = stats.critical_count || 0;
+  const criticalCount = stats.critical_events || 0;
   const openIncidents = incidents.filter(i => i.status === 'OPEN').length;
   const isCritical = criticalCount > 0;
 
   const recentCritical = incidents.filter(i => i.status === 'OPEN').slice(0, 5);
 
   return (
-    <div className="fade-in" style={{ minHeight: '100vh' }}>
+    <div className="page-enter" style={{ minHeight: '100vh' }}>
 
       {/* ── Hero Header ── */}
       <div style={{ marginBottom: 28, position: 'relative' }}>
@@ -125,7 +134,7 @@ export default function DashboardPage() {
                 const formData = new FormData();
                 formData.append('file', e.target.files[0]);
                 try {
-                  const res = await fetch('http://localhost:8000/api/ingest/csv', { method: 'POST', body: formData });
+                  const res = await fetch('/api/ingest/csv', { method: 'POST', body: formData });
                   if (res.ok) {
                     const data = await res.json();
                     alert(`✅ Real data uploaded! ${data.events_count} events queued for ML ingestion.`);
@@ -149,6 +158,28 @@ export default function DashboardPage() {
             {isCritical ? `CRITICAL ALERT — ${criticalCount} active high-severity events detected. Immediate investigation required.` : 'ALL SYSTEMS SECURE — No critical threats detected. Monitoring active.'}
           </span>
         </div>
+
+      {/* Threat Level Gauge */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <div style={{ position: 'relative', width: 160, height: 160 }}>
+          <svg viewBox="0 0 120 120" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(0,229,176,0.06)" strokeWidth="6" />
+            <circle cx="60" cy="60" r="52" fill="none"
+              stroke={isCritical ? '#f03250' : (stats.avg_risk || 0) >= 50 ? '#ffb800' : '#00e5b0'}
+              strokeWidth="6" strokeLinecap="round"
+              strokeDasharray={`${((stats.avg_risk || 0) / 100) * 327} 327`}
+              className="gauge-ring"
+              style={{ filter: `drop-shadow(0 0 8px ${isCritical ? 'rgba(240,50,80,0.5)' : 'rgba(0,229,176,0.4)'})` }}
+            />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 32, color: isCritical ? '#f03250' : '#00e5b0', textShadow: `0 0 20px ${isCritical ? 'rgba(240,50,80,0.4)' : 'rgba(0,229,176,0.4)'}` }}>
+              {Math.round(stats.avg_risk || 0)}
+            </div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 8, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>THREAT LEVEL</div>
+          </div>
+        </div>
+      </div>
       </div>
 
       {/* ── KPI Grid ── */}
@@ -158,9 +189,9 @@ export default function DashboardPage() {
           { label: 'OPEN INCIDENTS', value: openIncidents, accent: '#f03250', icon: '⚠', glow: 'rgba(255,45,45,0.2)' },
           { label: 'CRITICAL ALERTS', value: criticalCount, accent: '#f03250', icon: '◈', glow: 'rgba(255,45,45,0.2)' },
           { label: 'AVG RISK SCORE', value: stats.avg_risk ? Math.round(stats.avg_risk) : 0, accent: '#ffb800', icon: '▲', glow: 'rgba(255,184,0,0.2)' },
-          { label: 'HIGH SEVERITY', value: stats.high_count || 0, accent: '#ff8c00', icon: '◆', glow: 'rgba(255,140,0,0.2)' },
+          { label: 'HIGH SEVERITY', value: stats.high_events || 0, accent: '#ff8c00', icon: '◆', glow: 'rgba(255,140,0,0.2)' },
         ].map((kpi, i) => (
-          <div key={i} style={{ background: '#0c1520', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden', cursor: 'default', transition: 'transform 0.2s, box-shadow 0.2s' }}
+          <div key={i} className="stagger-item" style={{ background: '#0c1520', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden', cursor: 'default', transition: 'transform 0.2s, box-shadow 0.2s', animationDelay: `${i * 0.07}s` }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${kpi.glow}`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
           >
@@ -168,6 +199,24 @@ export default function DashboardPage() {
             <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
             <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 34, color: kpi.accent, textShadow: `0 0 20px ${kpi.glow}`, lineHeight: 1 }}>
               <AnimCounter value={kpi.value} color={kpi.accent} />
+            </div>
+            <div style={{ position: 'absolute', bottom: 14, right: 16, fontSize: 28, opacity: 0.06, color: kpi.accent }}>{kpi.icon}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* MTTD/MTTR Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+        {[
+          { label: 'MTTD (MEAN TIME TO DETECT)', value: formatDuration(mttd.mttd_avg_seconds), accent: '#4a9eff', icon: '\u23F1', glow: 'rgba(74,158,255,0.2)' },
+          { label: 'MTTR (MEAN TIME TO RESPOND)', value: formatDuration(mttd.mttr_avg_seconds), accent: '#a855f7', icon: '\u26A1', glow: 'rgba(168,85,247,0.2)' },
+          { label: 'AVG RESOLUTION TIME', value: formatDuration(mttd.resolution_avg_seconds), accent: '#00e5b0', icon: '\u2713', glow: 'rgba(0,255,200,0.2)' },
+        ].map((kpi, i) => (
+          <div key={i} style={{ background: '#0c1520', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${kpi.accent}, transparent)` }} />
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
+            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 28, color: kpi.accent, textShadow: `0 0 20px ${kpi.glow}`, lineHeight: 1 }}>
+              {kpi.value || '\u2014'}
             </div>
             <div style={{ position: 'absolute', bottom: 14, right: 16, fontSize: 28, opacity: 0.06, color: kpi.accent }}>{kpi.icon}</div>
           </div>
