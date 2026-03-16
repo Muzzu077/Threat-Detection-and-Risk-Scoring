@@ -219,6 +219,68 @@ export default function MLMetricsPage() {
           </ResponsiveContainer>
         </div>
       )}
+
+      {/* ── Dataset & Model Provenance ── */}
+      <div className="card" style={{ marginTop: 24, borderColor: 'rgba(74,158,255,0.2)' }}>
+        <div className="section-header flex-between">
+          <div className="section-title">📊 Dataset & Model Provenance</div>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>ENTERPRISE READINESS</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+          {[
+            {
+              title: 'Current Dataset',
+              color: '#00e5b0',
+              icon: '◉',
+              lines: [
+                'Synthetic labeled dataset',
+                '5 attack class labels',
+                'Balanced class distribution',
+                'Generated via train_ml_engine.py',
+              ],
+            },
+            {
+              title: 'Production Datasets',
+              color: '#4a9eff',
+              icon: '◈',
+              lines: [
+                'CIC-IDS2017 (University of NB)',
+                'UNSW-NB15 (ADFA/UNSW)',
+                'KDD Cup 99 (UCI)',
+                'Drop-in compatible with pipeline',
+              ],
+            },
+            {
+              title: 'Future Architecture',
+              color: '#a855f7',
+              icon: '◆',
+              lines: [
+                'Neo4j for attack graph scalability',
+                'Real-time stream via Kafka',
+                'PostgreSQL for event storage',
+                'MITRE ATT&CK STIX feeds',
+              ],
+            },
+          ].map(({ title, color, icon, lines }) => (
+            <div key={title} style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '14px 16px', borderLeft: `3px solid ${color}` }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color, letterSpacing: '0.08em', marginBottom: 10 }}>
+                {icon} {title}
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {lines.map(line => (
+                  <li key={line} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', display: 'flex', gap: 6 }}>
+                    <span style={{ color }}>›</span> {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(74,158,255,0.05)', borderRadius: 6, border: '1px solid rgba(74,158,255,0.15)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+          💡 <span style={{ color: '#4a9eff' }}>Production note:</span> To train on a real-world dataset, replace the CSV in <span style={{ color: 'var(--accent-cyan)' }}>data/labeled_logs.csv</span> with CIC-IDS2017 or UNSW-NB15 data and re-run <span style={{ color: 'var(--accent-cyan)' }}>python utils/train_ml_engine.py</span>.
+        </div>
+      </div>
     </div>
   );
 }
+
