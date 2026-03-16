@@ -1,0 +1,169 @@
+version: '3.9'
+
+# ─── ThreatPulse Enterprise Stack ───────────────────────────────────────────
+# Services:
+#   1. postgres  — PostgreSQL database
+#   2. redis     — Cache layer (for threat intel TTL caching)
+#   3. api       — FastAPI backend (REST + WebSocket)
+#   4. ingestion — Log ingestion + ML processing service
+#   5. simulator — Realistic attack traffic generator
+#   6. frontend  — React/Vite production build (served via nginx)
+#
+# Usage:
+#   docker compose up -d           # Start all services
+#   docker compose up -d api ingestion postgres redis  # Backend only
+#   docker compose logs -f api     # Follow API logs
+#   docker compose down -v         # Stop + remove volumes
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: threatpulse-postgres
+    environment:
+      POSTGRES_DB:       threatpulse
+      POSTGRES_USER:     ${POSTGRES_USER:-threatpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-threatpulse_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-threatpulse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ── Redis Cache ──────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: threatpulse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: threatpulse-api
+    environment:
+      DATABASE_URL:       postgresql://${POSTGRES_USER:-threatpulse}:${POSTGRES_PASSWORD:-threatpulse_secret}@postgres:5432/threatpulse
+      REDIS_URL:          redis://redis:6379/0
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ABUSEIPDB_API_KEY:  ${ABUSEIPDB_API_KEY:-}
+      OTX_API_KEY:        ${OTX_API_KEY:-}
+      VIRUSTOTAL_API_KEY: ${VIRUSTOTAL_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID:   ${TELEGRAM_CHAT_ID:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN:  ${TWILIO_AUTH_TOKEN:-}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-whatsapp:+14155238886}
+      TO_WHATSAPP:        ${TO_WHATSAPP:-}
+      ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-true}
+      ENABLE_WHATSAPP:    ${ENABLE_WHATSAPP:-false}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./logs_ingest:/app/logs_ingest
+      - ./models:/app/models
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 2
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Log Ingestion Service ────────────────────────────────────────────────────
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: threatpulse-ingestion
+    environment:
+      DATABASE_URL:       postgresql://${POSTGRES_USER:-threatpulse}:${POSTGRES_PASSWORD:-threatpulse_secret}@postgres:5432/threatpulse
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      ABUSEIPDB_API_KEY:  ${ABUSEIPDB_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID:   ${TELEGRAM_CHAT_ID:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN:  ${TWILIO_AUTH_TOKEN:-}
+      TO_WHATSAPP:        ${TO_WHATSAPP:-}
+      ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-true}
+      ENABLE_WHATSAPP:    ${ENABLE_WHATSAPP:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./logs_ingest:/app/logs_ingest
+      - ./models:/app/models
+    command: python -m src.ingestion_service
+    restart: unless-stopped
+
+  # ── Traffic Simulator ────────────────────────────────────────────────────────
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: threatpulse-simulator
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-threatpulse}:${POSTGRES_PASSWORD:-threatpulse_secret}@postgres:5432/threatpulse
+    depends_on:
+      ingestion:
+        condition: service_started
+    volumes:
+      - ./logs_ingest:/app/logs_ingest
+    command: python utils/simulate_live_traffic.py
+    restart: unless-stopped
+    profiles:
+      - demo  # Only starts with: docker compose --profile demo up
+
+  # ── React Frontend ───────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    container_name: threatpulse-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  default:
+    name: threatpulse-net
+    driver: bridge

@@ -31,6 +31,10 @@ from src.response_engine import execute_response, get_response_log, get_blocked_
 from src.mitre_mapping import get_mitre_mapping, get_all_techniques
 from src.explainability_shap import load_cached_shap, get_static_feature_importance
 from src.threat_predictor import get_prediction_from_db_events
+from src.ueba import analyze_event_ueba, get_user_profile, get_all_profiles
+from src.threat_intel_extended import extended_check_ip, check_domain_virustotal
+from utils.telegram_alerter import send_system_status, get_bot_info
+from utils.log_parsers import parse_log_file
 
 # ─── WebSocket Connection Manager ────────────────────────────────────────────
 
@@ -478,6 +482,86 @@ async def websocket_live_feed(websocket: WebSocket):
             await websocket.send_json({"type": "ping"})
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+
+# ── UEBA Endpoints ────────────────────────────────────────────────────────────
+
+@app.get("/api/ueba/profiles")
+def get_ueba_profiles():
+    """Get all UEBA user behavior profiles."""
+    return {"data": get_all_profiles()}
+
+@app.get("/api/ueba/user/{user}")
+def get_ueba_user_profile(user: str):
+    """Get behavioral baseline for a specific user."""
+    return get_user_profile(user)
+
+
+# ── Extended Threat Intel ─────────────────────────────────────────────────────
+
+@app.get("/api/threat-intel/extended/{ip}")
+def get_extended_threat_intel(ip: str):
+    """Multi-source threat intel: AbuseIPDB + OTX + VirusTotal."""
+    return extended_check_ip(ip)
+
+@app.get("/api/threat-intel/domain/{domain}")
+def check_domain(domain: str):
+    """Check a domain's reputation via VirusTotal."""
+    return check_domain_virustotal(domain)
+
+
+# ── Telegram Bot Endpoints ────────────────────────────────────────────────────
+
+@app.get("/api/telegram/status")
+def telegram_status():
+    """Check if the Telegram bot is configured and alive."""
+    info = get_bot_info()
+    if info:
+        return {"status": "online", "bot": info.get("username"), "name": info.get("first_name")}
+    return {"status": "offline", "error": "Bot not reachable — check TELEGRAM_BOT_TOKEN"}
+
+@app.post("/api/telegram/test")
+def telegram_test_message():
+    """Send a test message to the configured Telegram channel."""
+    ok = send_system_status(
+        "✅ ThreatPulse Telegram integration is working!\n\nThis is a test message from your SOC platform."
+    )
+    return {"sent": ok}
+
+
+# ── Real Log File Upload ──────────────────────────────────────────────────────
+
+@app.post("/api/upload/log-file")
+async def upload_real_log_file(file: UploadFile = File(...)):
+    """
+    Upload a real security log file (auth.log, access.log, Windows CSV, firewall.log).
+    Auto-detects format and queues events for ingestion.
+    """
+    content = await file.read()
+    tmp_path = os.path.join(os.path.dirname(__file__), '..', 'logs_ingest', f"uploaded_{int(time.time())}_{file.filename}")
+    os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
+    with open(tmp_path, 'wb') as f_out:
+        f_out.write(content)
+
+    # Parse the uploaded log
+    try:
+        events = parse_log_file(tmp_path)
+        if not events:
+            return {"message": "File parsed but no events matched known log formats.", "events_count": 0}
+
+        # Convert to CSV and drop in ingest folder for watchdog pickup
+        df = pd.DataFrame(events)
+        csv_path = tmp_path.replace(file.filename, f"parsed_{int(time.time())}.csv")
+        df.to_csv(csv_path, index=False)
+        os.remove(tmp_path)
+        return {
+            "message": f"{file.filename} parsed successfully",
+            "events_count": len(events),
+            "sample_events": events[:3],
+            "log_format": events[0].get('_source', 'unknown') if events else 'unknown',
+        }
+    except Exception as e:
+        return {"error": f"Parse failed: {str(e)}"}
 
 
 if __name__ == "__main__":
