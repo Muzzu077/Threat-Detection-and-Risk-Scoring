@@ -4,15 +4,21 @@ import plotly.express as px
 import sys
 import os
 import time
+from dotenv import load_dotenv
 
-# Add parent dir to path to import from src
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# 1️⃣ Get project root (one level above dashboard/)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(PROJECT_ROOT)
 
+# 2️⃣ Load .env explicitly using absolute path
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
+
+# 3️⃣ Imports
 from src.database import db
 from utils.auth import check_password
 from utils.constants import RISK_HIGH_THRESHOLD
 
-st.set_page_config(page_title="SOC Command Center", layout="wide", page_icon="🚨")
+st.set_page_config(page_title="ThreatPulse", layout="wide", page_icon="🛡️")
 
 # Custom SOC CSS
 st.markdown("""
@@ -52,11 +58,15 @@ st.markdown("""
 # Session State
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
+if 'page' not in st.session_state:
+    st.session_state.page = 'dashboard'
+if 'selected_incident' not in st.session_state:
+    st.session_state.selected_incident = None
 
 def login():
     c1, c2, c3 = st.columns([1,2,1])
     with c2:
-        st.title("🛡️ SOC ACCESS")
+        st.title("🛡️ ThreatPulse ACCESS")
         username = st.text_input("Operator ID")
         password = st.text_input("Access Key", type="password")
         if st.button("AUTHENTICATE"):
@@ -66,7 +76,61 @@ def login():
             else:
                 st.error("ACCESS DENIED")
 
+def investigation_page(incident_id):
+    st.title(f"🕵️ INCIDENT INVESTIGATION | ID: {incident_id}")
+    
+    if st.button("⬅️ BACK TO DASHBOARD"):
+        st.session_state.page = 'dashboard'
+        st.rerun()
+        
+    incident, log_event = db.get_incident_details(incident_id)
+    
+    if not incident:
+        st.error("Incident not found.")
+        return
+
+    # Header Metrics
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("STATUS", incident.status)
+    c2.metric("RISK SCORE", f"{incident.risk_score:.1f}")
+    c3.metric("USER", incident.user)
+    c4.metric("OWNER", incident.owner)
+    
+    st.markdown("---")
+    
+    # Context columns
+    c1, c2 = st.columns([2, 1])
+    
+    with c1:
+        st.subheader("📝 EVENT DETAILS")
+        st.markdown(f"**TIMESTAMP:** {incident.timestamp}")
+        st.markdown(f"**ACTION:** `{incident.action}`")
+        if log_event:
+            st.markdown(f"**IP ADDRESS:** `{log_event.ip}`")
+            st.markdown(f"**ROLE:** `{log_event.role}`")
+            st.markdown(f"**RESOURCE:** `{log_event.resource}`")
+            
+            st.subheader("💡 AI EXPLANATION")
+            st.info(log_event.explanation)
+        else:
+            st.warning("Raw log event details unavailable.")
+            
+    with c2:
+        st.subheader("⚙️ ACTIONS")
+        status_options = ["OPEN", "INVESTIGATING", "RESOLVED", "FALSE_POSITIVE"]
+        # Default to current status or OPEN
+        current_status = incident.status if incident.status in status_options else "OPEN"
+        current_idx = status_options.index(current_status)
+        new_status = st.selectbox("UPDATE STATUS", status_options, index=current_idx)
+        
+        if st.button("UPDATE INCIDENT"):
+            db.update_incident_status(incident.id, new_status, owner="Admin")
+            st.success("Status Updated")
+            time.sleep(1)
+            st.rerun()
+
 def main_dashboard():
+    st.title("🛡️ ThreatPulse DASHBOARD")
     # Auto-Refresh
     if st.checkbox("LIVE FEED ACTIVE", value=True):
         time.sleep(3)
@@ -75,6 +139,7 @@ def main_dashboard():
     # Fetch Data
     incidents = db.fetch_incidents()
     active_incidents = [i for i in incidents if i.status in ["OPEN", "INVESTIGATING"]]
+    resolved_incidents = [i for i in incidents if i.status == "RESOLVED"]
     events = db.fetch_all_events()
     
     # --- 1. LIVE STATUS BANNER ---
@@ -92,12 +157,13 @@ def main_dashboard():
         """, unsafe_allow_html=True)
         
     # --- 2. KPI ROW ---
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("TOTAL EVENTS", len(events))
     c2.metric("OPEN INCIDENTS", len(active_incidents), delta_color="inverse")
+    c3.metric("RESOLVED INCIDENTS", len(resolved_incidents))
     recent_risk = events[0].risk_score if events else 0
-    c3.metric("LATEST RISK SCORE", f"{recent_risk:.1f}", delta=f"{recent_risk - 50:.1f}" if events else 0, delta_color="inverse")
-    c4.metric("SYSTEM UPTIME", "99.9%")
+    c4.metric("LATEST RISK SCORE", f"{recent_risk:.1f}", delta=f"{recent_risk - 50:.1f}" if events else 0, delta_color="inverse")
+    c5.metric("SYSTEM UPTIME", "99.9%")
     
     st.markdown("---")
 
@@ -146,10 +212,12 @@ def main_dashboard():
                 
                 # Management Actions
                 c_a, c_b = st.columns(2)
-                if inc.status == "OPEN":
-                    if c_a.button("INVESTIGATE", key=f"inv_{inc.id}"):
+                if st.button("INVESTIGATE", key=f"inv_{inc.id}"):
+                    if inc.status == "OPEN":
                         db.update_incident_status(inc.id, "INVESTIGATING", owner="Admin")
-                        st.rerun()
+                    st.session_state.selected_incident = inc.id
+                    st.session_state.page = 'investigation'
+                    st.rerun()
                 if c_b.button("RESOLVE", key=f"res_{inc.id}"):
                     db.update_incident_status(inc.id, "RESOLVED")
                     st.rerun()
@@ -187,4 +255,7 @@ def main_dashboard():
 if not st.session_state.authenticated:
     login()
 else:
-    main_dashboard()
+    if st.session_state.page == 'investigation':
+        investigation_page(st.session_state.selected_incident)
+    else:
+        main_dashboard()

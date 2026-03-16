@@ -1,0 +1,3 @@
+timestamp,user,role,ip,action,status,resource
+2025-12-18 12:21:33.350039,hacker_xyz,unknown,182.21.4.9,failed_login,failed,admin_panel
+2025-12-18 12:21:33.350039,bot_crawler,impersonator,45.33.22.11,api_call,403_forbidden,user_settings

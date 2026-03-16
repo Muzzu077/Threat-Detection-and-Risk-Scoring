@@ -1,0 +1,2 @@
+timestamp,user,role,ip,action,status,resource
+2025-12-18 12:24:56.038341,hacker_xyz,unknown,182.21.4.9,failed_login,failed,admin_panel

@@ -1,0 +1,3 @@
+timestamp,user,role,ip,action,status,resource
+2025-12-18 12:24:04.357157,customer_102,user,192.168.1.6,view_page,success,about
+2025-12-18 12:24:04.357157,hacker_xyz,unknown,182.21.4.9,failed_login,failed,admin_panel

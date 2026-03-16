@@ -1,0 +1,2 @@
+timestamp,user,role,ip,action,status,resource
+2025-12-18 12:21:31.254628,public_guest,guest,172.16.0.5,view_page,success,about

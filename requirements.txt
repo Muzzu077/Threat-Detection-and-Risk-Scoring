@@ -8,4 +8,4 @@ sqlalchemy
 watchdog
 bcrypt
 requests
-twilio
+python-dotenv

@@ -1,17 +1,22 @@
 import requests
 import os
-import json
+import sys
+from dotenv import load_dotenv
 
-# 🚨 CONFIGURATION (Twilio WhatsApp) 🚨
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_WHATSAPP_FROM = 'whatsapp:+14155238886'
-TO_WHATSAPP = 'whatsapp:+918074708433'
+# 1️⃣ Load environment variables from Project Root
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env_path = os.path.join(PROJECT_ROOT, '.env')
+
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+
+# 2️⃣ Configuration & Validation (Using your provided keys as defaults)
+
 
 def trigger_whatsapp_alert(event, incident_id):
     """
-    Sends a WhatsApp alert with the user's specific requested format.
-    Uses requests to avoid Twilio library path issues on Windows.
+    Sends a WhatsApp alert using direct API calls (requests) to avoid
+    Windows 'MAX_PATH' issues with the official SDK.
     """
     message = f"""
 🚨 CRITICAL SECURITY ALERT
@@ -27,10 +32,14 @@ Incident ID: {incident_id}
 """
     
     try:
-        # Strip potential whitespace
+        # Strip potential whitespace from keys
         sid = TWILIO_ACCOUNT_SID.strip() if TWILIO_ACCOUNT_SID else ""
         token = TWILIO_AUTH_TOKEN.strip() if TWILIO_AUTH_TOKEN else ""
         
+        if not sid or not token:
+             print("❌ Alert Skipped: Twilio Credentials not set.")
+             return None
+
         url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
         
         payload = {
@@ -53,7 +62,7 @@ Incident ID: {incident_id}
         print(f"❌ Error in trigger_whatsapp_alert: {e}")
         return None
 
-# For backward compatibility with existing code
+# For backward compatibility
 def send_whatsapp_alert(event_details, incident_id=None):
     return trigger_whatsapp_alert(event_details, incident_id)
 
