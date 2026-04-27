@@ -3,12 +3,12 @@ import { fetchTimeline } from '../api/client';
 import { getSeverity } from '../utils/helpers';
 
 const ATK_COLORS = {
-  brute_force: '#ff8c00',
-  sql_injection: '#f03250',
-  data_exfiltration: '#ffb800',
-  port_scan: '#a855f7',
-  normal: '#00e5b0',
-  unknown: '#4a9eff',
+  brute_force: '#ed8936',
+  sql_injection: '#e53e3e',
+  data_exfiltration: '#e6a817',
+  port_scan: '#b794f4',
+  normal: '#ffffff',
+  unknown: '#63b3ed',
 };
 
 function formatTime(ts) {
@@ -49,7 +49,7 @@ export default function AttackTimeline({ incidentId }) {
       }} />
 
       {timeline.map((evt, idx) => {
-        const color = ATK_COLORS[evt.attack_type] || '#6e9ab5';
+        const color = ATK_COLORS[evt.attack_type] || '#a0a0a0';
         const isFocal = evt.is_focal;
         return (
           <div
@@ -114,7 +114,7 @@ export default function AttackTimeline({ incidentId }) {
                   <span style={{
                     padding: '1px 7px', borderRadius: 3, fontSize: 9,
                     background: 'rgba(74,158,255,0.1)', border: '1px solid rgba(74,158,255,0.25)',
-                    color: '#4a9eff', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em',
+                    color: '#63b3ed', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em',
                   }}>
                     {evt.mitre_id}
                   </span>
@@ -125,7 +125,7 @@ export default function AttackTimeline({ incidentId }) {
                   <span style={{
                     padding: '1px 7px', borderRadius: 3, fontSize: 9,
                     background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.25)',
-                    color: '#a855f7', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em',
+                    color: '#b794f4', fontFamily: 'var(--font-mono)', letterSpacing: '0.06em',
                   }}>
                     {evt.mitre_tactic}
                   </span>

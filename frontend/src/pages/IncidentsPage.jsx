@@ -8,22 +8,22 @@ const STATUS_OPTS = ['ALL', 'OPEN', 'INVESTIGATING', 'RESOLVED', 'FALSE_POSITIVE
 
 // MITRE technique lookup (client-side map for instant display)
 const MITRE_QUICK = {
-  brute_force:       { id: 'T1110', tactic: 'Credential Access', color: '#f03250' },
-  sql_injection:     { id: 'T1190', tactic: 'Initial Access',    color: '#ff8c00' },
-  data_exfiltration: { id: 'T1041', tactic: 'Exfiltration',      color: '#f03250' },
-  port_scan:         { id: 'T1046', tactic: 'Discovery',         color: '#ffb800' },
-  xss:                 { id: 'T1059.007', tactic: 'Execution',         color: '#ff8c00' },
-  privilege_escalation:{ id: 'T1068', tactic: 'Privilege Esc.',       color: '#f03250' },
-  dos_attack:          { id: 'T1498', tactic: 'Impact',               color: '#f03250' },
-  command_injection:   { id: 'T1059', tactic: 'Execution',            color: '#f03250' },
-  directory_traversal: { id: 'T1083', tactic: 'Discovery',            color: '#ffb800' },
-  session_hijacking:   { id: 'T1550', tactic: 'Lateral Movement',     color: '#ff8c00' },
-  credential_stuffing: { id: 'T1110.004', tactic: 'Credential Access', color: '#f03250' },
-  ssrf:                { id: 'T1090', tactic: 'Command & Control',     color: '#ff8c00' },
-  malware:             { id: 'T1204', tactic: 'Execution',            color: '#f03250' },
-  insider_threat:      { id: 'T1078', tactic: 'Defense Evasion',      color: '#ffb800' },
-  lateral_movement:  { id: 'T1021', tactic: 'Lateral Movement', color: '#ffb800' },
-  normal:            { id: '—',     tactic: 'Benign',            color: '#00e5b0' },
+  brute_force:       { id: 'T1110', tactic: 'Credential Access', color: '#e53e3e' },
+  sql_injection:     { id: 'T1190', tactic: 'Initial Access',    color: '#ed8936' },
+  data_exfiltration: { id: 'T1041', tactic: 'Exfiltration',      color: '#e53e3e' },
+  port_scan:         { id: 'T1046', tactic: 'Discovery',         color: '#e6a817' },
+  xss:                 { id: 'T1059.007', tactic: 'Execution',         color: '#ed8936' },
+  privilege_escalation:{ id: 'T1068', tactic: 'Privilege Esc.',       color: '#e53e3e' },
+  dos_attack:          { id: 'T1498', tactic: 'Impact',               color: '#e53e3e' },
+  command_injection:   { id: 'T1059', tactic: 'Execution',            color: '#e53e3e' },
+  directory_traversal: { id: 'T1083', tactic: 'Discovery',            color: '#e6a817' },
+  session_hijacking:   { id: 'T1550', tactic: 'Lateral Movement',     color: '#ed8936' },
+  credential_stuffing: { id: 'T1110.004', tactic: 'Credential Access', color: '#e53e3e' },
+  ssrf:                { id: 'T1090', tactic: 'Command & Control',     color: '#ed8936' },
+  malware:             { id: 'T1204', tactic: 'Execution',            color: '#e53e3e' },
+  insider_threat:      { id: 'T1078', tactic: 'Defense Evasion',      color: '#e6a817' },
+  lateral_movement:  { id: 'T1021', tactic: 'Lateral Movement', color: '#e6a817' },
+  normal:            { id: '—',     tactic: 'Benign',            color: '#ffffff' },
 };
 
 function getMitre(attackType) {
@@ -34,7 +34,7 @@ function getMitre(attackType) {
 
 function RiskBar({ score }) {
   const pct = Math.min(100, Math.max(0, score || 0));
-  const color = pct >= 80 ? '#f03250' : pct >= 60 ? '#ff8c00' : pct >= 40 ? '#ffb800' : '#00e5b0';
+  const color = pct >= 80 ? '#e53e3e' : pct >= 60 ? '#ed8936' : pct >= 40 ? '#e6a817' : '#ffffff';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
@@ -62,7 +62,7 @@ function MitreTag({ attackType }) {
 function IncidentCard({ inc, onClick }) {
   const sev = getSeverity(inc.risk_score);
   const mitre = getMitre(inc.attack_type);
-  const accentColor = sev === 'critical' ? '#f03250' : sev === 'high' ? '#ff8c00' : sev === 'medium' ? '#ffb800' : '#00e5b0';
+  const accentColor = sev === 'critical' ? '#e53e3e' : sev === 'high' ? '#ed8936' : sev === 'medium' ? '#e6a817' : '#ffffff';
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -71,7 +71,7 @@ function IncidentCard({ inc, onClick }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        background: hovered ? '#101d2a' : '#0c1520',
+        background: hovered ? '#1a1a1a' : '#0a0a0a',
         border: `1px solid ${hovered ? `${accentColor}50` : `${accentColor}20`}`,
         borderRadius: 10,
         padding: '16px 20px',
@@ -102,12 +102,12 @@ function IncidentCard({ inc, onClick }) {
 
       {/* User + action */}
       <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, color: '#e8f4f8', marginBottom: 4 }}>{inc.user}</div>
-      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#6e9ab5', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.action}</div>
+      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.action}</div>
 
       {/* Footer row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <AttackTypeBadge type={inc.attack_type} />
-        <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570' }}>{formatDateTime(inc.timestamp)}</span>
+        <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555' }}>{formatDateTime(inc.timestamp)}</span>
       </div>
 
       <RiskBar score={inc.risk_score} />
@@ -165,23 +165,23 @@ export default function IncidentsPage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: criticalCount > 0 ? '#f03250' : '#00e5b0', textShadow: criticalCount > 0 ? '0 0 24px rgba(240,50,80,0.4)' : '0 0 24px rgba(0,255,200,0.35)', letterSpacing: 2 }}>
+            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: criticalCount > 0 ? '#e53e3e' : '#ffffff', textShadow: criticalCount > 0 ? '0 0 24px rgba(229,62,62,0.4)' : '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
               ⚠ INCIDENT DASHBOARD
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Security Incident Management — Triage & Response
             </div>
           </div>
           {/* Quick KPI Strip */}
           <div style={{ display: 'flex', gap: 12 }}>
             {[
-              { label: 'OPEN', val: counts['OPEN'] || 0, color: '#f03250' },
-              { label: 'INVESTIGATING', val: counts['INVESTIGATING'] || 0, color: '#ffb800' },
-              { label: 'RESOLVED', val: counts['RESOLVED'] || 0, color: '#00e5b0' },
+              { label: 'OPEN', val: counts['OPEN'] || 0, color: '#e53e3e' },
+              { label: 'INVESTIGATING', val: counts['INVESTIGATING'] || 0, color: '#e6a817' },
+              { label: 'RESOLVED', val: counts['RESOLVED'] || 0, color: '#ffffff' },
             ].map(({ label, val, color }) => (
               <div key={label} style={{ textAlign: 'center', background: `${color}10`, border: `1px solid ${color}30`, padding: '6px 14px', borderRadius: 6 }}>
                 <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 20, color }}>{val}</div>
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: 2 }}>{label}</div>
+                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 2 }}>{label}</div>
               </div>
             ))}
           </div>
@@ -191,7 +191,7 @@ export default function IncidentsPage() {
       {/* Control Bar */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '0 0 260px' }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#2e5570', fontSize: 13 }}>⌕</span>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#555555', fontSize: 13 }}>⌕</span>
           <input className="input" placeholder="Search user, action, attack type…" value={search}
             onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 30 }}
           />
@@ -202,9 +202,9 @@ export default function IncidentsPage() {
             <button key={s} onClick={() => setFilter(s)} style={{
               padding: '6px 12px', borderRadius: 6, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
               letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', transition: 'all 0.2s', border: 'none',
-              background: filter === s ? 'rgba(0,255,200,0.12)' : 'transparent',
-              color: filter === s ? '#00e5b0' : '#2e5570',
-              outline: filter === s ? '1px solid rgba(0,255,200,0.3)' : '1px solid rgba(0,255,200,0.08)',
+              background: filter === s ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: filter === s ? '#ffffff' : '#555555',
+              outline: filter === s ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.08)',
             }}>
               {s} <span style={{ opacity: 0.6 }}>({counts[s] || 0})</span>
             </button>
@@ -221,14 +221,14 @@ export default function IncidentsPage() {
           {['grid', 'table'].map(v => (
             <button key={v} onClick={() => setView(v)} style={{
               padding: '6px 12px', borderRadius: 6, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, cursor: 'pointer', border: 'none', transition: 'all 0.2s', textTransform: 'uppercase',
-              background: view === v ? 'rgba(0,255,200,0.1)' : 'transparent', color: view === v ? '#00e5b0' : '#2e5570', outline: '1px solid rgba(0,255,200,0.1)',
+              background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent', color: view === v ? '#ffffff' : '#555555', outline: '1px solid rgba(255,255,255,0.1)',
             }}>
               {v === 'grid' ? '⊞' : '☰'}
             </button>
           ))}
         </div>
 
-        <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#2e5570' }}>
+        <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555' }}>
           {filtered.length} result{filtered.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -236,7 +236,7 @@ export default function IncidentsPage() {
       {loading ? (
         <div className="loading"><div className="spinner" /><div className="loading-text">Loading incidents...</div></div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#2e5570' }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#555555' }}>
           <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.4 }}>◎</div>
           NO INCIDENTS MATCH YOUR FILTER
         </div>
@@ -247,7 +247,7 @@ export default function IncidentsPage() {
           ))}
         </div>
       ) : (
-        <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.1)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -259,18 +259,18 @@ export default function IncidentsPage() {
                 const mitre = getMitre(inc.attack_type);
                 return (
                   <tr key={inc.id} onClick={() => navigate(`/incidents/${inc.id}`)} style={{ cursor: 'pointer' }}>
-                    <td style={{ color: '#00e5b0', fontFamily: 'IBM Plex Mono, monospace' }}>INC-{String(inc.id).padStart(4,'0')}</td>
-                    <td style={{ color: '#2e5570', fontSize: 11 }}>{formatDateTime(inc.timestamp)}</td>
+                    <td style={{ color: '#ffffff', fontFamily: 'IBM Plex Mono, monospace' }}>INC-{String(inc.id).padStart(4,'0')}</td>
+                    <td style={{ color: '#555555', fontSize: 11 }}>{formatDateTime(inc.timestamp)}</td>
                     <td style={{ color: '#e8f4f8' }}>{inc.user}</td>
-                    <td style={{ color: '#6e9ab5', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.action}</td>
+                    <td style={{ color: '#a0a0a0', fontSize: 11, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inc.action}</td>
                     <td><AttackTypeBadge type={inc.attack_type} /></td>
                     <td>
                       {mitre && mitre.id !== '—' ? (
                         <div>
                           <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: mitre.color }}>{mitre.id}</span>
-                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570' }}>{mitre.tactic}</div>
+                          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555' }}>{mitre.tactic}</div>
                         </div>
-                      ) : <span style={{ color: '#2e5570' }}>—</span>}
+                      ) : <span style={{ color: '#555555' }}>—</span>}
                     </td>
                     <td style={{ minWidth: 120 }}><RiskBar score={inc.risk_score} /></td>
                     <td><StatusBadge status={inc.status} /></td>

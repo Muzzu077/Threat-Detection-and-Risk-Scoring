@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { fetchPrediction } from '../api/client';
 
 const LEVEL_COLORS = {
-  critical: '#f03250',
-  high: '#ff8c00',
-  medium: '#ffb800',
-  low: '#00e5b0',
-  monitoring: '#4a9eff',
+  critical: '#e53e3e',
+  high: '#ed8936',
+  medium: '#e6a817',
+  low: '#ffffff',
+  monitoring: '#63b3ed',
 };
 
 const LEVEL_GLOW = {
@@ -47,7 +47,7 @@ export default function PredictionWidget() {
   if (!prediction) return null;
 
   const level = prediction.threat_level || 'monitoring';
-  const color = LEVEL_COLORS[level] || '#4a9eff';
+  const color = LEVEL_COLORS[level] || '#63b3ed';
   const glow = LEVEL_GLOW[level] || '';
   const conf = prediction.confidence || 0;
 
@@ -126,7 +126,7 @@ export default function PredictionWidget() {
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.1em' }}>
             VELOCITY
           </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: prediction.velocity > 3 ? '#ff8c00' : 'var(--text-secondary)' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: prediction.velocity > 3 ? '#ed8936' : 'var(--text-secondary)' }}>
             {prediction.velocity}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginLeft: 2 }}>ev/min</span>
@@ -136,7 +136,7 @@ export default function PredictionWidget() {
       {/* MITRE next technique */}
       {prediction.mitre_next && (
         <div style={{
-          background: 'rgba(0,255,200,0.05)', border: '1px solid var(--border-dim)',
+          background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-dim)',
           borderRadius: 5, padding: '8px 12px', marginBottom: 10,
           fontFamily: 'var(--font-mono)', fontSize: 11,
         }}>

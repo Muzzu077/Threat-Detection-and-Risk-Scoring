@@ -11,12 +11,15 @@ Set-Location $root
 
 # ── Load startup config from .env ─────────────────────────────────────────
 $enableSimulator = $true
+$enableDvwa = $true
 $envFile = Join-Path $root ".env"
 if (Test-Path $envFile) {
-    $simLine = Get-Content $envFile | Where-Object { $_ -match "^ENABLE_TRAFFIC_SIMULATOR\s*=" }
-    if ($simLine) {
-        if (($simLine -split "=", 2)[1].Trim().ToLower() -eq "false") { $enableSimulator = $false }
-    }
+    $envContent = Get-Content $envFile
+    $simLine = $envContent | Where-Object { $_ -match "^ENABLE_TRAFFIC_SIMULATOR\s*=" }
+    if ($simLine) { if (($simLine -split "=", 2)[1].Trim().ToLower() -eq "false") { $enableSimulator = $false } }
+    
+    $dvwaLine = $envContent | Where-Object { $_ -match "^ENABLE_DVWA_LAB\s*=" }
+    if ($dvwaLine) { if (($dvwaLine -split "=", 2)[1].Trim().ToLower() -eq "false") { $enableDvwa = $false } }
 }
 
 # ── Detect Python ─────────────────────────────────────────────────────────
@@ -87,7 +90,7 @@ Start-Sleep -Seconds 4
 
 # ── 5 & 6. DVWA Attack Lab (Docker) ──────────────────────────────────────
 $dvwaStarted = $false
-if ($hasDocker) {
+if ($hasDocker -and $enableDvwa) {
     Write-Host "  [5/6] Generating DVWA shipper API key..." -ForegroundColor Green
     & $pyExe "utils/ensure_dvwa_api_key.py" 2>&1 | ForEach-Object { Write-Host "       $_" -ForegroundColor DarkGray }
 
@@ -126,9 +129,12 @@ if ($hasDocker) {
             } else { Write-Host "        DVWA stack failed. Run manually: cd dvwa-stack; docker compose up --build -d" -ForegroundColor Red }
         }
     }
-} else {
+} elseif (-not $hasDocker) {
     Write-Host "  [5/6] Skipped -Docker not installed" -ForegroundColor Yellow
     Write-Host "  [6/6] Skipped -Docker not installed" -ForegroundColor Yellow
+} else {
+    Write-Host "  [5/6] DVWA Lab is DISABLED in .env" -ForegroundColor Yellow
+    Write-Host "  [6/6] DVWA Lab is DISABLED in .env" -ForegroundColor Yellow
 }
 
 # ── Summary ───────────────────────────────────────────────────────────────

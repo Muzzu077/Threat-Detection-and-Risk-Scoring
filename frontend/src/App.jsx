@@ -61,7 +61,7 @@ function App() {
     return (
       <div style={{
         height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg-dark)', color: '#00e5b0',
+        background: 'var(--bg-dark)', color: '#ffffff',
         fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
       }}>
         INITIALIZING THREATPULSE...
@@ -91,7 +91,7 @@ function App() {
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginRight: 12 }}>
               OPERATOR: <span style={{ color: 'var(--accent-cyan)' }}>{(user?.display_name || user?.email || '').toUpperCase()}</span>
               {user?.role === 'admin' && (
-                <span style={{ marginLeft: 8, padding: '2px 6px', background: 'rgba(240,50,80,0.15)', border: '1px solid rgba(240,50,80,0.3)', borderRadius: 3, fontSize: 8, color: '#f03250' }}>
+                <span style={{ marginLeft: 8, padding: '2px 6px', background: 'rgba(229,62,62,0.15)', border: '1px solid rgba(229,62,62,0.3)', borderRadius: 3, fontSize: 8, color: '#e53e3e' }}>
                   ADMIN
                 </span>
               )}

@@ -17,13 +17,14 @@ function flagEmoji(code) {
 }
 
 function formatDuration(seconds) {
-  if (!seconds || seconds <= 0) return '\u2014';
+  if (seconds === null || seconds === undefined) return '\u2014';
+  if (seconds <= 0) return '< 1s';
   if (seconds < 60) return `${Math.round(seconds)}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 }
 
-const SEV_COLORS = { critical: '#f03250', high: '#ff8c00', medium: '#ffb800', low: '#00e5b0' };
+const SEV_COLORS = { critical: '#e53e3e', high: '#ed8936', medium: '#e6a817', low: '#48bb78' };
 
 // Animated counter hook
 function useCounter(target, duration = 1200) {
@@ -50,9 +51,9 @@ function AnimCounter({ value, color = 'inherit' }) {
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.3)', borderRadius: 6, padding: '10px 14px', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}>
-      <div style={{ color: '#2e5570', marginBottom: 4 }}>{label}</div>
-      {payload.map(p => <div key={p.dataKey} style={{ color: p.color || '#00e5b0' }}>{p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</strong></div>)}
+    <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, padding: '10px 14px', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}>
+      <div style={{ color: '#555555', marginBottom: 4 }}>{label}</div>
+      {payload.map(p => <div key={p.dataKey} style={{ color: p.color || '#ffffff' }}>{p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</strong></div>)}
     </div>
   );
 };
@@ -117,17 +118,17 @@ export default function DashboardPage() {
       <div style={{ marginBottom: 28, position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: isCritical ? '#f03250' : '#00e5b0', textShadow: isCritical ? '0 0 30px rgba(255,45,45,0.5)' : '0 0 30px rgba(0,255,200,0.4)', letterSpacing: 2 }}>
+            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: isCritical ? '#e53e3e' : '#ffffff', textShadow: isCritical ? '0 0 30px rgba(229,62,62,0.5)' : '0 0 30px rgba(255,255,255,0.4)', letterSpacing: 2 }}>
               THREATPULSE SOC
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Security Operations Center — Live Monitoring
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}>
-            <label style={{ cursor: 'pointer', background: 'rgba(0,255,200,0.1)', border: '1px solid rgba(0,255,200,0.4)', color: '#00e5b0', padding: '6px 14px', borderRadius: 4, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: 1 }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,200,0.2)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,255,200,0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,255,200,0.1)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <label style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.4)', color: '#ffffff', padding: '6px 14px', borderRadius: 4, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: 1 }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(255,255,255,0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}>
               <span style={{ fontSize: 13 }}>📤</span> UPLOAD LOGS (CSV)
               <input type="file" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
                 if (!e.target.files?.length) return;
@@ -142,19 +143,19 @@ export default function DashboardPage() {
                 } catch (err) { alert('❌ Network error during upload. Is the API running?'); }
               }} />
             </label>
-            <div style={{ height: 16, width: 1, background: 'rgba(0,255,200,0.3)' }} />
+            <div style={{ height: 16, width: 1, background: 'rgba(255,255,255,0.3)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 8px #00e5b0', animation: 'pulse-live 1.5s ease-in-out infinite', display: 'inline-block' }}/>
-              <span style={{ color: '#00e5b0' }}>LIVE</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 8px #ffffff', animation: 'pulse-live 1.5s ease-in-out infinite', display: 'inline-block' }}/>
+              <span style={{ color: '#ffffff' }}>LIVE</span>
             </div>
-            <span style={{ color: '#2e5570' }}>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+            <span style={{ color: '#555555' }}>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Alert Banner */}
-        <div style={{ marginTop: 16, padding: '12px 20px', borderRadius: 8, background: isCritical ? 'rgba(255,45,45,0.07)' : 'rgba(0,255,200,0.04)', border: `1px solid ${isCritical ? 'rgba(255,45,45,0.35)' : 'rgba(0,255,200,0.18)'}`, display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>
+        <div style={{ marginTop: 16, padding: '12px 20px', borderRadius: 8, background: isCritical ? 'rgba(229,62,62,0.07)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isCritical ? 'rgba(229,62,62,0.35)' : 'rgba(255,255,255,0.18)'}`, display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>
           <span style={{ fontSize: 16 }}>{isCritical ? '🚨' : '✅'}</span>
-          <span style={{ color: isCritical ? '#ff6b6b' : '#00e5b0' }}>
+          <span style={{ color: isCritical ? '#fc8181' : '#ffffff' }}>
             {isCritical ? `CRITICAL ALERT — ${criticalCount} active high-severity events detected. Immediate investigation required.` : 'ALL SYSTEMS SECURE — No critical threats detected. Monitoring active.'}
           </span>
         </div>
@@ -163,20 +164,20 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
         <div style={{ position: 'relative', width: 160, height: 160 }}>
           <svg viewBox="0 0 120 120" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(0,229,176,0.06)" strokeWidth="6" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
             <circle cx="60" cy="60" r="52" fill="none"
-              stroke={isCritical ? '#f03250' : (stats.avg_risk || 0) >= 50 ? '#ffb800' : '#00e5b0'}
+              stroke={isCritical ? '#e53e3e' : (stats.avg_risk || 0) >= 50 ? '#e6a817' : '#ffffff'}
               strokeWidth="6" strokeLinecap="round"
               strokeDasharray={`${((stats.avg_risk || 0) / 100) * 327} 327`}
               className="gauge-ring"
-              style={{ filter: `drop-shadow(0 0 8px ${isCritical ? 'rgba(240,50,80,0.5)' : 'rgba(0,229,176,0.4)'})` }}
+              style={{ filter: `drop-shadow(0 0 8px ${isCritical ? 'rgba(229,62,62,0.5)' : 'rgba(255,255,255,0.4)'})` }}
             />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 32, color: isCritical ? '#f03250' : '#00e5b0', textShadow: `0 0 20px ${isCritical ? 'rgba(240,50,80,0.4)' : 'rgba(0,229,176,0.4)'}` }}>
+            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 32, color: isCritical ? '#e53e3e' : '#ffffff', textShadow: `0 0 20px ${isCritical ? 'rgba(229,62,62,0.4)' : 'rgba(255,255,255,0.4)'}` }}>
               {Math.round(stats.avg_risk || 0)}
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 8, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>THREAT LEVEL</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 8, color: '#555555', letterSpacing: 3, textTransform: 'uppercase' }}>THREAT LEVEL</div>
           </div>
         </div>
       </div>
@@ -185,18 +186,18 @@ export default function DashboardPage() {
       {/* ── KPI Grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'TOTAL EVENTS', value: stats.total_events, accent: '#00e5b0', icon: '◉', glow: 'rgba(0,255,200,0.2)' },
-          { label: 'OPEN INCIDENTS', value: openIncidents, accent: '#f03250', icon: '⚠', glow: 'rgba(255,45,45,0.2)' },
-          { label: 'CRITICAL ALERTS', value: criticalCount, accent: '#f03250', icon: '◈', glow: 'rgba(255,45,45,0.2)' },
-          { label: 'AVG RISK SCORE', value: stats.avg_risk ? Math.round(stats.avg_risk) : 0, accent: '#ffb800', icon: '▲', glow: 'rgba(255,184,0,0.2)' },
-          { label: 'HIGH SEVERITY', value: stats.high_events || 0, accent: '#ff8c00', icon: '◆', glow: 'rgba(255,140,0,0.2)' },
+          { label: 'TOTAL EVENTS', value: stats.total_events, accent: '#ffffff', icon: '◉', glow: 'rgba(255,255,255,0.2)' },
+          { label: 'OPEN INCIDENTS', value: openIncidents, accent: '#e53e3e', icon: '⚠', glow: 'rgba(229,62,62,0.2)' },
+          { label: 'CRITICAL ALERTS', value: criticalCount, accent: '#e53e3e', icon: '◈', glow: 'rgba(229,62,62,0.2)' },
+          { label: 'AVG RISK SCORE', value: stats.avg_risk ? Math.round(stats.avg_risk) : 0, accent: '#e6a817', icon: '▲', glow: 'rgba(255,184,0,0.2)' },
+          { label: 'HIGH SEVERITY', value: stats.high_events || 0, accent: '#ed8936', icon: '◆', glow: 'rgba(255,140,0,0.2)' },
         ].map((kpi, i) => (
-          <div key={i} className="stagger-item" style={{ background: '#0c1520', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden', cursor: 'default', transition: 'transform 0.2s, box-shadow 0.2s', animationDelay: `${i * 0.07}s` }}
+          <div key={i} className="stagger-item" style={{ background: '#0a0a0a', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden', cursor: 'default', transition: 'transform 0.2s, box-shadow 0.2s', animationDelay: `${i * 0.07}s` }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${kpi.glow}`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
           >
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${kpi.accent}, transparent)` }} />
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
             <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 34, color: kpi.accent, textShadow: `0 0 20px ${kpi.glow}`, lineHeight: 1 }}>
               <AnimCounter value={kpi.value} color={kpi.accent} />
             </div>
@@ -208,13 +209,13 @@ export default function DashboardPage() {
       {/* MTTD/MTTR Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'MTTD (MEAN TIME TO DETECT)', value: formatDuration(mttd.mttd_avg_seconds), accent: '#4a9eff', icon: '\u23F1', glow: 'rgba(74,158,255,0.2)' },
-          { label: 'MTTR (MEAN TIME TO RESPOND)', value: formatDuration(mttd.mttr_avg_seconds), accent: '#a855f7', icon: '\u26A1', glow: 'rgba(168,85,247,0.2)' },
-          { label: 'AVG RESOLUTION TIME', value: formatDuration(mttd.resolution_avg_seconds), accent: '#00e5b0', icon: '\u2713', glow: 'rgba(0,255,200,0.2)' },
+          { label: 'MTTD (MEAN TIME TO DETECT)', value: formatDuration(mttd.mttd_avg_seconds), accent: '#63b3ed', icon: '\u23F1', glow: 'rgba(74,158,255,0.2)' },
+          { label: 'MTTR (MEAN TIME TO RESPOND)', value: formatDuration(mttd.mttr_avg_seconds), accent: '#b794f4', icon: '\u26A1', glow: 'rgba(168,85,247,0.2)' },
+          { label: 'AVG RESOLUTION TIME', value: formatDuration(mttd.resolution_avg_seconds), accent: '#ffffff', icon: '\u2713', glow: 'rgba(255,255,255,0.2)' },
         ].map((kpi, i) => (
-          <div key={i} style={{ background: '#0c1520', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+          <div key={i} style={{ background: '#0a0a0a', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${kpi.accent}, transparent)` }} />
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
             <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 28, color: kpi.accent, textShadow: `0 0 20px ${kpi.glow}`, lineHeight: 1 }}>
               {kpi.value || '\u2014'}
             </div>
@@ -227,37 +228,37 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Hourly Activity Area Chart */}
-        <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: '20px 20px 12px' }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>24-H Risk Timeline</div>
+        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '20px 20px 12px' }}>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>24-H Risk Timeline</div>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={hourly} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f03250" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#f03250" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#e53e3e" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="#e53e3e" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="evtGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00e5b0" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#00e5b0" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,255,200,0.05)" />
-              <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#2e5570', fontFamily: 'IBM Plex Mono, monospace' }} interval={5} />
-              <YAxis tick={{ fontSize: 9, fill: '#2e5570', fontFamily: 'IBM Plex Mono, monospace' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#555555', fontFamily: 'IBM Plex Mono, monospace' }} interval={5} />
+              <YAxis tick={{ fontSize: 9, fill: '#555555', fontFamily: 'IBM Plex Mono, monospace' }} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="avgRisk" name="Avg Risk" stroke="#f03250" strokeWidth={1.5} fill="url(#riskGrad)" />
-              <Area type="monotone" dataKey="events" name="Events" stroke="#00e5b0" strokeWidth={1.5} fill="url(#evtGrad)" />
+              <Area type="monotone" dataKey="avgRisk" name="Avg Risk" stroke="#e53e3e" strokeWidth={1.5} fill="url(#riskGrad)" />
+              <Area type="monotone" dataKey="events" name="Events" stroke="#ffffff" strokeWidth={1.5} fill="url(#evtGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Severity Distribution */}
-        <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: '20px 20px 12px' }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Severity Breakdown</div>
+        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '20px 20px 12px' }}>
+          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Severity Breakdown</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={sevDist} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-              <XAxis type="number" tick={{ fontSize: 9, fill: '#2e5570' }} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#6e9ab5', fontFamily: 'IBM Plex Mono,monospace' }} width={60} />
+              <XAxis type="number" tick={{ fontSize: 9, fill: '#555555' }} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#a0a0a0', fontFamily: 'IBM Plex Mono,monospace' }} width={60} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" name="Events" radius={[0, 4, 4, 0]}>
                 {sevDist.map((d, i) => <Cell key={i} fill={d.fill} fillOpacity={0.8} />)}
@@ -271,24 +272,24 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
         {/* Left: Active Incidents */}
-        <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: 20 }}>
+        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>Active Incidents</div>
+            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase' }}>Active Incidents</div>
             <button className="btn btn-ghost" style={{ fontSize: 10, padding: '4px 10px' }} onClick={() => navigate('/incidents')}>VIEW ALL →</button>
           </div>
           {recentCritical.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#2e5570' }}>NO ACTIVE INCIDENTS</div>
+            <div style={{ textAlign: 'center', padding: '30px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555' }}>NO ACTIVE INCIDENTS</div>
           ) : recentCritical.map(inc => (
             <div key={inc.id} onClick={() => navigate(`/incidents/${inc.id}`)}
-              style={{ padding: '12px 14px', background: '#101d2a', borderRadius: 8, marginBottom: 8, border: '1px solid rgba(0,255,200,0.06)', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,255,200,0.2)'; e.currentTarget.style.background = '#122030'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,255,200,0.06)'; e.currentTarget.style.background = '#101d2a'; }}
+              style={{ padding: '12px 14px', background: '#1a1a1a', borderRadius: 8, marginBottom: 8, border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = '#1a1a1a'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = '#1a1a1a'; }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#00e5b0' }}>INC-{String(inc.id).padStart(4, '0')}</span>
+                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#ffffff' }}>INC-{String(inc.id).padStart(4, '0')}</span>
                 <RiskBadge score={inc.risk_score} />
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#6e9ab5', marginBottom: 4 }}>{inc.user}</div>
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 4 }}>{inc.user}</div>
               <AttackTypeBadge type={inc.attack_type} />
             </div>
           ))}
@@ -298,13 +299,13 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Geo Origin Panel */}
-          <div style={{ background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, padding: 20 }}>
+          <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase' }}>🌐 Attack Origins</div>
+              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase' }}>🌐 Attack Origins</div>
               <button className="btn btn-ghost" style={{ fontSize: 10, padding: '4px 10px' }} onClick={() => navigate('/threat-intel')}>INTEL MAP →</button>
             </div>
             {geo.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#2e5570' }}>NO GEO DATA YET</div>
+              <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555' }}>NO GEO DATA YET</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {geo.slice(0, 6).map(({ country, count }) => {
@@ -313,11 +314,11 @@ export default function DashboardPage() {
                   return (
                     <div key={country} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: 14, minWidth: 22 }}>{flagEmoji(country)}</span>
-                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#6e9ab5', minWidth: 30 }}>{country}</span>
+                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', minWidth: 30 }}>{country}</span>
                       <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #00e5b0, #4a9eff)', borderRadius: 2, boxShadow: '0 0 6px rgba(0,229,176,0.4)', transition: 'width 0.8s ease' }} />
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #ffffff, #63b3ed)', borderRadius: 2, boxShadow: '0 0 6px rgba(255,255,255,0.4)', transition: 'width 0.8s ease' }} />
                       </div>
-                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', minWidth: 22, textAlign: 'right' }}>{count}</span>
+                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', minWidth: 22, textAlign: 'right' }}>{count}</span>
                     </div>
                   );
                 })}
@@ -332,9 +333,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Live Feed (full width at bottom) */}
-      <div style={{ marginTop: 16, background: '#0c1520', border: '1px solid rgba(0,255,200,0.12)', borderRadius: 10, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(0,255,200,0.08)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 8px #00e5b0', display: 'inline-block', animation: 'pulse-live 1.5s ease-in-out infinite' }} />
+      <div style={{ marginTop: 16, background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 8px #ffffff', display: 'inline-block', animation: 'pulse-live 1.5s ease-in-out infinite' }} />
           Live Event Feed
         </div>
         <LiveFeed />

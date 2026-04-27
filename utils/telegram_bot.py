@@ -37,13 +37,21 @@ def _creds():
     load_dotenv(os.path.join(PROJECT_ROOT, '.env'), override=True)
     token = os.getenv("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
-    return token, chat_id, f"{TELEGRAM_API_BASE}{token}"
+    proxy = os.getenv("TELEGRAM_PROXY", "") or os.getenv("HTTPS_PROXY", "")
+    proxies = {"https": proxy, "http": proxy} if proxy else None
+    return token, chat_id, f"{TELEGRAM_API_BASE}{token}", proxies
+
+
+def _tg_post(url, **kwargs):
+    """POST to Telegram API with proxy support."""
+    _, _, _, proxies = _creds()
+    return requests.post(url, proxies=proxies, **kwargs)
 
 
 def _answer_callback(api_url: str, callback_id: str, text: str):
     """Send a toast notification back to the user who clicked the button."""
     try:
-        requests.post(f"{api_url}/answerCallbackQuery", json={
+        _tg_post(f"{api_url}/answerCallbackQuery", json={
             "callback_query_id": callback_id,
             "text": text,
             "show_alert": True,
@@ -55,7 +63,7 @@ def _answer_callback(api_url: str, callback_id: str, text: str):
 def _edit_message(api_url: str, chat_id: str, message_id: int, new_text: str):
     """Append status text below the original alert message."""
     try:
-        requests.post(f"{api_url}/sendMessage", json={
+        _tg_post(f"{api_url}/sendMessage", json={
             "chat_id": chat_id,
             "text": new_text,
             "parse_mode": "Markdown",
@@ -197,7 +205,7 @@ def handle_soar(api_url: str, chat_id: str, message_id: str, callback_id: str, i
 
 def poll_callbacks():
     """Long-poll Telegram for callback queries (button clicks)."""
-    token, chat_id, api_url = _creds()
+    token, chat_id, api_url, proxies = _creds()
     if not token:
         print("[Telegram Bot] No TELEGRAM_BOT_TOKEN set. Callback handler disabled.")
         return
@@ -207,12 +215,12 @@ def poll_callbacks():
 
     while True:
         try:
-            token, chat_id, api_url = _creds()
+            token, chat_id, api_url, proxies = _creds()
             resp = requests.get(f"{api_url}/getUpdates", params={
                 "offset": offset,
                 "timeout": 30,
                 "allowed_updates": json.dumps(["callback_query"]),
-            }, timeout=35)
+            }, timeout=35, proxies=proxies)
 
             if resp.status_code != 200:
                 time.sleep(5)
@@ -267,7 +275,7 @@ def poll_callbacks():
 
 def start_polling_thread():
     """Start the Telegram callback poller as a daemon thread."""
-    token, _, _ = _creds()
+    token, _, _, _ = _creds()
     if not token:
         return None
 

@@ -1,5 +1,11 @@
 """
-Main orchestration loop — cycles through attack modules at all security levels.
+Main orchestration loop — weighted severity distribution for realistic SOC feeds.
+
+Severity distribution:
+  70% normal (low-risk) traffic  — benign browsing
+  20% medium-severity attacks    — XSS, CSRF, weak sessions, file inclusion
+  10% high-severity attacks      — SQLi, brute force, command injection, file upload
+
 Each module gets a unique geo-realistic IP per cycle via X-Forwarded-For.
 """
 
@@ -35,21 +41,35 @@ logger = logging.getLogger("runner")
 DVWA_URL = os.environ.get("DVWA_URL", "http://nginx")
 LEVELS = ["low", "medium", "high"]
 
-ATTACK_MODULES = [
-    BruteForce(),
-    SqlInjection(),
-    SqlInjectionBlind(),
-    XssReflected(),
-    XssStored(),
-    XssDom(),
-    CommandInjection(),
-    FileInclusion(),
-    FileUpload(),
-    CsrfAttack(),
-    WeakSessionIds(),
+# ── Severity-weighted module tiers ────────────────────────────────────────────
+# 70% normal | 20% medium | 10% high
+TIER_LOW = [NormalTraffic()]                                      # 70%
+TIER_MEDIUM = [                                                   # 20%
+    XssReflected(), XssStored(), XssDom(),
+    CsrfAttack(), WeakSessionIds(), FileInclusion(),
+]
+TIER_HIGH = [                                                     # 10%
+    BruteForce(), SqlInjection(), SqlInjectionBlind(),
+    CommandInjection(), FileUpload(),
 ]
 
-NORMAL_MODULE = NormalTraffic()
+TIER_WEIGHTS = [
+    (0.55, TIER_LOW,    "low"),
+    (0.82, TIER_MEDIUM, "medium"),   # 0.55 + 0.27
+    (1.00, TIER_HIGH,   "high"),     # 0.82 + 0.18
+]
+
+# How many iterations per cycle before rotating IPs
+ITERATIONS_PER_CYCLE = 20
+
+
+def pick_tier():
+    """Weighted random tier selection: 70% low, 20% medium, 10% high."""
+    roll = random.random()
+    for threshold, modules, tier_name in TIER_WEIGHTS:
+        if roll < threshold:
+            return modules, tier_name
+    return TIER_LOW, "low"
 
 
 def run_module(module, level, cycle_id):
@@ -61,18 +81,9 @@ def run_module(module, level, cycle_id):
     module.run(session, level)
 
 
-def maybe_normal_traffic(cycle_id, level):
-    """30% chance of injecting normal browsing traffic between attacks."""
-    if random.random() < 0.3:
-        ip = get_session_ip_sticky("normal_traffic", cycle_id)
-        session = DVWASession(DVWA_URL, xff_ip=ip)
-        session.login()
-        session.set_security(level)
-        NORMAL_MODULE.run(session, level)
-
-
 def main():
     logger.info("Attack runner starting — target: %s", DVWA_URL)
+    logger.info("Severity distribution: 70%% normal | 20%% medium | 10%% high")
 
     # Wait for DVWA to be available
     init_session = DVWASession(DVWA_URL, xff_ip="10.0.0.1")
@@ -81,31 +92,42 @@ def main():
     # Initialize DVWA database
     init_session.login()
     init_session.setup_database()
-    # Re-login after DB reset
     init_session.login()
 
-    logger.info("DVWA initialized. Starting attack cycles.")
+    logger.info("DVWA initialized. Starting weighted attack loop.")
 
     cycle_id = 0
+    iteration = 0
+
     while True:
-        for level in LEVELS:
-            logger.info("=== Cycle %d | Level: %s ===", cycle_id, level)
-            modules = list(ATTACK_MODULES)
-            random.shuffle(modules)
+        # Pick severity tier and module
+        tier_modules, tier_name = pick_tier()
+        module = random.choice(tier_modules)
+        level = random.choice(LEVELS)
 
-            for module in modules:
-                try:
-                    run_module(module, level, cycle_id)
-                except Exception as e:
-                    logger.error("Module %s failed: %s", module.NAME, e)
+        logger.info(
+            "[iter %d | cycle %d] tier=%s module=%s level=%s",
+            iteration, cycle_id, tier_name, module.NAME, level,
+        )
 
-                maybe_normal_traffic(cycle_id, level)
-                time.sleep(random.uniform(2, 10))
+        try:
+            run_module(module, level, cycle_id)
+        except Exception as e:
+            logger.error("Module %s failed: %s", module.NAME, e)
 
-        cycle_id += 1
-        pause = random.uniform(5, 15)
-        logger.info("Cycle %d complete. Pausing %.1fs before next cycle.", cycle_id - 1, pause)
-        time.sleep(pause)
+        # Rotate IPs every N iterations
+        iteration += 1
+        if iteration % ITERATIONS_PER_CYCLE == 0:
+            cycle_id += 1
+            logger.info("IP rotation — new cycle_id: %d", cycle_id)
+
+        # Delays: normal traffic faster, attacks slower
+        if tier_name == "low":
+            time.sleep(random.uniform(1, 4))
+        elif tier_name == "medium":
+            time.sleep(random.uniform(3, 8))
+        else:
+            time.sleep(random.uniform(4, 10))
 
 
 if __name__ == "__main__":

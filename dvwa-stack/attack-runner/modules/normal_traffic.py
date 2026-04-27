@@ -8,17 +8,10 @@ BENIGN_PAGES = [
     "/",
     "/about.php",
     "/instructions.php",
-    "/phpinfo.php",
     "/security.php",
-    "/setup.php",
-    "/vulnerabilities/brute/",
-    "/vulnerabilities/sqli/",
-    "/vulnerabilities/xss_r/",
-    "/vulnerabilities/exec/",
-    "/vulnerabilities/fi/?page=include.php",
-    "/vulnerabilities/upload/",
-    "/vulnerabilities/csrf/",
-    "/vulnerabilities/xss_s/",
+    "/index.php",
+    "/dvwa/css/main.css",
+    "/favicon.ico",
 ]
 
 

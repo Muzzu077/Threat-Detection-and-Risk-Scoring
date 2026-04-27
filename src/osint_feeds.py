@@ -51,26 +51,58 @@ def fetch_tor_exit_nodes() -> list:
         resp = requests.get("https://check.torproject.org/torbulkexitlist", timeout=15)
         if resp.status_code == 200:
             ips = [line.strip() for line in resp.text.splitlines() if line.strip() and not line.startswith('#')]
-            _cache[cache_key] = {"data": ips[:500], "ts": time.time(), "total": len(ips)}
+            _cache[cache_key] = {"data": ips, "ts": time.time(), "total": len(ips)}
             _save_cache()
-            return ips[:500]
+            return ips
     except Exception:
         pass
     return _cache.get(cache_key, {}).get("data", [])
 
 
 def fetch_urlhaus_recent() -> list:
-    """Fetch recent malicious URLs from abuse.ch URLhaus."""
+    """Fetch recent malicious URLs from abuse.ch URLhaus CSV feed."""
     cache_key = "urlhaus"
     if cache_key in _cache and time.time() - _cache[cache_key].get("ts", 0) < FEED_TTL:
         return _cache[cache_key]["data"]
 
+    urls = []
+    # Primary: CSV feed (no auth required)
     try:
-        resp = requests.get("https://urlhaus-api.abuse.ch/v1/urls/recent/",
-                          json={"limit": 50}, timeout=15)
+        resp = requests.get(
+            "https://urlhaus.abuse.ch/downloads/csv_recent/",
+            timeout=15,
+            headers={"User-Agent": "ThreatPulse/1.0"}
+        )
+        if resp.status_code == 200:
+            for line in resp.text.splitlines()[:60]:
+                if line.startswith('#') or line.startswith('"id"') or not line.strip():
+                    continue
+                parts = line.strip('"').split('","')
+                if len(parts) >= 7:
+                    urls.append({
+                        "url": parts[2] if len(parts) > 2 else "",
+                        "host": parts[2].split('/')[2] if len(parts) > 2 and '/' in parts[2] else "",
+                        "threat": parts[5] if len(parts) > 5 else "malware",
+                        "tags": parts[6].split(',') if len(parts) > 6 and parts[6] else [],
+                        "date_added": parts[1] if len(parts) > 1 else "",
+                        "status": parts[3] if len(parts) > 3 else "online",
+                    })
+            if urls:
+                _cache[cache_key] = {"data": urls[:50], "ts": time.time()}
+                _save_cache()
+                return urls[:50]
+    except Exception:
+        pass
+
+    # Fallback: POST API (legacy)
+    try:
+        resp = requests.post(
+            "https://urlhaus-api.abuse.ch/v1/urls/recent/",
+            data={"limit": 50},
+            timeout=15
+        )
         if resp.status_code == 200:
             data = resp.json()
-            urls = []
             for entry in data.get("urls", [])[:50]:
                 urls.append({
                     "url": entry.get("url", ""),
@@ -80,9 +112,10 @@ def fetch_urlhaus_recent() -> list:
                     "date_added": entry.get("date_added", ""),
                     "status": entry.get("url_status", ""),
                 })
-            _cache[cache_key] = {"data": urls, "ts": time.time()}
-            _save_cache()
-            return urls
+            if urls:
+                _cache[cache_key] = {"data": urls, "ts": time.time()}
+                _save_cache()
+                return urls
     except Exception:
         pass
     return _cache.get(cache_key, {}).get("data", [])
@@ -98,9 +131,9 @@ def fetch_emerging_threats_ips() -> list:
         resp = requests.get("https://rules.emergingthreats.net/blockrules/compromised-ips.txt", timeout=15)
         if resp.status_code == 200:
             ips = [line.strip() for line in resp.text.splitlines() if line.strip() and not line.startswith('#')]
-            _cache[cache_key] = {"data": ips[:500], "ts": time.time(), "total": len(ips)}
+            _cache[cache_key] = {"data": ips, "ts": time.time(), "total": len(ips)}
             _save_cache()
-            return ips[:500]
+            return ips
     except Exception:
         pass
     return _cache.get(cache_key, {}).get("data", [])

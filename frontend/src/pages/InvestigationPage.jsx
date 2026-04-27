@@ -117,7 +117,7 @@ export default function InvestigationPage() {
             onClick={() => setActiveTab(tab.id)}
             style={{
               padding: '8px 16px',
-              background: activeTab === tab.id ? 'rgba(0,255,200,0.1)' : 'transparent',
+              background: activeTab === tab.id ? 'rgba(255,255,255,0.1)' : 'transparent',
               border: 'none',
               borderBottom: activeTab === tab.id ? '2px solid var(--accent-cyan)' : '2px solid transparent',
               color: activeTab === tab.id ? 'var(--accent-cyan)' : 'var(--text-muted)',
@@ -177,9 +177,9 @@ export default function InvestigationPage() {
 
             {/* AI Summary */}
             {incident.note && (
-              <div className="card" style={{ borderColor: 'rgba(0,255,200,0.25)' }}>
+              <div className="card" style={{ borderColor: 'rgba(255,255,255,0.25)' }}>
                 <div className="section-header"><div className="section-title">AI Security Analysis</div></div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, background: 'rgba(0,255,200,0.04)', borderRadius: 6, padding: '12px 14px' }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.7, background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: '12px 14px' }}>
                   {incident.note}
                 </div>
               </div>
@@ -206,10 +206,10 @@ export default function InvestigationPage() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {[
-                  { label: 'FALSE POSITIVE', value: 'false_positive', color: '#ffb800', desc: 'Not a real threat' },
-                  { label: 'CONFIRMED THREAT', value: 'confirmed_threat', color: '#f03250', desc: 'Real attack' },
-                  { label: 'ESCALATE', value: 'escalated', color: '#a855f7', desc: 'Needs further review' },
-                  { label: 'BENIGN', value: 'benign', color: '#00e5b0', desc: 'Normal activity' },
+                  { label: 'FALSE POSITIVE', value: 'false_positive', color: '#e6a817', desc: 'Not a real threat' },
+                  { label: 'CONFIRMED THREAT', value: 'confirmed_threat', color: '#e53e3e', desc: 'Real attack' },
+                  { label: 'ESCALATE', value: 'escalated', color: '#b794f4', desc: 'Needs further review' },
+                  { label: 'BENIGN', value: 'benign', color: '#ffffff', desc: 'Normal activity' },
                 ].map(fb => (
                   <button key={fb.value} onClick={async () => {
                     try {
@@ -280,7 +280,7 @@ export default function InvestigationPage() {
               <div className="section-header flex-between">
                 <div className="section-title">MITRE ATT&CK Mapping</div>
                 {mitre.technique_id && (
-                  <span style={{ padding: '4px 10px', background: 'rgba(74,158,255,0.1)', border: '1px solid rgba(74,158,255,0.3)', borderRadius: 4, fontFamily: 'var(--font-display)', fontSize: 14, color: '#4a9eff' }}>
+                  <span style={{ padding: '4px 10px', background: 'rgba(74,158,255,0.1)', border: '1px solid rgba(74,158,255,0.3)', borderRadius: 4, fontFamily: 'var(--font-display)', fontSize: 14, color: '#63b3ed' }}>
                     {mitre.technique_id}
                   </span>
                 )}
@@ -289,7 +289,7 @@ export default function InvestigationPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.12em' }}>TACTIC</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#a855f7' }}>{mitre.tactic}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#b794f4' }}>{mitre.tactic}</div>
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.12em' }}>TECHNIQUE</div>
@@ -298,7 +298,7 @@ export default function InvestigationPage() {
                 {mitre.sub_technique && (
                   <div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.12em' }}>SUB-TECHNIQUE</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#4a9eff' }}>{mitre.sub_technique}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#63b3ed' }}>{mitre.sub_technique}</div>
                   </div>
                 )}
                 <div>
@@ -309,7 +309,7 @@ export default function InvestigationPage() {
             </div>
 
             {/* Mitigation Card */}
-            <div className="card" style={{ borderColor: 'rgba(0,255,200,0.2)' }}>
+            <div className="card" style={{ borderColor: 'rgba(255,255,255,0.2)' }}>
               <div className="section-header"><div className="section-title">Recommended Mitigations</div></div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
                 {mitre.mitigation}
@@ -321,7 +321,7 @@ export default function InvestigationPage() {
                     target="_blank"
                     rel="noreferrer"
                     style={{
-                      fontFamily: 'var(--font-mono)', fontSize: 11, color: '#4a9eff',
+                      fontFamily: 'var(--font-mono)', fontSize: 11, color: '#63b3ed',
                       textDecoration: 'none', borderBottom: '1px solid rgba(74,158,255,0.3)',
                       paddingBottom: 2
                     }}
@@ -371,7 +371,7 @@ export default function InvestigationPage() {
                 </div>
                 <span style={{
                   fontFamily: 'var(--font-mono)', fontSize: 10,
-                  color: phase.active ? '#4a9eff' : 'var(--border-mid)'
+                  color: phase.active ? '#63b3ed' : 'var(--border-mid)'
                 }}>{phase.tid}</span>
               </div>
             ))}
@@ -422,7 +422,7 @@ export default function InvestigationPage() {
                       </span>
                     </div>
                     {action.message && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>{action.message}</div>}
-                    {action.command && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#4a9eff', marginTop: 4 }}>$ {action.command}</div>}
+                    {action.command && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#63b3ed', marginTop: 4 }}>$ {action.command}</div>}
                   </div>
                 ))}
               </div>

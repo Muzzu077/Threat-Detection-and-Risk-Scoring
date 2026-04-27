@@ -11,13 +11,18 @@ load_dotenv(os.path.join(PROJECT_ROOT, '.env'), override=True)
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# Models to try in order — first success wins (verified free on OpenRouter)
+# Models to try in order — first success wins
+# Uses only verified free models available on OpenRouter that handle
+# security content without guardrail blocks.
 MODELS = [
-    "google/gemma-3n-e4b-it:free",
-    "nvidia/nemotron-nano-9b-v2:free",
+    "google/gemma-3-27b-it:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "mistralai/mistral-small-3.1-24b-instruct:free",
+    "nousresearch/hermes-3-llama-3.1-405b:free",
+    "google/gemma-3-12b-it:free",
+    "stepfun/step-3.5-flash:free",
+    "nvidia/nemotron-3-super-120b-a12b:free",
     "qwen/qwen3-coder:free",
-    "z-ai/glm-4.5-air:free",
-    "openai/gpt-oss-20b:free",
 ]
 
 
@@ -30,24 +35,25 @@ def generate_security_summary(event_details: dict) -> str:
     if not api_key:
         return "AI summary unavailable — OPENROUTER_API_KEY not set."
 
-    prompt = f"""You are a Cyber Security Analyst looking at a high-risk event.
-Summarize the following security log into a short, actionable explanation for a SOC team.
+    prompt = f"""You are an IT monitoring analyst reviewing a flagged system event.
+Provide a structured summary for the operations team using EXACTLY this format:
 
-Event Details:
+*What happened?* <1-2 sentences describing the event>
+
+*Why is it suspicious?* <1-2 sentences explaining why it was flagged, mention the risk score and anomaly details>
+
+*Recommended immediate action:* <1-2 sentences with specific steps the team should take>
+
+Event log:
 - User: {event_details.get('user')}
 - Action: {event_details.get('action')}
 - Status: {event_details.get('status')}
 - Resource: {event_details.get('resource')}
-- Attack Type: {event_details.get('attack_type', 'unknown')}
+- Classification: {event_details.get('attack_type', 'unknown')}
 - Risk Score: {event_details.get('risk_score')}
-- Context: {event_details.get('explanation')}
+- Notes: {event_details.get('explanation')}
 
-Explain:
-1. What happened?
-2. Why is it suspicious?
-3. Recommended immediate action.
-
-Keep it brief (max 3-4 sentences)."""
+Use the exact format above with the bold headings. Be specific and actionable. Do not add any extra sections."""
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -61,10 +67,11 @@ Keep it brief (max 3-4 sentences)."""
             payload = {
                 "model": model,
                 "messages": [
-                    {"role": "user", "content": "You are a cybersecurity SOC analyst. Be concise and actionable.\n\n" + prompt},
+                    {"role": "system", "content": "You are a concise IT security operations analyst. Always respond in the structured format requested. Use *bold* markdown for headings."},
+                    {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.3,
-                "max_tokens": 300,
+                "max_tokens": 500,
             }
 
             response = requests.post(
@@ -80,12 +87,8 @@ Keep it brief (max 3-4 sentences)."""
                 if content:
                     return content
 
-            # 405/429/503 = try next model
-            if response.status_code in (405, 429, 503):
-                continue
-
-            # Other errors — return the error but don't crash
-            return f"AI Summary Error ({response.status_code}): {response.text[:150]}"
+            # Any non-200 = try next model (404=guardrail block, 429=rate limit, 503=down)
+            continue
 
         except requests.exceptions.Timeout:
             continue

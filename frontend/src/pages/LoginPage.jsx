@@ -1,95 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authLogin } from '../api/client';
-
-const BOOT_SEQUENCE = [
-  '[SYS] Initializing ThreatPulse Core...',
-  '[NET] Establishing secure channel... OK',
-  '[ML]  Loading threat detection model... OK',
-  '[DB]  Connecting to event database... OK',
-  '[SOC] Security Operations Center online',
-  '[AUTH] Awaiting operator authentication...',
-];
-
-function MatrixRain() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const chars = 'THREATPULSE01\u30A2\u30A4\u30A6\u30A8\u30AA\u30AB\u30AD\u30AF\u30B1\u30B3\u30B5\u30B7\u30B9\u30BB\u30BD\u2588\u2593\u2591\u2592'.split('');
-    const fontSize = 12;
-    const cols = Math.floor(canvas.width / fontSize);
-    const drops = Array(cols).fill(1);
-
-    const draw = () => {
-      ctx.fillStyle = 'rgba(2, 7, 12, 0.06)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(0, 229, 176, 0.15)';
-      ctx.font = `${fontSize}px monospace`;
-
-      for (let i = 0; i < drops.length; i++) {
-        const char = chars[Math.floor(Math.random() * chars.length)];
-        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
-        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-          drops[i] = 0;
-        }
-        drops[i]++;
-      }
-    };
-
-    const interval = setInterval(draw, 45);
-    const handleResize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-    window.addEventListener('resize', handleResize);
-    return () => { clearInterval(interval); window.removeEventListener('resize', handleResize); };
-  }, []);
-
-  return <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0, opacity: 0.7 }} />;
-}
-
-function FloatingThreat({ label, value, color, delay, position }) {
-  return (
-    <div style={{
-      position: 'absolute', ...position,
-      background: 'rgba(8,18,24,0.6)', backdropFilter: 'blur(8px)',
-      border: `1px solid ${color}25`, borderRadius: 8,
-      padding: '10px 14px', fontFamily: 'IBM Plex Mono, monospace',
-      animation: `fadeIn 0.6s ease ${delay}s both`,
-      pointerEvents: 'none',
-    }}>
-      <div style={{ fontSize: 8, color: '#2e5570', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 16, color, fontFamily: 'Syne Mono, monospace' }}>{value}</div>
-    </div>
-  );
-}
 
 export default function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [booting, setBooting] = useState(true);
-  const [bootLines, setBootLines] = useState([]);
   const [shake, setShake] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    let i = 0;
-    const timer = setInterval(() => {
-      if (i < BOOT_SEQUENCE.length) {
-        const line = BOOT_SEQUENCE[i];
-        i++;
-        setBootLines(prev => [...prev, line]);
-      } else {
-        clearInterval(timer);
-        setTimeout(() => setBooting(false), 400);
-      }
-    }, 250);
-    return () => clearInterval(timer);
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -115,108 +34,80 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <div className="login-page" style={{ overflow: 'hidden' }}>
-      <MatrixRain />
       <div className="login-bg-grid" />
 
-      <div style={{ position: 'absolute', top: '15%', left: '10%', width: 350, height: 350, background: 'radial-gradient(circle, rgba(0,229,176,0.08) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '15%', right: '10%', width: 400, height: 400, background: 'radial-gradient(circle, rgba(240,50,80,0.05) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 600, height: 600, background: 'radial-gradient(circle, rgba(74,158,255,0.04) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+      <div className="login-box" style={{
+        position: 'relative', zIndex: 10,
+        animation: shake ? 'shake 0.5s ease' : undefined,
+      }}>
+        <div style={{ position: 'absolute', top: -1, left: -1, width: 20, height: 20, borderTop: '2px solid rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,255,255,0.5)', borderRadius: '2px 0 0 0' }} />
+        <div style={{ position: 'absolute', top: -1, right: -1, width: 20, height: 20, borderTop: '2px solid rgba(255,255,255,0.5)', borderRight: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 2px 0 0' }} />
+        <div style={{ position: 'absolute', bottom: -1, left: -1, width: 20, height: 20, borderBottom: '2px solid rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 0 0 2px' }} />
+        <div style={{ position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderBottom: '2px solid rgba(255,255,255,0.5)', borderRight: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 0 2px 0' }} />
 
-      <FloatingThreat label="Active Threats" value="0" color="#f03250" delay={1.5} position={{ top: '18%', left: '12%' }} />
-      <FloatingThreat label="ML Model" value="READY" color="#00e5b0" delay={1.8} position={{ top: '25%', right: '14%' }} />
-      <FloatingThreat label="Events/24h" value="--" color="#4a9eff" delay={2.1} position={{ bottom: '28%', left: '10%' }} />
-      <FloatingThreat label="OSINT Feeds" value="3" color="#a855f7" delay={2.4} position={{ bottom: '22%', right: '12%' }} />
-
-      {booting ? (
-        <div style={{
-          position: 'relative', zIndex: 10, width: '100%', maxWidth: 500,
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#00e5b0',
-          padding: 40, lineHeight: 2.2,
-        }}>
-          {bootLines.map((line, i) => (
-            <div key={i} style={{ animation: `fadeIn 0.2s ease ${i * 0.05}s both`, opacity: 0 }}>
-              <span style={{ color: (line || '').includes('OK') ? '#00e5b0' : (line || '').includes('AUTH') ? '#ffb800' : '#2e5570' }}>
-                {line}
-              </span>
-            </div>
-          ))}
-          <div className="typing-cursor" style={{ display: 'inline-block', marginTop: 8, color: '#2e5570' }}>_</div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 24, lineHeight: 1.4, textAlign: 'center' }}>
+          {'// AUTONOMOUS CYBER DEFENSE SYSTEM'}
         </div>
-      ) : (
-        <div className="login-box page-enter" style={{
-          position: 'relative', zIndex: 10,
-          animation: shake ? 'shake 0.5s ease' : undefined,
-        }}>
-          <div style={{ position: 'absolute', top: -1, left: -1, width: 20, height: 20, borderTop: '2px solid rgba(0,229,176,0.5)', borderLeft: '2px solid rgba(0,229,176,0.5)', borderRadius: '2px 0 0 0' }} />
-          <div style={{ position: 'absolute', top: -1, right: -1, width: 20, height: 20, borderTop: '2px solid rgba(0,229,176,0.5)', borderRight: '2px solid rgba(0,229,176,0.5)', borderRadius: '0 2px 0 0' }} />
-          <div style={{ position: 'absolute', bottom: -1, left: -1, width: 20, height: 20, borderBottom: '2px solid rgba(0,229,176,0.5)', borderLeft: '2px solid rgba(0,229,176,0.5)', borderRadius: '0 0 0 2px' }} />
-          <div style={{ position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderBottom: '2px solid rgba(0,229,176,0.5)', borderRight: '2px solid rgba(0,229,176,0.5)', borderRadius: '0 0 2px 0' }} />
 
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 24, lineHeight: 1.4, textAlign: 'center' }}>
-            {'// AUTONOMOUS CYBER DEFENSE SYSTEM'}
+        <div className="login-header">
+          <div style={{ fontSize: 40, marginBottom: 12, filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.3))' }}>&#128737;</div>
+          <div className="login-title" style={{ fontSize: 28 }}>THREATPULSE</div>
+          <div className="login-subtitle">
+            <span>Security Operations Center</span>
+          </div>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input className="input" type="email" placeholder="operator@example.com" value={email}
+              onChange={e => setEmail(e.target.value)} autoComplete="email" required />
           </div>
 
-          <div className="login-header">
-            <div style={{ fontSize: 40, marginBottom: 12, filter: 'drop-shadow(0 0 12px rgba(0,229,176,0.3))' }}>&#128737;</div>
-            <div className="login-title glitch-text" style={{ fontSize: 28 }}>THREATPULSE</div>
-            <div className="login-subtitle">
-              <span className="typing-cursor">Security Operations Center</span>
-            </div>
+          <div className="form-group">
+            <label className="form-label">Access Key</label>
+            <input className="input" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+              value={password} onChange={e => setPassword(e.target.value)}
+              autoComplete="current-password" required />
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input className="input" type="email" placeholder="operator@example.com" value={email}
-                onChange={e => setEmail(e.target.value)} autoComplete="email" required />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Access Key</label>
-              <input className="input" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
-                value={password} onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password" required />
-            </div>
-
-            {error && (
-              <div className="login-error" style={{
-                animation: 'fadeIn 0.3s ease',
-                display: 'flex', alignItems: 'center', gap: 8,
-              }}>
-                <span style={{ fontSize: 14 }}>&#9888;</span> {error}
-              </div>
-            )}
-
-            <button className="login-btn" type="submit" disabled={loading} style={{
-              position: 'relative', overflow: 'hidden',
+          {error && (
+            <div className="login-error" style={{
+              display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              {loading ? (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                  <span className="spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
-                  AUTHENTICATING...
-                </span>
-              ) : 'AUTHENTICATE \u2192'}
-            </button>
-          </form>
-
-          <div style={{ marginTop: 24, textAlign: 'center' }}>
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--font-mono)', fontSize: 10, color: '#00e5b0',
-                letterSpacing: '0.08em', textDecoration: 'underline',
-                textUnderlineOffset: 3,
-              }}
-            >
-              CREATE NEW ACCOUNT
-            </button>
-            <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--border-bright)', letterSpacing: 2 }}>
-              ALL ACTIVITIES ARE MONITORED AND LOGGED
+              <span style={{ fontSize: 14 }}>&#9888;</span> {error}
             </div>
+          )}
+
+          <button className="login-btn" type="submit" disabled={loading} style={{
+            position: 'relative', overflow: 'hidden',
+          }}>
+            {loading ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <span className="spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
+                AUTHENTICATING...
+              </span>
+            ) : 'AUTHENTICATE \u2192'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <button
+            onClick={() => navigate('/register')}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)', fontSize: 10, color: '#ffffff',
+              letterSpacing: '0.08em', textDecoration: 'underline',
+              textUnderlineOffset: 3,
+            }}
+          >
+            CREATE NEW ACCOUNT
+          </button>
+          <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--border-bright)', letterSpacing: 2 }}>
+            ALL ACTIVITIES ARE MONITORED AND LOGGED
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

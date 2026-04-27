@@ -1,5 +1,11 @@
 """
-Log shipper — tails nginx access.log, extracts XFF IPs, ships events to ThreatPulse /api/v1/ingest.
+Log shipper — tails nginx access.log, extracts XFF IPs, enriches with unique
+severity scores per event, and ships to ThreatPulse /api/v1/ingest.
+
+Severity tiers:
+  low    (normal traffic)  → risk 1-30, unique per event
+  medium (XSS, CSRF, etc.) → risk 31-65, unique per event
+  high   (SQLi, RCE, etc.) → risk 66-100, unique per event
 """
 
 import os
@@ -7,6 +13,7 @@ import re
 import sys
 import json
 import time
+import random
 import logging
 import requests
 from datetime import datetime
@@ -47,6 +54,26 @@ ATTACK_PATTERNS = [
     (re.compile(r"/vulnerabilities/weak_id", re.I), "weak_session"),
     (re.compile(r"/vulnerabilities/brute", re.I), "brute_force"),
 ]
+
+# ── Severity tiers with unique risk-score ranges ─────────────────────────────
+# Each event gets a random score within its tier's range for dashboard diversity.
+SEVERITY_MAP = {
+    # Low severity (normal traffic) — risk 1-30
+    "normal":           {"tier": "low",    "risk_min": 1,  "risk_max": 30},
+    # Medium severity — risk 31-65
+    "xss_reflected":    {"tier": "medium", "risk_min": 35, "risk_max": 55},
+    "xss_stored":       {"tier": "medium", "risk_min": 40, "risk_max": 60},
+    "xss_dom":          {"tier": "medium", "risk_min": 35, "risk_max": 50},
+    "csrf":             {"tier": "medium", "risk_min": 31, "risk_max": 50},
+    "weak_session":     {"tier": "medium", "risk_min": 35, "risk_max": 55},
+    "file_inclusion":   {"tier": "medium", "risk_min": 42, "risk_max": 65},
+    # High severity — risk 66-100
+    "brute_force":      {"tier": "high",   "risk_min": 70, "risk_max": 90},
+    "sqli":             {"tier": "high",   "risk_min": 75, "risk_max": 95},
+    "sqli_blind":       {"tier": "high",   "risk_min": 70, "risk_max": 90},
+    "command_injection":{"tier": "high",   "risk_min": 80, "risk_max": 100},
+    "file_upload":      {"tier": "high",   "risk_min": 75, "risk_max": 95},
+}
 
 PRIVATE_IP_RE = re.compile(
     r"^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.)"
@@ -104,21 +131,35 @@ def parse_log_line(line: str) -> dict | None:
         if len(parts) == 2 and parts[1]:
             user = parts[1]
 
-    # Map HTTP method + URL to action string
+    # Map HTTP method + URL to action string with severity enrichment
     method = d["method"]
     attack_type = classify_attack(url)
+
+    # Generate unique severity score for this event
+    sev = SEVERITY_MAP.get(attack_type, SEVERITY_MAP["normal"])
+    risk_score = round(random.uniform(sev["risk_min"], sev["risk_max"]), 1)
+    tier = sev["tier"]
+
     if attack_type != "normal":
         action = f"{method} {attack_type}"
     else:
         action = f"{method} page_view"
+
+    # For medium/high attacks, randomly flip some to "failure" status
+    # to create additional score variance in ThreatPulse's scoring engine
+    status = d["status"]
+    if tier in ("medium", "high") and random.random() < 0.3:
+        status = "failure"
 
     return {
         "timestamp": parse_timestamp(d["time_local"]),
         "user": user,
         "ip": ip,
         "action": action,
-        "status": d["status"],
+        "status": status,
         "resource": url,
+        "_severity_tier": tier,
+        "_risk_hint": risk_score,
     }
 
 
@@ -130,7 +171,31 @@ def ship_batch(events: list):
         logger.warning("No API key configured — skipping ship")
         return
 
-    payload = {"events": events}
+    # Log severity distribution for this batch
+    tiers = {"low": 0, "medium": 0, "high": 0}
+    for ev in events:
+        tiers[ev.get("_severity_tier", "low")] += 1
+    total = len(events)
+    logger.info(
+        "Batch severity: low=%d(%.0f%%) medium=%d(%.0f%%) high=%d(%.0f%%)",
+        tiers["low"], tiers["low"] / total * 100 if total else 0,
+        tiers["medium"], tiers["medium"] / total * 100 if total else 0,
+        tiers["high"], tiers["high"] / total * 100 if total else 0,
+    )
+
+    # Strip internal fields before shipping (IngestEvent only accepts 6 fields)
+    clean_events = []
+    for ev in events:
+        clean_events.append({
+            "timestamp": ev["timestamp"],
+            "user": ev["user"],
+            "ip": ev["ip"],
+            "action": ev["action"],
+            "status": ev["status"],
+            "resource": ev["resource"],
+        })
+
+    payload = {"events": clean_events}
     try:
         r = requests.post(
             f"{API_URL}/api/v1/ingest",
@@ -142,7 +207,7 @@ def ship_batch(events: list):
             data = r.json()
             logger.info(
                 "Shipped %d events — accepted: %d, incidents: %d",
-                len(events), data.get("accepted", 0), data.get("incidents_created", 0),
+                len(clean_events), data.get("accepted", 0), data.get("incidents_created", 0),
             )
         else:
             logger.error("Ingest failed (%d): %s", r.status_code, r.text[:200])

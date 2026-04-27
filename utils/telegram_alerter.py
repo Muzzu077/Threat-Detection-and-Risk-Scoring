@@ -30,12 +30,16 @@ TELEGRAM_API_BASE = "https://api.telegram.org/bot"
 
 
 def _creds():
-    """Return (token, chat_id, api_url) fresh from .env on every call."""
+    """Return (token, chat_id, api_url, proxies) fresh from .env on every call."""
     load_dotenv(_ENV_PATH, override=True)
     token   = os.getenv("TELEGRAM_BOT_TOKEN", "")
     chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
-    api_url = f"{TELEGRAM_API_BASE}{token}"
-    return token, chat_id, api_url
+    api_base = os.getenv("TELEGRAM_API_URL", "https://api.telegram.org/bot")
+    api_url = f"{api_base}{token}"
+    # Optional proxy for networks that block api.telegram.org
+    proxy = os.getenv("TELEGRAM_PROXY", "") or os.getenv("HTTPS_PROXY", "")
+    proxies = {"https": proxy, "http": proxy} if proxy else None
+    return token, chat_id, api_url, proxies
 
 
 # ── Severity emoji mapping ─────────────────────────────────────────────────────
@@ -81,7 +85,7 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
     Send a formatted critical alert to Telegram with inline action buttons.
     Reads BOT_TOKEN and CHAT_ID from .env at call time.
     """
-    token, chat_id, api_url = _creds()
+    token, chat_id, api_url, proxies = _creds()
 
     if not token or not chat_id:
         print(f"⚠️  Telegram: BOT_TOKEN={bool(token)} CHAT_ID={bool(chat_id)} — skipping alert.")
@@ -150,30 +154,39 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
     }
 
     import time
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
     for attempt in range(3):
         try:
-            resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=15)
+            # Use a fresh session per attempt to avoid stale connection reuse
+            # (fixes Windows ConnectionResetError 10054 on idle keep-alive)
+            session = requests.Session()
+            retry_strategy = Retry(total=0)  # no urllib3 retries, we handle them
+            adapter = HTTPAdapter(max_retries=retry_strategy)
+            session.mount("https://", adapter)
+
+            resp = session.post(f"{api_url}/sendMessage", json=payload, timeout=15, proxies=proxies)
+            session.close()
+
             if resp.status_code == 200:
                 print(f"✅ Telegram Alert sent! INC-{inc_id_str} → chat {chat_id}")
                 return True
             else:
                 print(f"❌ Telegram send failed (Attempt {attempt+1}/3): {resp.status_code} — {resp.text[:200]}")
-                if resp.status_code < 500:  # 4xx errors (like 400 Bad Request) are invalid payloads; don't retry
+                if resp.status_code < 500:  # 4xx errors are invalid payloads; don't retry
                     return False
         except Exception as e:
             print(f"⚠️ Telegram send attempt {attempt+1}/3 failed: {e}")
-            if attempt < 2:
-                time.sleep(3)  # Wait with backoff before retrying
-                continue
-            else:
-                print(f"❌ Telegram send ultimately failed after 3 attempts.")
-                return False
+        if attempt < 2:
+            time.sleep(2 * (attempt + 1))  # Exponential backoff: 2s, 4s
+    print(f"❌ Telegram send ultimately failed after 3 attempts.")
     return False
 
 
 def send_system_status(message: str) -> bool:
     """Send a plain system info message to Telegram."""
-    token, chat_id, api_url = _creds()
+    token, chat_id, api_url, proxies = _creds()
     if not token or not chat_id:
         return False
     payload = {
@@ -184,19 +197,21 @@ def send_system_status(message: str) -> bool:
     import time
     for attempt in range(3):
         try:
-            resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=15)
+            session = requests.Session()
+            resp = session.post(f"{api_url}/sendMessage", json=payload, timeout=15, proxies=proxies)
+            session.close()
             if resp.status_code == 200:
                 return True
         except Exception:
-            if attempt < 2:
-                time.sleep(3)
-                continue
+            pass
+        if attempt < 2:
+            time.sleep(2 * (attempt + 1))
     return False
 
 
 def send_daily_summary(stats: dict) -> bool:
     """Send a daily threat summary to Telegram."""
-    token, chat_id, api_url = _creds()
+    token, chat_id, api_url, proxies = _creds()
     if not token or not chat_id:
         return False
 
@@ -219,26 +234,29 @@ def send_daily_summary(stats: dict) -> bool:
     import time
     for attempt in range(3):
         try:
-            resp = requests.post(f"{api_url}/sendMessage", json=payload, timeout=15)
+            session = requests.Session()
+            resp = session.post(f"{api_url}/sendMessage", json=payload, timeout=15, proxies=proxies)
+            session.close()
             if resp.status_code == 200:
                 print("✅ Telegram daily summary sent!")
                 return True
         except Exception as e:
-            if attempt < 2:
-                time.sleep(3)
-                continue
-            else:
+            if attempt == 2:
                 print(f"❌ Telegram summary failed after 3 attempts: {e}")
+        if attempt < 2:
+            time.sleep(2 * (attempt + 1))
     return False
 
 
 def get_bot_info() -> dict:
     """Fetch bot info to verify the token is valid."""
-    token, _, api_url = _creds()
+    token, _, api_url, proxies = _creds()
     if not token:
         return {}
     try:
-        resp = requests.get(f"{api_url}/getMe", timeout=10)
+        session = requests.Session()
+        resp = session.get(f"{api_url}/getMe", timeout=10, proxies=proxies)
+        session.close()
         if resp.status_code == 200:
             return resp.json().get("result", {})
     except Exception:
@@ -248,12 +266,12 @@ def get_bot_info() -> dict:
 
 def register_webhook_receiver(webhook_url: str) -> bool:
     """Register a webhook so Telegram sends callbacks to ThreatPulse API."""
-    token, _, api_url = _creds()
+    token, _, api_url, proxies = _creds()
     if not token:
         return False
     payload = {"url": webhook_url}
     try:
-        resp = requests.post(f"{api_url}/setWebhook", json=payload, timeout=10)
+        resp = requests.post(f"{api_url}/setWebhook", json=payload, timeout=10, proxies=proxies)
         result = resp.status_code == 200
         print(f"{'✅' if result else '❌'} Telegram webhook: {webhook_url} → {resp.json()}")
         return result

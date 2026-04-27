@@ -7,13 +7,13 @@ export function getSeverity(score) {
 
 export function getSeverityColor(severity) {
   const map = {
-    critical: '#ff2d2d',
-    high: '#ff8c00',
-    medium: '#ffb800',
-    low: '#00ffc8',
-    normal: '#4a9eff',
+    critical: '#e53e3e',
+    high: '#ed8936',
+    medium: '#e6a817',
+    low: '#48bb78',
+    normal: '#63b3ed',
   };
-  return map[severity] || '#7da5be';
+  return map[severity] || '#a0a0a0';
 }
 
 export function formatTime(ts) {

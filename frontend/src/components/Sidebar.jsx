@@ -37,12 +37,12 @@ export default function Sidebar() {
       </div>
 
       {/* Live Clock */}
-      <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(0,255,200,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="live-badge" style={{ padding: 0, border: 'none' }}>
           <div className="live-dot" />
           SYSTEM ONLINE
         </div>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#00e5b0', letterSpacing: 1 }}>
+        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#ffffff', letterSpacing: 1 }}>
           {timeStr}
         </div>
       </div>
@@ -64,10 +64,10 @@ export default function Sidebar() {
                 <span className="nav-icon" style={{ fontSize: 14 }}>{item.icon}</span>
                 <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>{item.label}</span>
                 {isActive && (
-                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 6px #00e5b0' }} />
+                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #ffffff' }} />
                 )}
               </div>
-              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(0,255,200,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
+              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
                 {item.sub}
               </div>
             </div>
@@ -88,10 +88,10 @@ export default function Sidebar() {
                 <span className="nav-icon" style={{ fontSize: 14 }}>{item.icon}</span>
                 <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>{item.label}</span>
                 {isActive && (
-                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#00e5b0', boxShadow: '0 0 6px #00e5b0' }} />
+                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #ffffff' }} />
                 )}
               </div>
-              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(0,255,200,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
+              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
                 {item.sub}
               </div>
             </div>
@@ -100,10 +100,10 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(0,255,200,0.06)' }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#2e5570', letterSpacing: '0.12em', lineHeight: 1.8 }}>
+      <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: '0.12em', lineHeight: 1.8 }}>
           AUTONOMOUS AI DEFENSE<br />
-          <span style={{ color: 'rgba(0,255,200,0.35)' }}>// THREAT DETECTION ACTIVE</span><br />
+          <span style={{ color: 'rgba(255,255,255,0.35)' }}>// THREAT DETECTION ACTIVE</span><br />
           <span style={{ color: '#1a3a50' }}>// v3.0.0-enterprise</span>
         </div>
       </div>
