@@ -90,7 +90,7 @@ Think of it like a **smart CCTV system**, but for computer networks:
 | **Attack Graph** | NetworkX + D3.js | Kill chain visualization with zoom/pan |
 | **MITRE ATT&CK** | 15+ technique mappings | Full tactic/technique/sub-technique with mitigations |
 | **SHAP Explainability** | SHAP TreeExplainer | Feature importance visualization per prediction |
-| **AI Summaries** | Google Gemini (via OpenRouter) | SOC-grade incident analysis with recommendations |
+| **AI Summaries** | SambaNova AI (Meta-Llama-3.3-70B) | SOC-grade incident analysis with recommendations |
 | **Real-Time Feed** | WebSockets | New events pushed live to dashboard |
 | **Multi-Tenant SaaS** | JWT + API Keys | User registration, data isolation, admin roles |
 | **SDK Integration** | Node.js + Python | Zero-config middleware for customer web servers |
