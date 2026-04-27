@@ -496,7 +496,7 @@ def generate_labeled_dataset(n_samples: int = 10000) -> pd.DataFrame:
 
 def main():
     print("=" * 60)
-    print("  ThreatPulse ML Engine — Training Script")
+    print("  TrustFlow ML Engine — Training Script")
     print("=" * 60)
 
     os.makedirs("data", exist_ok=True)

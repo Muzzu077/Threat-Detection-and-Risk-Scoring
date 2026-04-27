@@ -206,7 +206,7 @@ def start_ingestion_service():
     print("🧠 Loading TensorFlow Autoencoder Model...")
     tf_model, tf_encoders = load_tf_model()
     if tf_model is None:
-        print("⚠️ No TF model. Run 'python utils/generate_data.py' first.")
+        print("⚠️ No TF model. Run 'python utils/train_ml_engine.py' first.")
         return
 
     print("🤖 Loading ML Classification Engine...")

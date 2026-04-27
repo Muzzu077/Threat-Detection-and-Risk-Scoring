@@ -1,7 +1,7 @@
 {
-  "name": "threatpulse-sdk",
+  "name": "trustflow-sdk",
   "version": "1.0.0",
-  "description": "ThreatPulse SDK for Node.js — ship HTTP logs to your ThreatPulse threat detection dashboard. Zero dependencies.",
+  "description": "TrustFlow SDK for Node.js — ship HTTP logs to your TrustFlow threat detection dashboard. Zero dependencies.",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js",
@@ -12,7 +12,7 @@
     "README.md"
   ],
   "keywords": [
-    "threatpulse",
+    "trustflow",
     "security",
     "threat-detection",
     "logging",

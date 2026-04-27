@@ -1,5 +1,5 @@
 """
-Shared fixtures for ThreatPulse test suite.
+Shared fixtures for TrustFlow test suite.
 Uses an isolated in-memory SQLite database for every test.
 """
 import os

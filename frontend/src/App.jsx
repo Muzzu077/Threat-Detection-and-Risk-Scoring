@@ -64,7 +64,7 @@ function App() {
         background: 'var(--bg-dark)', color: '#ffffff',
         fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
       }}>
-        INITIALIZING THREATPULSE...
+        INITIALIZING TRUSTFLOW...
       </div>
     );
   }

@@ -1,5 +1,5 @@
 """
-ThreatPulse — Extended Threat Intelligence
+TrustFlow — Extended Threat Intelligence
 Adds AlienVault OTX and VirusTotal to the existing AbuseIPDB module.
 
 Priority of checks:

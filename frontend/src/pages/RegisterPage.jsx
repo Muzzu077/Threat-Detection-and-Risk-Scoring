@@ -72,7 +72,7 @@ export default function RegisterPage({ onRegister }) {
 
         <div className="login-header">
           <div style={{ fontSize: 40, marginBottom: 12, filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.3))' }}>&#128737;</div>
-          <div className="login-title" style={{ fontSize: 28 }}>THREATPULSE</div>
+          <div className="login-title" style={{ fontSize: 28 }}>TRUSTFLOW</div>
           <div className="login-subtitle">
             <span>New Operator Registration</span>
           </div>
@@ -81,7 +81,7 @@ export default function RegisterPage({ onRegister }) {
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">EMAIL</label>
-            <input className="input" type="email" placeholder="operator@threatpulse.io"
+            <input className="input" type="email" placeholder="operator@trustflow.io"
               value={email} onChange={e => setEmail(e.target.value)}
               autoComplete="email" required />
           </div>

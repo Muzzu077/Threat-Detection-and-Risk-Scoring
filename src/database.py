@@ -128,22 +128,22 @@ class AttackChain(Base):
 class Database:
     def __init__(self):
         db_url = os.getenv("DATABASE_URL")
-        if db_url:
-            self.engine = create_engine(db_url, echo=False)
-            print(f"Connected to PostgreSQL database.")
-        else:
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-            db_path = os.path.join(project_root, 'security_events.db')
-            self.engine = create_engine(f'sqlite:///{db_path}', echo=False)
-
+        if not db_url:
+            raise RuntimeError(
+                "DATABASE_URL is not set. TrustFlow requires PostgreSQL — "
+                "set DATABASE_URL=postgresql://user:pass@host:5432/dbname"
+            )
+        if not db_url.startswith(("postgresql://", "postgresql+psycopg2://")):
+            raise RuntimeError(
+                f"DATABASE_URL must point to PostgreSQL (got: {db_url.split('://')[0]}://...). "
+                "SQLite is no longer supported."
+            )
+        self.engine = create_engine(db_url, echo=False, pool_pre_ping=True)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-
-        # Migrate existing tables — add tenant_id if missing
         self._migrate_tenant_columns()
 
     def _migrate_tenant_columns(self):
-        """Add tenant_id column to existing tables if missing (SQLite compat)."""
         from sqlalchemy import text, inspect
         inspector = inspect(self.engine)
         migrations = [
@@ -159,7 +159,6 @@ class Database:
                         try:
                             conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
                             conn.commit()
-                            print(f"  Migrated: {table}.{column}")
                         except Exception:
                             pass
 
@@ -490,5 +489,21 @@ class Database:
             session.close()
 
 
-# Singleton
-db = Database()
+# Lazy singleton — defers DATABASE_URL check until first access so importing
+# this module (e.g. in tests that patch `db`) doesn't require a live database.
+_db_instance = None
+
+
+def _get_db() -> "Database":
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = Database()
+    return _db_instance
+
+
+class _DBProxy:
+    def __getattr__(self, name):
+        return getattr(_get_db(), name)
+
+
+db = _DBProxy()

@@ -1,5 +1,5 @@
 """
-ThreatPulse FastAPI Backend
+TrustFlow FastAPI Backend
 REST + WebSocket API for the React frontend dashboard.
 Multi-tenant SaaS with JWT auth and API key support.
 """
@@ -132,7 +132,7 @@ async def lifespan(app: FastAPI):
 # ─── App Setup ────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="ThreatPulse API",
+    title="TrustFlow API",
     description="AI-Powered Threat Detection and Risk Scoring Platform",
     version="3.0.0",
     lifespan=lifespan
@@ -471,7 +471,7 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
     is_failure = status == "failure"
 
     # ── Action-based classification (shipper embeds attack type in action field) ──
-    # Action format from DVWA shipper: "GET sql_injection", "POST xss_stored", etc.
+    # Action format example: "GET sql_injection", "POST xss_stored", etc.
     _ACTION_ATTACK_MAP = {
         "sql_injection": "sql_injection", "sqli": "sql_injection", "sqli_blind": "sql_injection",
         "xss_reflected": "xss", "xss_stored": "xss", "xss_dom": "xss",
@@ -706,7 +706,7 @@ def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
 
 @app.get("/")
 def root():
-    return {"status": "online", "service": "ThreatPulse API v3.0"}
+    return {"status": "online", "service": "TrustFlow API v3.0"}
 
 @app.get("/health")
 def health():
@@ -1253,7 +1253,7 @@ def telegram_status(current_user: User = Depends(get_current_user)):
 @app.post("/api/telegram/test")
 def telegram_test_message(current_user: User = Depends(get_current_user)):
     ok = send_system_status(
-        "ThreatPulse Telegram integration is working!\n\nThis is a test message from your SOC platform."
+        "TrustFlow Telegram integration is working!\n\nThis is a test message from your SOC platform."
     )
     return {"sent": ok}
 

@@ -1,46 +1,42 @@
-version: '3.9'
-
-# ─── ThreatPulse Enterprise Stack ───────────────────────────────────────────
+# ─── TrustFlow Production Stack ─────────────────────────────────────────────
 # Services:
-#   1. postgres  — PostgreSQL database
-#   2. redis     — Cache layer (for threat intel TTL caching)
+#   1. postgres  — PostgreSQL database (sole source of truth)
+#   2. redis     — Cache layer
 #   3. api       — FastAPI backend (REST + WebSocket)
 #   4. ingestion — Log ingestion + ML processing service
-#   5. simulator — Realistic attack traffic generator
-#   6. frontend  — React/Vite production build (served via nginx)
+#   5. frontend  — React/Vite production build (served via nginx)
 #
 # Usage:
-#   docker compose up -d           # Start all services
-#   docker compose up -d api ingestion postgres redis  # Backend only
-#   docker compose logs -f api     # Follow API logs
-#   docker compose down -v         # Stop + remove volumes
+#   docker compose up -d                 # Start full stack
+#   docker compose logs -f api           # Follow API logs
+#   docker compose down                  # Stop (keeps data)
+#   docker compose down -v               # Stop + drop database
+#   docker compose exec api python -m src.bootstrap_admin --email you@x.com
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
 
-  # ── PostgreSQL Database ──────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    container_name: threatpulse-postgres
+    container_name: trustflow-postgres
     environment:
-      POSTGRES_DB:       threatpulse
-      POSTGRES_USER:     ${POSTGRES_USER:-threatpulse}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-threatpulse_secret}
+      POSTGRES_DB:       ${POSTGRES_DB:-trustflow}
+      POSTGRES_USER:     ${POSTGRES_USER:-trustflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-threatpulse}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trustflow}"]
       interval: 5s
       timeout: 5s
       retries: 10
     restart: unless-stopped
 
-  # ── Redis Cache ──────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: threatpulse-redis
+    container_name: trustflow-redis
     ports:
       - "6379:6379"
     volumes:
@@ -53,15 +49,15 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ── FastAPI Backend ──────────────────────────────────────────────────────────
   api:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: threatpulse-api
+    container_name: trustflow-api
     environment:
-      DATABASE_URL:       postgresql://${POSTGRES_USER:-threatpulse}:${POSTGRES_PASSWORD:-threatpulse_secret}@postgres:5432/threatpulse
+      DATABASE_URL:       postgresql://${POSTGRES_USER:-trustflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-trustflow}
       REDIS_URL:          redis://redis:6379/0
+      JWT_SECRET_KEY:     ${JWT_SECRET_KEY:?JWT_SECRET_KEY must be set in .env}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ABUSEIPDB_API_KEY:  ${ABUSEIPDB_API_KEY:-}
       OTX_API_KEY:        ${OTX_API_KEY:-}
@@ -72,7 +68,7 @@ services:
       TWILIO_AUTH_TOKEN:  ${TWILIO_AUTH_TOKEN:-}
       TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM:-whatsapp:+14155238886}
       TO_WHATSAPP:        ${TO_WHATSAPP:-}
-      ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-true}
+      ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-false}
       ENABLE_WHATSAPP:    ${ENABLE_WHATSAPP:-false}
     ports:
       - "8000:8000"
@@ -93,14 +89,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Log Ingestion Service ────────────────────────────────────────────────────
   ingestion:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: threatpulse-ingestion
+    container_name: trustflow-ingestion
     environment:
-      DATABASE_URL:       postgresql://${POSTGRES_USER:-threatpulse}:${POSTGRES_PASSWORD:-threatpulse_secret}@postgres:5432/threatpulse
+      DATABASE_URL:       postgresql://${POSTGRES_USER:-trustflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-trustflow}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       ABUSEIPDB_API_KEY:  ${ABUSEIPDB_API_KEY:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
@@ -108,7 +103,7 @@ services:
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN:  ${TWILIO_AUTH_TOKEN:-}
       TO_WHATSAPP:        ${TO_WHATSAPP:-}
-      ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-true}
+      ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-false}
       ENABLE_WHATSAPP:    ${ENABLE_WHATSAPP:-false}
     depends_on:
       postgres:
@@ -120,32 +115,13 @@ services:
     command: python -m src.ingestion_service
     restart: unless-stopped
 
-  # ── Traffic Simulator ────────────────────────────────────────────────────────
-  simulator:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: threatpulse-simulator
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-threatpulse}:${POSTGRES_PASSWORD:-threatpulse_secret}@postgres:5432/threatpulse
-    depends_on:
-      ingestion:
-        condition: service_started
-    volumes:
-      - ./logs_ingest:/app/logs_ingest
-    command: python utils/simulate_live_traffic.py
-    restart: unless-stopped
-    profiles:
-      - demo  # Only starts with: docker compose --profile demo up
-
-  # ── React Frontend ───────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.frontend
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
-    container_name: threatpulse-frontend
+    container_name: trustflow-frontend
     ports:
       - "80:80"
       - "443:443"
@@ -155,15 +131,13 @@ services:
     restart: unless-stopped
 
 
-# ── Volumes ───────────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
 
-# ── Networks ──────────────────────────────────────────────────────────────────
 networks:
   default:
-    name: threatpulse-net
+    name: trustflow-net
     driver: bridge

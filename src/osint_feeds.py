@@ -1,5 +1,5 @@
 """
-ThreatPulse — OSINT Threat Feed Integration
+TrustFlow — OSINT Threat Feed Integration
 Integrates open-source threat intelligence feeds:
 - abuse.ch URLhaus (malicious URLs)
 - Tor Exit Node list
@@ -71,7 +71,7 @@ def fetch_urlhaus_recent() -> list:
         resp = requests.get(
             "https://urlhaus.abuse.ch/downloads/csv_recent/",
             timeout=15,
-            headers={"User-Agent": "ThreatPulse/1.0"}
+            headers={"User-Agent": "TrustFlow/1.0"}
         )
         if resp.status_code == 200:
             for line in resp.text.splitlines()[:60]:

@@ -1,8 +1,8 @@
-# ThreatPulse Backend Dockerfile
+# TrustFlow Backend Dockerfile
 FROM python:3.11-slim
 
-LABEL maintainer="ThreatPulse"
-LABEL description="ThreatPulse FastAPI Backend + ML Engine"
+LABEL maintainer="TrustFlow"
+LABEL description="TrustFlow FastAPI Backend + ML Engine"
 
 WORKDIR /app
 
@@ -15,7 +15,8 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir --retries 10 --timeout 180 -r requirements.txt
 
 # Copy project
 COPY . .

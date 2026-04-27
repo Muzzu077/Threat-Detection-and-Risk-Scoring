@@ -262,7 +262,7 @@ export default function MLMetricsPage() {
           </div>
 
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.8, padding: '0 0 14px', borderBottom: '1px solid var(--border-dim)' }}>
-            <span style={{ color: '#63b3ed', fontWeight: 600 }}>Live data:</span> This matrix updates in real-time from actual events flowing through ThreatPulse. The training matrix above is static from model evaluation — this one reflects what's happening <strong>right now</strong>.
+            <span style={{ color: '#63b3ed', fontWeight: 600 }}>Live data:</span> This matrix updates in real-time from actual events flowing through TrustFlow. The training matrix above is static from model evaluation — this one reflects what's happening <strong>right now</strong>.
           </div>
 
           {/* Summary KPIs */}

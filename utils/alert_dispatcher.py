@@ -1,5 +1,5 @@
 """
-ThreatPulse — Multi-Channel Alert Dispatcher
+TrustFlow — Multi-Channel Alert Dispatcher
 Modular alerting system: WhatsApp, Telegram, Email, Slack, Webhook.
 Add channels by implementing the channel functions and enabling via .env.
 
@@ -71,10 +71,10 @@ def _send_email(event: dict, incident_id: int, response_actions: str = '') -> bo
         email_from = os.getenv("EMAIL_FROM", "") or smtp_user
         risk = float(event.get('risk_score', 0))
         severity = _get_severity(risk)
-        subject = f"[{severity}] ThreatPulse Alert — INC-{str(incident_id).zfill(4)}"
+        subject = f"[{severity}] TrustFlow Alert — INC-{str(incident_id).zfill(4)}"
         html_body = f"""
         <html><body style="font-family: monospace; background: #030609; color: #00e5b0; padding: 24px;">
-        <h2 style="color: #f03250;">🚨 ThreatPulse Security Alert</h2>
+        <h2 style="color: #f03250;">🚨 TrustFlow Security Alert</h2>
         <table style="border-collapse: collapse; width: 100%;">
             <tr><td style="padding: 6px; color: #2e5570;">Severity</td><td style="color: {'#f03250' if severity == 'CRITICAL' else '#ffb800'}">{severity}</td></tr>
             <tr><td style="padding: 6px; color: #2e5570;">Threat Type</td><td>{event.get('attack_type', 'unknown').replace('_',' ').title()}</td></tr>
@@ -84,7 +84,7 @@ def _send_email(event: dict, incident_id: int, response_actions: str = '') -> bo
             <tr><td style="padding: 6px; color: #2e5570;">Incident ID</td><td>INC-{str(incident_id).zfill(4)}</td></tr>
         </table>
         <p style="margin-top: 16px; color: #6e9ab5;">{event.get('explanation', '')}</p>
-        <p style="color: #2e5570;">ThreatPulse • {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}</p>
+        <p style="color: #2e5570;">TrustFlow • {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}</p>
         </body></html>
         """
         msg = MIMEMultipart('alternative')
@@ -116,7 +116,7 @@ def _send_slack(event: dict, incident_id: int, response_actions: str = '') -> bo
         payload = {
             "attachments": [{
                 "color": color,
-                "title": f"🚨 ThreatPulse Alert — INC-{str(incident_id).zfill(4)}",
+                "title": f"🚨 TrustFlow Alert — INC-{str(incident_id).zfill(4)}",
                 "fields": [
                     {"title": "Severity",    "value": severity,                                                   "short": True},
                     {"title": "Threat Type", "value": event.get('attack_type', 'unknown').replace('_',' ').title(), "short": True},
@@ -125,7 +125,7 @@ def _send_slack(event: dict, incident_id: int, response_actions: str = '') -> bo
                     {"title": "Risk Score",  "value": f"{risk:.0f}/100",                                          "short": True},
                 ],
                 "text":   event.get('explanation', '')[:300],
-                "footer": f"ThreatPulse • {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
+                "footer": f"TrustFlow • {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
             }]
         }
         resp = requests.post(slack_url, json=payload, timeout=10)

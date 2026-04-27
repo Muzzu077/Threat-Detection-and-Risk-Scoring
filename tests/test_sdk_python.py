@@ -1,5 +1,5 @@
 """
-Tests for sdk/python/threatpulse — client and middleware.
+Tests for sdk/python/trustflow — client and middleware.
 """
 import pytest
 import json
@@ -9,12 +9,12 @@ from unittest.mock import patch, MagicMock
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 
-class TestThreatPulseClient:
+class TestTrustFlowClient:
     def test_init_defaults(self):
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(api_key="tp_live_test", flush_interval=9999)
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(api_key="tf_live_test", flush_interval=9999)
         try:
-            assert tp.api_key == "tp_live_test"
+            assert tp.api_key == "tf_live_test"
             assert tp.endpoint == "http://localhost:8000"
             assert tp.batch_size == 25
             assert tp._queue == []
@@ -22,19 +22,19 @@ class TestThreatPulseClient:
             tp.shutdown()
 
     def test_init_from_env(self, monkeypatch):
-        monkeypatch.setenv("THREATPULSE_API_KEY", "tp_live_env_key")
-        monkeypatch.setenv("THREATPULSE_ENDPOINT", "http://custom:9000")
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(flush_interval=9999)
+        monkeypatch.setenv("TRUSTFLOW_API_KEY", "tf_live_env_key")
+        monkeypatch.setenv("TRUSTFLOW_ENDPOINT", "http://custom:9000")
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(flush_interval=9999)
         try:
-            assert tp.api_key == "tp_live_env_key"
+            assert tp.api_key == "tf_live_env_key"
             assert tp.endpoint == "http://custom:9000"
         finally:
             tp.shutdown()
 
     def test_track_adds_to_queue(self):
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(api_key="k", flush_interval=9999, batch_size=100)
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(api_key="k", flush_interval=9999, batch_size=100)
         try:
             tp.track({"user": "alice", "action": "login"})
             assert len(tp._queue) == 1
@@ -43,8 +43,8 @@ class TestThreatPulseClient:
             tp.shutdown()
 
     def test_track_auto_flush_at_batch_size(self):
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(api_key="k", flush_interval=9999, batch_size=3)
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(api_key="k", flush_interval=9999, batch_size=3)
         flush_called = []
         original_flush = tp.flush
         def mock_flush():
@@ -63,16 +63,16 @@ class TestThreatPulseClient:
             tp.shutdown()
 
     def test_flush_empty_queue_noop(self):
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(api_key="k", flush_interval=9999)
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(api_key="k", flush_interval=9999)
         try:
             tp.flush()  # should not raise
         finally:
             tp.shutdown()
 
     def test_flush_requeues_on_failure(self):
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(
             api_key="k",
             endpoint="http://127.0.0.1:1",  # non-routable port
             flush_interval=9999,
@@ -87,14 +87,14 @@ class TestThreatPulseClient:
             tp.shutdown()
 
     def test_shutdown_stops_timer(self):
-        from sdk.python.threatpulse.client import ThreatPulse
-        tp = ThreatPulse(api_key="k", flush_interval=9999)
+        from sdk.python.trustflow.client import TrustFlow
+        tp = TrustFlow(api_key="k", flush_interval=9999)
         tp.shutdown()
         assert tp._running is False
 
     def test_flush_posts_correct_format(self):
         """Test that flush sends correct JSON structure to the right URL."""
-        from sdk.python.threatpulse.client import ThreatPulse
+        from sdk.python.trustflow.client import TrustFlow
 
         captured = {}
 
@@ -109,36 +109,36 @@ class TestThreatPulseClient:
             mock_resp.__exit__ = MagicMock(return_value=False)
             return mock_resp
 
-        tp = ThreatPulse(api_key="tp_live_abc", endpoint="http://example.com", flush_interval=9999)
+        tp = TrustFlow(api_key="tf_live_abc", endpoint="http://example.com", flush_interval=9999)
         try:
             tp.track({"timestamp": "2024-01-01T00:00:00Z", "user": "test"})
-            with patch("sdk.python.threatpulse.client.urllib.request.urlopen", mock_urlopen):
+            with patch("sdk.python.trustflow.client.urllib.request.urlopen", mock_urlopen):
                 tp.flush()
 
             assert captured["url"] == "http://example.com/api/v1/ingest"
             assert captured["method"] == "POST"
             assert "events" in captured["data"]
             assert len(captured["data"]["events"]) == 1
-            assert captured["headers"]["X-api-key"] == "tp_live_abc"
+            assert captured["headers"]["X-api-key"] == "tf_live_abc"
         finally:
             tp.shutdown()
 
 
-class TestThreatPulseMiddleware:
+class TestTrustFlowMiddleware:
     def test_middleware_wraps_app(self):
-        from sdk.python.threatpulse.middleware import ThreatPulseMiddleware
+        from sdk.python.trustflow.middleware import TrustFlowMiddleware
 
         def dummy_app(environ, start_response):
             start_response("200 OK", [("Content-Type", "text/plain")])
             return [b"Hello"]
 
-        mw = ThreatPulseMiddleware(dummy_app, api_key="k")
+        mw = TrustFlowMiddleware(dummy_app, api_key="k")
         # Shutdown the timer to avoid background threads
         mw.tp.shutdown()
         assert mw.app is dummy_app
 
     def test_middleware_tracks_request(self):
-        from sdk.python.threatpulse.middleware import ThreatPulseMiddleware
+        from sdk.python.trustflow.middleware import TrustFlowMiddleware
 
         tracked_events = []
 
@@ -146,7 +146,7 @@ class TestThreatPulseMiddleware:
             start_response("200 OK", [("Content-Type", "text/plain")])
             return [b"OK"]
 
-        mw = ThreatPulseMiddleware(dummy_app, api_key="k")
+        mw = TrustFlowMiddleware(dummy_app, api_key="k")
         original_track = mw.tp.track
         def capture_track(event):
             tracked_events.append(event)
@@ -175,7 +175,7 @@ class TestThreatPulseMiddleware:
         mw.tp.shutdown()
 
     def test_middleware_captures_failure_status(self):
-        from sdk.python.threatpulse.middleware import ThreatPulseMiddleware
+        from sdk.python.trustflow.middleware import TrustFlowMiddleware
 
         tracked_events = []
 
@@ -183,7 +183,7 @@ class TestThreatPulseMiddleware:
             start_response("500 Internal Server Error", [])
             return [b"Error"]
 
-        mw = ThreatPulseMiddleware(error_app, api_key="k")
+        mw = TrustFlowMiddleware(error_app, api_key="k")
         mw.tp.track = lambda e: tracked_events.append(e)
 
         environ = {
@@ -198,7 +198,7 @@ class TestThreatPulseMiddleware:
         mw.tp.shutdown()
 
     def test_middleware_x_forwarded_for(self):
-        from sdk.python.threatpulse.middleware import ThreatPulseMiddleware
+        from sdk.python.trustflow.middleware import TrustFlowMiddleware
 
         tracked_events = []
 
@@ -206,7 +206,7 @@ class TestThreatPulseMiddleware:
             start_response("200 OK", [])
             return [b""]
 
-        mw = ThreatPulseMiddleware(app, api_key="k")
+        mw = TrustFlowMiddleware(app, api_key="k")
         mw.tp.track = lambda e: tracked_events.append(e)
 
         environ = {
@@ -222,7 +222,7 @@ class TestThreatPulseMiddleware:
         mw.tp.shutdown()
 
     def test_middleware_with_query_string(self):
-        from sdk.python.threatpulse.middleware import ThreatPulseMiddleware
+        from sdk.python.trustflow.middleware import TrustFlowMiddleware
 
         tracked_events = []
 
@@ -230,7 +230,7 @@ class TestThreatPulseMiddleware:
             start_response("200 OK", [])
             return [b""]
 
-        mw = ThreatPulseMiddleware(app, api_key="k")
+        mw = TrustFlowMiddleware(app, api_key="k")
         mw.tp.track = lambda e: tracked_events.append(e)
 
         environ = {

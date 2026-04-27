@@ -1,5 +1,5 @@
 """
-ThreatPulse — Real-World Log Parsers
+TrustFlow — Real-World Log Parsers
 Parse actual security logs from Linux, Apache, Nginx, Windows.
 
 Supported formats:

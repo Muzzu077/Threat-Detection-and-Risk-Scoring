@@ -1,21 +1,21 @@
-# threatpulse-sdk
+# trustflow-sdk
 
-ThreatPulse SDK for Node.js — ship HTTP logs to your ThreatPulse threat detection dashboard with zero dependencies.
+TrustFlow SDK for Node.js — ship HTTP logs to your TrustFlow threat detection dashboard with zero dependencies.
 
 ## Installation
 
 ```bash
-npm install threatpulse-sdk
+npm install trustflow-sdk
 ```
 
 ## Quick Start
 
 ```js
-const { ThreatPulse } = require('threatpulse-sdk');
+const { TrustFlow } = require('trustflow-sdk');
 
-const tp = new ThreatPulse({
-  apiKey: process.env.THREATPULSE_API_KEY,
-  endpoint: 'https://your-threatpulse-instance.com',
+const tp = new TrustFlow({
+  apiKey: process.env.TRUSTFLOW_API_KEY,
+  endpoint: 'https://your-trustflow-instance.com',
 });
 
 // Track an event manually
@@ -38,13 +38,13 @@ Automatically capture every HTTP request/response:
 
 ```js
 const express = require('express');
-const { threatPulseMiddleware } = require('threatpulse-sdk/express');
+const { trustFlowMiddleware } = require('trustflow-sdk/express');
 
 const app = express();
 
-app.use(threatPulseMiddleware({
-  apiKey: process.env.THREATPULSE_API_KEY,
-  endpoint: 'https://your-threatpulse-instance.com',
+app.use(trustFlowMiddleware({
+  apiKey: process.env.TRUSTFLOW_API_KEY,
+  endpoint: 'https://your-trustflow-instance.com',
 }));
 
 app.get('/', (req, res) => res.send('OK'));
@@ -71,14 +71,14 @@ The middleware automatically captures:
 
 | Option | Env Variable | Default | Description |
 |---|---|---|---|
-| `apiKey` | `THREATPULSE_API_KEY` | `''` | Your ThreatPulse API key |
-| `endpoint` | `THREATPULSE_ENDPOINT` | `http://localhost:8000` | ThreatPulse API base URL |
+| `apiKey` | `TRUSTFLOW_API_KEY` | `''` | Your TrustFlow API key |
+| `endpoint` | `TRUSTFLOW_ENDPOINT` | `http://localhost:8000` | TrustFlow API base URL |
 | `batchSize` | — | `25` | Auto-flush after N queued events |
 | `flushInterval` | — | `5000` | Periodic flush interval (ms) |
 
 ## API
 
-### `new ThreatPulse(options)`
+### `new TrustFlow(options)`
 Create a new client instance.
 
 ### `tp.track(event)`

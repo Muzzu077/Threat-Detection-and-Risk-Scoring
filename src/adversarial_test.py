@@ -1,5 +1,5 @@
 """
-ThreatPulse — Adversarial Robustness Testing Module
+TrustFlow — Adversarial Robustness Testing Module
 Tests ML model resilience against evasion techniques.
 """
 import os

@@ -31,7 +31,7 @@ export default function Sidebar() {
       <div className="sidebar-logo">
         <div className="logo-icon" style={{ fontSize: 18 }}>&#128737;</div>
         <div>
-          <div className="logo-text">THREATPULSE</div>
+          <div className="logo-text">TRUSTFLOW</div>
           <div className="logo-sub">SOC Platform v3.0</div>
         </div>
       </div>

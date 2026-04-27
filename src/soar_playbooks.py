@@ -1,5 +1,5 @@
 """
-ThreatPulse — SOAR Playbook Engine
+TrustFlow — SOAR Playbook Engine
 Conditional response playbooks based on attack type and risk level.
 Each playbook defines a sequence of automated response actions.
 """

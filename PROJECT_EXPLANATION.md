@@ -1,6 +1,6 @@
-# ThreatPulse — Complete Project Explanation
+# TrustFlow — Complete Project Explanation
 
-> **30-second pitch:** ThreatPulse is an AI-powered cybersecurity platform that watches server traffic in real-time, detects 15 types of cyber attacks with 97% accuracy, and automatically fights back — blocking hackers, locking compromised accounts, and alerting your team via Telegram and WhatsApp within seconds. Enterprise tools cost $15K-50K/year. **99% of small businesses have zero security monitoring.** ThreatPulse gives them enterprise-grade protection for free.
+> **30-second pitch:** TrustFlow is an AI-powered cybersecurity platform that watches server traffic in real-time, detects 15 types of cyber attacks with 97% accuracy, and automatically fights back — blocking hackers, locking compromised accounts, and alerting your team via Telegram and WhatsApp within seconds. Enterprise tools cost $15K-50K/year. **99% of small businesses have zero security monitoring.** TrustFlow gives them enterprise-grade protection for free.
 
 ---
 
@@ -13,7 +13,7 @@ Imagine you own a building with 100 doors. You need:
 3. **Automatic locks** that slam shut when a burglar is detected
 4. **A control room** where you see everything on screens
 
-ThreatPulse does exactly this, but for computer networks:
+TrustFlow does exactly this, but for computer networks:
 
 - **Cameras** = Log Ingestion (watches every HTTP request)
 - **Smart Guard** = ML Engine (AI that classifies attacks with 97% accuracy)
@@ -28,15 +28,15 @@ ThreatPulse does exactly this, but for computer networks:
 ┌──────────────────────────────────────────────────────────────────┐
 │                      CUSTOMER'S WEB SERVER                       │
 │  ┌──────────────────────────────────────────────────────────┐    │
-│  │  SDK (npm install @threatpulse/sdk)                      │    │
+│  │  SDK (npm install @trustflow/sdk)                      │    │
 │  │  Captures: IP, method, path, status, user, timestamp     │    │
-│  │  Batches events -> ships to ThreatPulse API              │    │
+│  │  Batches events -> ships to TrustFlow API              │    │
 │  └────────────────────────┬─────────────────────────────────┘    │
 └───────────────────────────┼──────────────────────────────────────┘
                             │ POST /api/v1/ingest (API Key auth)
                             v
 ┌──────────────────────────────────────────────────────────────────┐
-│                    THREATPULSE PLATFORM                           │
+│                    TRUSTFLOW PLATFORM                           │
 │                                                                  │
 │  ┌─────────────────────────────────────────────────────────────┐ │
 │  │  REACT DASHBOARD (13 pages)                                 │ │
@@ -73,7 +73,7 @@ ThreatPulse does exactly this, but for computer networks:
 **Data flow:**
 1. Customer installs SDK (Node.js or Python) on their web server
 2. SDK captures every HTTP request (IP, method, path, status, user, timestamp)
-3. SDK batches and ships events to ThreatPulse via `POST /api/v1/ingest` (API key auth)
+3. SDK batches and ships events to TrustFlow via `POST /api/v1/ingest` (API key auth)
 4. FastAPI backend processes each event through the ML engine, UEBA, threat intel, and MITRE mapping
 5. If an attack is detected, SOAR playbooks execute automatically (block IP, lock account, etc.)
 6. Critical alerts are dispatched to Telegram and WhatsApp instantly
@@ -177,7 +177,7 @@ Based on **OWASP Top 10 (2021 + 2023 API Security)** — the global standard for
 - Without MITRE: "We detected something bad"
 - With MITRE: "We detected T1110.004 (Credential Stuffing) — Credential Access tactic"
 
-**How it works in ThreatPulse:**
+**How it works in TrustFlow:**
 
 ```
 ML Engine says: "This is a brute_force attack"
@@ -322,7 +322,7 @@ Result: Risk boost = +20 (Tor) + +25 (ET) + threat context enrichment
 
 ### 3.7 Multi-Tenant SaaS Architecture
 
-**What it is:** ThreatPulse is built as a multi-tenant SaaS platform, meaning multiple organizations can use the same deployment with complete data isolation.
+**What it is:** TrustFlow is built as a multi-tenant SaaS platform, meaning multiple organizations can use the same deployment with complete data isolation.
 
 **How it works:**
 
@@ -350,23 +350,23 @@ Data Isolation:
 
 ### 3.8 SDK Integration (Zero-Config Monitoring)
 
-**What it is:** Pre-built packages that customers install on their web servers to start sending traffic data to ThreatPulse with zero configuration.
+**What it is:** Pre-built packages that customers install on their web servers to start sending traffic data to TrustFlow with zero configuration.
 
 **Node.js SDK (Express middleware):**
 
 ```javascript
-const { threatPulseMiddleware } = require('@threatpulse/sdk/express');
-app.use(threatPulseMiddleware({
-  apiKey: process.env.THREATPULSE_API_KEY  // Generated from dashboard
+const { trustFlowMiddleware } = require('@trustflow/sdk/express');
+app.use(trustFlowMiddleware({
+  apiKey: process.env.TRUSTFLOW_API_KEY  // Generated from dashboard
 }));
-// Every HTTP request is now monitored by ThreatPulse
+// Every HTTP request is now monitored by TrustFlow
 ```
 
 **Python SDK (Flask/Django):**
 
 ```python
-from threatpulse import ThreatPulse
-tp = ThreatPulse(api_key=os.environ['THREATPULSE_API_KEY'])
+from trustflow import TrustFlow
+tp = TrustFlow(api_key=os.environ['TRUSTFLOW_API_KEY'])
 # Auto-captures and ships request logs
 ```
 
@@ -385,7 +385,7 @@ Events are batched and shipped to `POST /api/v1/ingest` with API key authenticat
 ### 3.9 Alerts — Telegram + WhatsApp
 
 **Telegram Bot:**
-When a critical threat is detected, ThreatPulse sends an instant Telegram message to the security team's phone.
+When a critical threat is detected, TrustFlow sends an instant Telegram message to the security team's phone.
 
 **What the alert contains:**
 - Incident ID and severity level
@@ -395,7 +395,7 @@ When a critical threat is detected, ThreatPulse sends an instant Telegram messag
 - Quick action buttons (View Incident, Block IP)
 
 **WhatsApp (via Twilio):**
-For teams that prefer WhatsApp, ThreatPulse sends formatted alerts through Twilio's WhatsApp API with the same information.
+For teams that prefer WhatsApp, TrustFlow sends formatted alerts through Twilio's WhatsApp API with the same information.
 
 **Alert dispatch logic:**
 - Critical severity (risk >= 80) -> Both Telegram + WhatsApp
@@ -480,12 +480,12 @@ Industry averages (without AI):
   MTTD: 197 days (IBM 2023 report)
   MTTR: 69 days
 
-ThreatPulse:
+TrustFlow:
   MTTD: < 10 seconds (real-time ML classification)
   MTTR: < 1 second (automated SOAR playbooks)
 ```
 
-These are **SLA-grade metrics** that enterprises use to measure their security team's effectiveness. ThreatPulse tracks them with trend graphs on the dashboard.
+These are **SLA-grade metrics** that enterprises use to measure their security team's effectiveness. TrustFlow tracks them with trend graphs on the dashboard.
 
 ---
 
@@ -584,31 +584,31 @@ These are **SLA-grade metrics** that enterprises use to measure their security t
 
 **The problem:** Online stores face constant attacks — SQL injection on search bars, credential stuffing on customer accounts, DDoS during sales events.
 
-**How ThreatPulse helps:** Install the Node.js SDK on their Express server. During a Black Friday sale, when a DDoS attack starts, SOAR automatically rate-limits the attackers before the site goes down. When someone tries SQL injection on the search bar, the IP is blocked within 1 second.
+**How TrustFlow helps:** Install the Node.js SDK on their Express server. During a Black Friday sale, when a DDoS attack starts, SOAR automatically rate-limits the attackers before the site goes down. When someone tries SQL injection on the search bar, the IP is blocked within 1 second.
 
 ### 2. University / Educational Institution
 
 **The problem:** University networks are constantly attacked (students experimenting, external hackers targeting research data), but IT budgets are tight.
 
-**How ThreatPulse helps:** Deploy on the university network to monitor login attempts to student portals, research databases, and admin systems. When someone tries credential stuffing against the student email system at 3 AM, it catches it immediately. Free and open-source = fits the budget.
+**How TrustFlow helps:** Deploy on the university network to monitor login attempts to student portals, research databases, and admin systems. When someone tries credential stuffing against the student email system at 3 AM, it catches it immediately. Free and open-source = fits the budget.
 
 ### 3. SaaS Startup (1-3 Person Security Team)
 
 **The problem:** They have one security person who can't watch logs 24/7. They need automation.
 
-**How ThreatPulse helps:** Instead of the security engineer manually reading through 10,000 log entries every morning, ThreatPulse classifies them automatically. They open the dashboard, see "3 critical incidents overnight," click into each one, and the AI summary tells them exactly what happened and what to do.
+**How TrustFlow helps:** Instead of the security engineer manually reading through 10,000 log entries every morning, TrustFlow classifies them automatically. They open the dashboard, see "3 critical incidents overnight," click into each one, and the AI summary tells them exactly what happened and what to do.
 
 ### 4. Government Agency (Developing Country)
 
 **The problem:** Many government departments have websites (tax portals, citizen services) but zero cybersecurity budget. They're sitting ducks.
 
-**How ThreatPulse helps:** Free, open-source, self-hosted. A government IT team can deploy it on their existing servers without paying for licenses. It gives them enterprise-grade threat detection without the enterprise price tag.
+**How TrustFlow helps:** Free, open-source, self-hosted. A government IT team can deploy it on their existing servers without paying for licenses. It gives them enterprise-grade threat detection without the enterprise price tag.
 
 ### 5. Managed Security Service Provider (MSSP)
 
 **The problem:** Small MSSPs that manage security for 10-50 clients need a platform to monitor all of them. Commercial SIEM tools charge per-client.
 
-**How ThreatPulse helps:** Deploy one multi-tenant instance. Each client gets their own API key and isolated data. The MSSP gets ML-powered detection, SOAR automation, and MITRE mapping for all clients — then sells it as a managed service. Cost is near-zero, value proposition is high.
+**How TrustFlow helps:** Deploy one multi-tenant instance. Each client gets their own API key and isolated data. The MSSP gets ML-powered detection, SOAR automation, and MITRE mapping for all clients — then sells it as a managed service. Cost is near-zero, value proposition is high.
 
 ---
 
@@ -667,37 +667,42 @@ docker-compose up -d
 
 ```javascript
 // Node.js (Express)
-const { threatPulseMiddleware } = require('@threatpulse/sdk/express');
-app.use(threatPulseMiddleware({
-  apiKey: process.env.THREATPULSE_API_KEY  // Generated from dashboard
+const { trustFlowMiddleware } = require('@trustflow/sdk/express');
+app.use(trustFlowMiddleware({
+  apiKey: process.env.TRUSTFLOW_API_KEY  // Generated from dashboard
 }));
-// Every HTTP request is now monitored by ThreatPulse
+// Every HTTP request is now monitored by TrustFlow
 ```
 
 ```python
 # Python (Flask/Django)
-from threatpulse import ThreatPulse
-tp = ThreatPulse(api_key=os.environ['THREATPULSE_API_KEY'])
+from trustflow import TrustFlow
+tp = TrustFlow(api_key=os.environ['TRUSTFLOW_API_KEY'])
 # Auto-captures and ships request logs
 ```
 
-### Default Login
+### First-Admin Bootstrap
 
-- **Email:** `demo@threatpulse.com`
-- **Password:** `ThreatPulse2025`
-- **Role:** Admin (sees all data)
+There is no seeded demo account. After `docker compose up -d`, create your first admin:
+
+```bash
+docker compose exec api python -m src.bootstrap_admin --email you@example.com
+# (you will be prompted for a password)
+```
+
+Then log in at <http://localhost> with that email/password. Subsequent users register via `/register` or are added by the admin.
 
 ---
 
 ## 9. How to Explain This to a Non-Technical Person
 
-> "ThreatPulse is like a smart security guard for computer networks. It watches every request that comes into your system — who's asking, what they want, and when. Using AI (like facial recognition but for network traffic), it can identify 15 different types of cyber attacks with 97% accuracy. When it spots an attack, it doesn't just ring an alarm — it automatically blocks the attacker, locks compromised accounts, and notifies the security team on their phone within seconds. It uses the same threat classification system (MITRE ATT&CK) that the FBI and Pentagon use. And it gets smarter over time — when security analysts correct a mistake, the system learns from it. Enterprise tools that do this cost $15,000-50,000 per year. ThreatPulse is free and open-source."
+> "TrustFlow is like a smart security guard for computer networks. It watches every request that comes into your system — who's asking, what they want, and when. Using AI (like facial recognition but for network traffic), it can identify 15 different types of cyber attacks with 97% accuracy. When it spots an attack, it doesn't just ring an alarm — it automatically blocks the attacker, locks compromised accounts, and notifies the security team on their phone within seconds. It uses the same threat classification system (MITRE ATT&CK) that the FBI and Pentagon use. And it gets smarter over time — when security analysts correct a mistake, the system learns from it. Enterprise tools that do this cost $15,000-50,000 per year. TrustFlow is free and open-source."
 
 ---
 
 ## 10. Competitive Advantage
 
-| Feature | ThreatPulse | Splunk | CrowdStrike |
+| Feature | TrustFlow | Splunk | CrowdStrike |
 |---------|-------------|--------|-------------|
 | Price | **Free** | $15K+/year | $25K+/year |
 | Attack types | 15 (OWASP) | Custom rules | Agent-based |
@@ -716,10 +721,10 @@ tp = ThreatPulse(api_key=os.environ['THREATPULSE_API_KEY'])
 
 ## 11. Verification Plan
 
-To verify that ThreatPulse works as described, follow these 10 steps:
+To verify that TrustFlow works as described, follow these 10 steps:
 
-1. **Start the platform** — Run `start_enterprise.ps1` and confirm all 4 services launch (backend, frontend, simulator, ingestion)
-2. **Login** — Open http://localhost:5173, login with `demo@threatpulse.com` / `ThreatPulse2025`
+1. **Start the platform** — Run `docker compose up -d` and confirm `postgres`, `redis`, `api`, `ingestion`, and `frontend` containers all reach a healthy state
+2. **Login** — Bootstrap an admin via `docker compose exec api python -m src.bootstrap_admin --email you@example.com`, then log in at http://localhost
 3. **Dashboard** — Verify threat gauge, KPI cards, live feed updating in real-time via WebSocket
 4. **Incidents** — Check that incidents are being created with severity levels and MITRE ATT&CK tags
 5. **Investigation** — Click any incident, verify 4 tabs (Details, Timeline, MITRE, SOAR) all populated
@@ -772,6 +777,6 @@ This makes the system auditable and trustworthy — security analysts can verify
 
 <div align="center">
 
-**ThreatPulse** — Enterprise-grade cyber defense, free for everyone.
+**TrustFlow** — Enterprise-grade cyber defense, free for everyone.
 
 </div>

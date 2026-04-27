@@ -1,26 +1,26 @@
 /**
- * ThreatPulse Express middleware
+ * TrustFlow Express middleware
  * Automatically captures HTTP request/response details and ships them
- * to ThreatPulse via the SDK client.
+ * to TrustFlow via the SDK client.
  */
 
-const { ThreatPulse } = require('./index');
+const { TrustFlow } = require('./index');
 
 /**
  * Returns an Express middleware that tracks every request.
  *
  * @param {Object} options
- * @param {string} [options.apiKey]    - ThreatPulse API key
- * @param {string} [options.endpoint]  - ThreatPulse API base URL
+ * @param {string} [options.apiKey]    - TrustFlow API key
+ * @param {string} [options.endpoint]  - TrustFlow API base URL
  * @returns {Function} Express middleware
  */
-function threatPulseMiddleware({ apiKey, endpoint } = {}) {
-  const tp = new ThreatPulse({ apiKey, endpoint });
+function trustFlowMiddleware({ apiKey, endpoint } = {}) {
+  const tp = new TrustFlow({ apiKey, endpoint });
 
   // Flush remaining events when the process exits
   process.on('beforeExit', () => tp.shutdown());
 
-  return function _threatPulseMiddleware(req, res, next) {
+  return function _trustFlowMiddleware(req, res, next) {
     const requestTime = new Date().toISOString();
 
     res.on('finish', () => {
@@ -52,4 +52,4 @@ function threatPulseMiddleware({ apiKey, endpoint } = {}) {
   };
 }
 
-module.exports = { threatPulseMiddleware };
+module.exports = { trustFlowMiddleware };

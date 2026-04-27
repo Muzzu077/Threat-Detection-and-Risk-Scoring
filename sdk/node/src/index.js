@@ -1,22 +1,22 @@
 /**
- * ThreatPulse SDK for Node.js
- * Zero-dependency client for shipping HTTP logs to your ThreatPulse dashboard.
+ * TrustFlow SDK for Node.js
+ * Zero-dependency client for shipping HTTP logs to your TrustFlow dashboard.
  */
 
-class ThreatPulse {
+class TrustFlow {
   /**
    * @param {Object} options
-   * @param {string}  [options.apiKey]         - API key (or set THREATPULSE_API_KEY env var)
-   * @param {string}  [options.endpoint]       - ThreatPulse API base URL
+   * @param {string}  [options.apiKey]         - API key (or set TRUSTFLOW_API_KEY env var)
+   * @param {string}  [options.endpoint]       - TrustFlow API base URL
    * @param {number}  [options.batchSize=25]   - Flush automatically after this many queued events
    * @param {number}  [options.flushInterval=5000] - Auto-flush interval in ms
    */
   constructor({ apiKey, endpoint, batchSize = 25, flushInterval = 5000 } = {}) {
     this.apiKey =
-      apiKey || process.env.THREATPULSE_API_KEY || '';
+      apiKey || process.env.TRUSTFLOW_API_KEY || '';
     this.endpoint =
       endpoint ||
-      process.env.THREATPULSE_ENDPOINT ||
+      process.env.TRUSTFLOW_ENDPOINT ||
       'http://localhost:8000';
     this.batchSize = batchSize;
     this.flushInterval = flushInterval;
@@ -50,7 +50,7 @@ class ThreatPulse {
   }
 
   /**
-   * POST all queued events to the ThreatPulse ingest endpoint.
+   * POST all queued events to the TrustFlow ingest endpoint.
    * On failure the events are re-queued so they can be retried.
    * @returns {Promise<void>}
    */
@@ -71,13 +71,13 @@ class ThreatPulse {
       });
 
       if (!res.ok) {
-        throw new Error(`ThreatPulse ingest responded with ${res.status}`);
+        throw new Error(`TrustFlow ingest responded with ${res.status}`);
       }
     } catch (err) {
       // Re-queue events so they can be retried on the next flush
       this._queue.unshift(...batch);
       // Surface the error but don't crash
-      console.error('[ThreatPulse]', err.message || err);
+      console.error('[TrustFlow]', err.message || err);
     }
   }
 
@@ -95,4 +95,4 @@ class ThreatPulse {
   }
 }
 
-module.exports = { ThreatPulse };
+module.exports = { TrustFlow };

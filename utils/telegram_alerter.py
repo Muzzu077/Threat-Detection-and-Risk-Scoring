@@ -1,7 +1,7 @@
 """
-ThreatPulse — Telegram Alert Bot
+TrustFlow — Telegram Alert Bot
 Sends rich security incident alerts with inline action buttons.
-Bot: t.me/Threat_pulse_bot
+Bot: t.me/TrustFlow_bot
 
 All credentials are read from .env at CALL TIME on every function invocation
 so that TELEGRAM_CHAT_ID / BOT_TOKEN set after startup are always picked up.
@@ -108,7 +108,7 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
         return str(text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
     message = (
-        f"🚨 <b>THREATPULSE SECURITY ALERT</b>\n"
+        f"🚨 <b>TRUSTFLOW SECURITY ALERT</b>\n"
         f"{'━' * 28}\n\n"
         f"{sev_emoji} <b>Severity:</b> {sev.upper()}\n"
         f"{atk_emoji} <b>Threat Type:</b> {esc(atk_type.replace('_', ' ').title())}\n"
@@ -191,7 +191,7 @@ def send_system_status(message: str) -> bool:
         return False
     payload = {
         "chat_id":    chat_id,
-        "text":       f"ℹ️ *ThreatPulse System*\n\n{message}",
+        "text":       f"ℹ️ *TrustFlow System*\n\n{message}",
         "parse_mode": "Markdown",
     }
     import time
@@ -216,7 +216,7 @@ def send_daily_summary(stats: dict) -> bool:
         return False
 
     message = (
-        f"📊 *THREATPULSE DAILY SUMMARY*\n"
+        f"📊 *TRUSTFLOW DAILY SUMMARY*\n"
         f"{'━' * 28}\n\n"
         f"🔴 Critical Events: {stats.get('critical_count', 0)}\n"
         f"🟠 High Events:     {stats.get('high_count', 0)}\n"
@@ -265,7 +265,7 @@ def get_bot_info() -> dict:
 
 
 def register_webhook_receiver(webhook_url: str) -> bool:
-    """Register a webhook so Telegram sends callbacks to ThreatPulse API."""
+    """Register a webhook so Telegram sends callbacks to TrustFlow API."""
     token, _, api_url, proxies = _creds()
     if not token:
         return False

@@ -18,7 +18,7 @@ TO_WHATSAPP = os.getenv("TO_WHATSAPP", "")
 def trigger_whatsapp_alert(event, incident_id):
     """Sends a WhatsApp alert via Twilio SDK."""
     message = (
-        f"🚨 *THREAT PULSE ALERT* 🚨\n\n"
+        f"🚨 *TRUSTFLOW ALERT* 🚨\n\n"
         f"👤 User: {event['user']}\n"
         f"⚡ Action: {event['action']}\n"
         f"🔴 Risk Score: {event['risk_score']:.0f}/100\n\n"

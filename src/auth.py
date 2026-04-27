@@ -1,5 +1,5 @@
 """
-ThreatPulse Authentication Module
+TrustFlow Authentication Module
 JWT + bcrypt authentication for multi-tenant SaaS.
 """
 import os
@@ -12,7 +12,7 @@ from fastapi import Request, HTTPException, Depends
 
 from src.database import db, User, RefreshToken
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "threatpulse-jwt-secret-change-me-in-production")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "trustflow-jwt-secret-change-me-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7

@@ -1,5 +1,5 @@
 """
-ThreatPulse — Online Learning / Analyst Feedback Loop
+TrustFlow — Online Learning / Analyst Feedback Loop
 Stores analyst feedback (false positives, confirmed threats) and provides
 incremental model improvement capabilities.
 """

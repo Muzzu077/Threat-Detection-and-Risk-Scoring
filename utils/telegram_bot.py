@@ -1,5 +1,5 @@
 """
-ThreatPulse — Telegram Bot Callback Handler
+TrustFlow — Telegram Bot Callback Handler
 Polls for inline button clicks and executes SOAR actions.
 
 Handles callback_data patterns:
@@ -292,7 +292,7 @@ def start_polling_thread():
 
 
 if __name__ == "__main__":
-    print("ThreatPulse Telegram Bot — Callback Handler")
+    print("TrustFlow Telegram Bot — Callback Handler")
     print("Listening for inline button clicks...")
     print("Press Ctrl+C to stop.\n")
     poll_callbacks()

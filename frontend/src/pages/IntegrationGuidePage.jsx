@@ -12,18 +12,18 @@ const TAB_CONTENT = {
     sections: [
       {
         heading: '01 // INSTALLATION',
-        code: 'npm install threatpulse-sdk',
+        code: 'npm install trustflow-sdk',
       },
       {
         heading: '02 // INITIALIZE CLIENT',
-        code: `const { ThreatPulse } = require('threatpulse-sdk');
-const tp = new ThreatPulse({ apiKey: process.env.THREATPULSE_API_KEY });`,
+        code: `const { TrustFlow } = require('trustflow-sdk');
+const tp = new TrustFlow({ apiKey: process.env.TRUSTFLOW_API_KEY });`,
       },
       {
         heading: '03 // EXPRESS MIDDLEWARE',
         description: 'Automatically analyze all incoming requests for threats.',
-        code: `const { threatPulseMiddleware } = require('threatpulse-sdk/express');
-app.use(threatPulseMiddleware({ apiKey: process.env.THREATPULSE_API_KEY }));`,
+        code: `const { trustFlowMiddleware } = require('trustflow-sdk/express');
+app.use(trustFlowMiddleware({ apiKey: process.env.TRUSTFLOW_API_KEY }));`,
       },
     ],
   },
@@ -32,18 +32,18 @@ app.use(threatPulseMiddleware({ apiKey: process.env.THREATPULSE_API_KEY }));`,
     sections: [
       {
         heading: '01 // INSTALLATION',
-        code: 'pip install threatpulse-sdk',
+        code: 'pip install trustflow-sdk',
       },
       {
         heading: '02 // INITIALIZE CLIENT',
-        code: `from threatpulse import ThreatPulse
-tp = ThreatPulse(api_key=os.environ['THREATPULSE_API_KEY'])`,
+        code: `from trustflow import TrustFlow
+tp = TrustFlow(api_key=os.environ['TRUSTFLOW_API_KEY'])`,
       },
       {
         heading: '03 // FLASK MIDDLEWARE',
         description: 'Wrap your WSGI application to monitor all requests.',
-        code: `from threatpulse.middleware import ThreatPulseMiddleware
-app.wsgi_app = ThreatPulseMiddleware(app.wsgi_app, api_key=os.environ['THREATPULSE_API_KEY'])`,
+        code: `from trustflow.middleware import TrustFlowMiddleware
+app.wsgi_app = TrustFlowMiddleware(app.wsgi_app, api_key=os.environ['TRUSTFLOW_API_KEY'])`,
       },
     ],
   },
@@ -56,7 +56,7 @@ app.wsgi_app = ThreatPulseMiddleware(app.wsgi_app, api_key=os.environ['THREATPUL
       },
       {
         heading: '02 // HEADERS',
-        code: `X-API-Key: tp_live_your_key_here
+        code: `X-API-Key: tf_live_your_key_here
 Content-Type: application/json`,
       },
       {
@@ -194,7 +194,7 @@ export default function IntegrationGuidePage() {
           INTEGRATION GUIDE
         </div>
         <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
-          Connect your applications to ThreatPulse
+          Connect your applications to TrustFlow
         </div>
       </div>
 
@@ -262,7 +262,7 @@ export default function IntegrationGuidePage() {
         <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', lineHeight: 1.8 }}>
           <span style={{ color: '#ffffff', letterSpacing: '0.1em' }}>NOTE:</span> You will need an API key to authenticate requests.
           Generate one from the <span style={{ color: '#ffffff' }}>API Keys</span> page.
-          All API keys follow the format <span style={{ color: '#e6a817' }}>tp_live_*</span> for production
+          All API keys follow the format <span style={{ color: '#e6a817' }}>tf_live_*</span> for production
           and <span style={{ color: '#e6a817' }}>tp_test_*</span> for sandbox environments.
         </div>
       </div>

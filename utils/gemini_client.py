@@ -1,5 +1,5 @@
 """
-ThreatPulse — AI Security Summary Generator
+TrustFlow — AI Security Summary Generator
 Uses OpenRouter API with fallback model chain.
 """
 import os
@@ -57,8 +57,8 @@ Use the exact format above with the bold headings. Be specific and actionable. D
 
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "HTTP-Referer": "https://github.com/threatpulse",
-        "X-Title": "ThreatPulse SOC",
+        "HTTP-Referer": "https://github.com/trustflow",
+        "X-Title": "TrustFlow SOC",
         "Content-Type": "application/json",
     }
 

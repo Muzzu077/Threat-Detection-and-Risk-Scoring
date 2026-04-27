@@ -283,7 +283,7 @@ export default function LandingPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <span style={{ fontSize: 22, filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.4))' }}>&#128737;</span>
-          <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 16, fontWeight: 400, color: '#f0f0f0', letterSpacing: 2 }}>THREATPULSE</span>
+          <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 16, fontWeight: 400, color: '#f0f0f0', letterSpacing: 2 }}>TRUSTFLOW</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           {['Features', 'Architecture', 'Pricing'].map(s => (
@@ -314,7 +314,7 @@ export default function LandingPage() {
 
         {/* Subtitle */}
         <p style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 'clamp(14px, 1.8vw, 18px)', color: '#a0a0a0', maxWidth: 640, lineHeight: 1.8, marginBottom: 40, animation: 'fadeUp 0.8s ease 0.2s both' }}>
-          Deploy ThreatPulse on your infrastructure in minutes. Our ML engine detects 15 attack types in real-time, maps to MITRE ATT&CK, and auto-remediates with SOAR playbooks.
+          Deploy TrustFlow on your infrastructure in minutes. Our ML engine detects 15 attack types in real-time, maps to MITRE ATT&CK, and auto-remediates with SOAR playbooks.
         </p>
 
         {/* CTA buttons */}
@@ -382,7 +382,7 @@ export default function LandingPage() {
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 4, color: '#3d8ef0', textTransform: 'uppercase', marginBottom: 12 }}>Architecture</div>
           <h2 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(24px, 3.5vw, 40px)', color: '#f0f0f0', fontWeight: 400 }}>
-            How ThreatPulse Works
+            How TrustFlow Works
           </h2>
         </div>
         <ArchDiagram />
@@ -397,10 +397,10 @@ export default function LandingPage() {
             <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#555555' }}>integration.js</span>
           </div>
           <pre style={{ padding: '20px 24px', margin: 0, fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, lineHeight: 1.8, color: '#a0a0a0', overflow: 'auto' }}>
-{`const { threatPulseMiddleware } = require(`}<span style={{ color: '#f0a500' }}>'threatpulse-sdk/express'</span>{`);
+{`const { trustFlowMiddleware } = require(`}<span style={{ color: '#f0a500' }}>'trustflow-sdk/express'</span>{`);
 
-app.use(threatPulseMiddleware({
-  apiKey: process.env.`}<span style={{ color: '#ffffff' }}>THREATPULSE_API_KEY</span>{`
+app.use(trustFlowMiddleware({
+  apiKey: process.env.`}<span style={{ color: '#ffffff' }}>TRUSTFLOW_API_KEY</span>{`
 }));
 
 `}<span style={{ color: '#555555' }}>// That's it. Every request is now monitored.</span>
@@ -417,8 +417,8 @@ app.use(threatPulseMiddleware({
           </h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-          <Testimonial quote="ThreatPulse cut our incident response time from hours to seconds. The SOAR playbooks caught a brute force campaign at 3AM that would've gone unnoticed until morning." name="Sarah Chen" role="SOC Lead" company="FinGuard Capital" />
-          <Testimonial quote="We replaced three separate tools with ThreatPulse. The MITRE ATT&CK mapping gives our team a common language, and the ML engine catches things our rule-based SIEM missed entirely." name="Marcus Rivera" role="CISO" company="MedSecure Health" />
+          <Testimonial quote="TrustFlow cut our incident response time from hours to seconds. The SOAR playbooks caught a brute force campaign at 3AM that would've gone unnoticed until morning." name="Sarah Chen" role="SOC Lead" company="FinGuard Capital" />
+          <Testimonial quote="We replaced three separate tools with TrustFlow. The MITRE ATT&CK mapping gives our team a common language, and the ML engine catches things our rule-based SIEM missed entirely." name="Marcus Rivera" role="CISO" company="MedSecure Health" />
           <Testimonial quote="Setting up the SDK took 5 minutes. We were seeing our Express traffic analyzed and threat-scored in real-time before lunch. The kill chain graphs are incredible for investigations." name="Aiko Tanaka" role="Security Engineer" company="CloudForge" />
         </div>
       </section>
@@ -462,7 +462,7 @@ app.use(threatPulseMiddleware({
             Your network is being scanned<br /><span style={{ color: '#e53e3e' }}>right now</span>.
           </h2>
           <p style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 15, color: '#a0a0a0', marginBottom: 32, lineHeight: 1.7 }}>
-            Deploy ThreatPulse in 5 minutes. No credit card required.
+            Deploy TrustFlow in 5 minutes. No credit card required.
           </p>
           <button onClick={() => navigate('/register')} className="landing-cta" style={{
             fontFamily: '"IBM Plex Mono", monospace', fontSize: 14, letterSpacing: 2, fontWeight: 600,
@@ -481,7 +481,7 @@ app.use(threatPulseMiddleware({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <span style={{ fontSize: 18 }}>&#128737;</span>
-              <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 14, color: '#f0f0f0', letterSpacing: 2 }}>THREATPULSE</span>
+              <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 14, color: '#f0f0f0', letterSpacing: 2 }}>TRUSTFLOW</span>
             </div>
             <div style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 12, color: '#555555', maxWidth: 280, lineHeight: 1.7 }}>
               AI-powered threat detection and autonomous response platform for modern security teams.
@@ -507,7 +507,7 @@ app.use(threatPulseMiddleware({
         </div>
         <div style={{ maxWidth: 1200, margin: '40px auto 0', paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#1a3a50', letterSpacing: 1 }}>
-            &copy; 2025 ThreatPulse. All rights reserved.
+            &copy; 2025 TrustFlow. All rights reserved.
           </span>
           <div style={{ display: 'flex', gap: 24 }}>
             {['Privacy', 'Terms', 'Security'].map(l => (

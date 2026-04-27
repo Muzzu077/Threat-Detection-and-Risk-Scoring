@@ -1,5 +1,5 @@
 """
-ThreatPulse — User and Entity Behavior Analytics (UEBA)
+TrustFlow — User and Entity Behavior Analytics (UEBA)
 Detects anomalous user behavior by building per-user baselines.
 
 Detections:

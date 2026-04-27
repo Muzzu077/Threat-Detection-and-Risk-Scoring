@@ -1,11 +1,11 @@
-# threatpulse-sdk
+# trustflow-sdk
 
-ThreatPulse SDK for Python -- ship HTTP logs to your ThreatPulse dashboard with zero dependencies.
+TrustFlow SDK for Python -- ship HTTP logs to your TrustFlow dashboard with zero dependencies.
 
 ## Installation
 
 ```bash
-pip install threatpulse-sdk
+pip install trustflow-sdk
 ```
 
 Or install from source:
@@ -18,11 +18,11 @@ pip install .
 ## Quick Start
 
 ```python
-from threatpulse import ThreatPulse
+from trustflow import TrustFlow
 
-tp = ThreatPulse(
+tp = TrustFlow(
     api_key="your-api-key",
-    endpoint="https://threatpulse.example.com",
+    endpoint="https://trustflow.example.com",
 )
 
 tp.track({
@@ -42,13 +42,13 @@ tp.shutdown()
 
 ```python
 from flask import Flask
-from threatpulse.middleware import ThreatPulseMiddleware
+from trustflow.middleware import TrustFlowMiddleware
 
 app = Flask(__name__)
-app.wsgi_app = ThreatPulseMiddleware(
+app.wsgi_app = TrustFlowMiddleware(
     app.wsgi_app,
     api_key="your-api-key",
-    endpoint="https://threatpulse.example.com",
+    endpoint="https://trustflow.example.com",
 )
 
 @app.route("/")
@@ -63,15 +63,15 @@ Add the WSGI middleware in your `wsgi.py`:
 ```python
 import os
 from django.core.wsgi import get_wsgi_application
-from threatpulse.middleware import ThreatPulseMiddleware
+from trustflow.middleware import TrustFlowMiddleware
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "myproject.settings")
 
 application = get_wsgi_application()
-application = ThreatPulseMiddleware(
+application = TrustFlowMiddleware(
     application,
     api_key="your-api-key",
-    endpoint="https://threatpulse.example.com",
+    endpoint="https://trustflow.example.com",
 )
 ```
 
@@ -79,8 +79,8 @@ application = ThreatPulseMiddleware(
 
 | Parameter | Env Variable | Default | Description |
 |---|---|---|---|
-| `api_key` | `THREATPULSE_API_KEY` | `""` | API key for authentication |
-| `endpoint` | `THREATPULSE_ENDPOINT` | `http://localhost:8000` | ThreatPulse API base URL |
+| `api_key` | `TRUSTFLOW_API_KEY` | `""` | API key for authentication |
+| `endpoint` | `TRUSTFLOW_ENDPOINT` | `http://localhost:8000` | TrustFlow API base URL |
 | `batch_size` | -- | `25` | Auto-flush after this many queued events |
 | `flush_interval` | -- | `5.0` | Seconds between periodic flushes |
 

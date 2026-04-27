@@ -119,7 +119,7 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: isCritical ? '#e53e3e' : '#ffffff', textShadow: isCritical ? '0 0 30px rgba(229,62,62,0.5)' : '0 0 30px rgba(255,255,255,0.4)', letterSpacing: 2 }}>
-              THREATPULSE SOC
+              TRUSTFLOW SOC
             </div>
             <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Security Operations Center — Live Monitoring

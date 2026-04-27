@@ -132,7 +132,7 @@ def load_cached_shap() -> dict:
 
 def get_static_feature_importance() -> dict:
     """
-    Return pre-defined typical feature importance for the ThreatPulse model.
+    Return pre-defined typical feature importance for the TrustFlow model.
     Used as fallback when no SHAP cache is available.
     """
     return {
