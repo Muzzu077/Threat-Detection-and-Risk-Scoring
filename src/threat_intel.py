@@ -1,89 +1,72 @@
 """
-Threat Intelligence Module — AbuseIPDB Integration
-Checks IP reputation with local in-memory + file cache (TTL 1 hour).
-Degrades gracefully if API key is absent.
+Threat Intelligence — AbuseIPDB integration.
+
+Caching strategy:
+  1. Redis (TTL 1h) — preferred; survives process restarts, shared across workers.
+  2. Process-local dict — fallback when Redis is unavailable (e.g., Redis is
+     down and we don't want to hammer AbuseIPDB on every request).
+
+Degrades gracefully if ABUSEIPDB_API_KEY is absent — returns a neutral result.
 """
 import os
-import json
 import time
 import requests
 from typing import Optional, Dict
 
-_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-CACHE_FILE = os.path.join(_PROJECT_ROOT, "data", "threat_intel_cache.json")
+from src import redis_cache
+
 CACHE_TTL_SECONDS = 3600  # 1 hour
 
-# In-memory cache: { ip: { data: {...}, timestamp: float } }
-_cache: Dict[str, dict] = {}
+# Process-local fallback when Redis is down
+_local_cache: Dict[str, dict] = {}
 
 
-def _load_cache_from_disk():
-    """Load cache from disk on startup."""
-    global _cache
-    if os.path.exists(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, "r") as f:
-                _cache = json.load(f)
-        except Exception:
-            _cache = {}
+def _cache_key(ip: str) -> str:
+    return f"trustflow:ti:abuseipdb:{ip}"
 
 
-def _save_cache_to_disk():
-    """Persist cache to disk."""
-    os.makedirs(os.path.join(_PROJECT_ROOT, "data"), exist_ok=True)
-    try:
-        with open(CACHE_FILE, "w") as f:
-            json.dump(_cache, f, indent=2)
-    except Exception:
-        pass
+def _cache_get(ip: str) -> Optional[dict]:
+    cached = redis_cache.get_json(_cache_key(ip))
+    if cached is not None:
+        cached["data_source"] = "cache"
+        return cached
+    entry = _local_cache.get(ip)
+    if entry and (time.time() - entry["timestamp"]) < CACHE_TTL_SECONDS:
+        result = dict(entry["data"])
+        result["data_source"] = "cache"
+        return result
+    return None
 
 
-def _is_cache_valid(ip: str) -> bool:
-    """Check if cached entry exists and is not expired."""
-    if ip in _cache:
-        age = time.time() - _cache[ip].get("timestamp", 0)
-        return age < CACHE_TTL_SECONDS
-    return False
+def _cache_set(ip: str, data: dict) -> None:
+    if not redis_cache.set_json(_cache_key(ip), data, CACHE_TTL_SECONDS):
+        _local_cache[ip] = {"data": data, "timestamp": time.time()}
 
 
 def check_ip(ip: Optional[str]) -> dict:
     """
     Check IP reputation via AbuseIPDB.
-    Returns dict with: abuse_score, country, total_reports, is_suspicious, data_source
+    Returns dict with: ip, abuse_score, country, total_reports, is_suspicious, data_source
     """
     if not ip or ip in ("", "unknown", "127.0.0.1", "::1"):
         return _make_result(ip, 0, "LOCAL", 0, False, "skipped")
 
-    # Cache check
-    if not _cache:
-        _load_cache_from_disk()
-
-    if _is_cache_valid(ip):
-        cached = _cache[ip]["data"]
-        cached["data_source"] = "cache"
+    cached = _cache_get(ip)
+    if cached is not None:
         return cached
 
-    # No API key — return neutral result
     api_key = os.getenv("ABUSEIPDB_API_KEY", "")
     if not api_key:
         result = _make_result(ip, 0, "UNKNOWN", 0, False, "no_api_key")
-        _store_cache(ip, result)
+        _cache_set(ip, result)
         return result
 
-    # Query AbuseIPDB
     try:
         response = requests.get(
             "https://api.abuseipdb.com/api/v2/check",
-            headers={
-                "Accept": "application/json",
-                "Key": api_key
-            },
-            params={
-                "ipAddress": ip,
-                "maxAgeInDays": 90,
-                "verbose": False
-            },
-            timeout=5
+            headers={"Accept": "application/json", "Key": api_key},
+            params={"ipAddress": ip, "maxAgeInDays": 90, "verbose": False},
+            timeout=5,
         )
 
         if response.status_code == 200:
@@ -92,19 +75,16 @@ def check_ip(ip: Optional[str]) -> dict:
             country = data.get("countryCode", "UNKNOWN")
             total_reports = data.get("totalReports", 0)
             is_suspicious = abuse_score >= 25
-
             result = _make_result(ip, abuse_score, country, total_reports, is_suspicious, "abuseipdb")
-            _store_cache(ip, result)
+            _cache_set(ip, result)
             return result
 
-        elif response.status_code == 429:
-            # Rate limited
+        if response.status_code == 429:
             result = _make_result(ip, 0, "UNKNOWN", 0, False, "rate_limited")
-            _store_cache(ip, result)
+            _cache_set(ip, result)
             return result
-        else:
-            result = _make_result(ip, 0, "UNKNOWN", 0, False, f"api_error_{response.status_code}")
-            return result
+
+        return _make_result(ip, 0, "UNKNOWN", 0, False, f"api_error_{response.status_code}")
 
     except requests.exceptions.Timeout:
         return _make_result(ip, 0, "UNKNOWN", 0, False, "timeout")
@@ -119,20 +99,13 @@ def _make_result(ip, abuse_score, country, total_reports, is_suspicious, data_so
         "country": country,
         "total_reports": total_reports,
         "is_suspicious": is_suspicious,
-        "data_source": data_source
+        "data_source": data_source,
     }
 
 
-def _store_cache(ip: str, data: dict):
-    """Store result in cache and persist to disk."""
-    _cache[ip] = {"data": data, "timestamp": time.time()}
-    _save_cache_to_disk()
-
-
 def get_known_bad_ips() -> list:
-    """Return list of IPs with high abuse scores from cache."""
-    _load_cache_from_disk()
-    return [
-        ip for ip, entry in _cache.items()
-        if entry.get("data", {}).get("abuse_score", 0) >= 25
-    ]
+    """Return process-local IPs flagged as suspicious. Redis-cached entries are
+    not enumerable here (would require a SCAN); use the dashboard for the
+    authoritative list backed by the database."""
+    return [ip for ip, entry in _local_cache.items()
+            if entry.get("data", {}).get("abuse_score", 0) >= 25]
