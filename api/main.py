@@ -118,7 +118,13 @@ manager = ConnectionManager()
 _last_broadcast_event_id = 0
 
 async def broadcast_live_events():
-    """Poll DB for new events and push to subscribed (per-tenant) clients."""
+    """Safety-net poller for the live feed.
+
+    /api/v1/ingest now broadcasts events immediately, so this loop is
+    primarily a fallback for events written via paths that don't push
+    (legacy ingestion, manual DB seeds, replays). Limit is generous so
+    a burst can't slip past the cursor unseen.
+    """
     global _last_broadcast_event_id
     while True:
         try:
@@ -126,7 +132,7 @@ async def broadcast_live_events():
             # user_role="admin" bypasses the DB tenant filter so we can see
             # every fresh event and decide who to forward it to.
             events, _ = db.fetch_events_paginated(
-                page=1, limit=10, min_risk=0, tenant_id=None, user_role="admin"
+                page=1, limit=200, min_risk=0, tenant_id=None, user_role="admin"
             )
             new_events = []
             for e in events:
@@ -1043,10 +1049,14 @@ def _ip_to_country(ip: str) -> str:
 
 
 @app.post("/api/v1/ingest")
-def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
+async def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
     """SDK ingestion endpoint — saves events DIRECTLY to database for instant visibility.
     Includes lightweight pattern-based threat detection + UEBA analysis.
     Auth via X-API-Key header.
+
+    Each accepted event is also broadcast immediately to the tenant's
+    WebSocket subscribers so the live feed reflects activity in real time
+    (no 2-second polling delay, no burst loss).
     """
     if not batch.events or len(batch.events) == 0:
         raise HTTPException(status_code=400, detail="Empty event batch")
@@ -1118,6 +1128,31 @@ def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
         event_id, incident_id = db.insert_event(event_dict)
         if event_id:
             inserted += 1
+            # Push to the tenant's live feed *immediately*. Without this,
+            # the dashboard would only see events on the next 2s poll tick
+            # and would silently drop bursts of >10 events/2s.
+            try:
+                live_payload = {
+                    "type": "new_event",
+                    "data": {
+                        "id": event_id,
+                        "timestamp": ts.isoformat() if ts else datetime.utcnow().isoformat(),
+                        "user": event_dict["user"],
+                        "action": event_dict["action"],
+                        "ip": event_dict["ip"],
+                        "risk_score": round(event_dict["risk_score"] or 0, 1),
+                        "attack_type": event_dict["attack_type"] or "unknown",
+                        "country": event_dict["country"] or "UNKNOWN",
+                        "status": event_dict["status"],
+                        "resource": event_dict["resource"],
+                    },
+                }
+                global _last_broadcast_event_id
+                if event_id > _last_broadcast_event_id:
+                    _last_broadcast_event_id = event_id
+                await manager.broadcast_to_tenant(live_payload, api_user.id)
+            except Exception:
+                pass
             # Phase 4: stream to Kafka if KAFKA_BROKERS is configured (no-op otherwise)
             try:
                 from src.kafka_stream import publish_event, is_enabled

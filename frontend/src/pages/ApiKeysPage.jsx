@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fetchApiKeys, createApiKey, revokeApiKey } from '../api/client';
+import { fetchApiKeys, createApiKey, revokeApiKey, apiBase } from '../api/client';
+
+const INGEST_ORIGIN =
+  apiBase ||
+  (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:8000');
 
 function formatDate(dateStr) {
   if (!dateStr) return '\u2014';
@@ -162,6 +166,17 @@ export default function ApiKeysPage() {
             </div>
             <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Generate and manage API access credentials
+            </div>
+            <div style={{
+              marginTop: 12, padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 10,
+              background: 'rgba(72,187,120,0.06)', border: '1px solid rgba(72,187,120,0.25)', borderRadius: 6,
+            }}>
+              <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#48bb78', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Endpoint
+              </span>
+              <code style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#ffffff', letterSpacing: '0.02em' }}>
+                {INGEST_ORIGIN}
+              </code>
             </div>
           </div>
 

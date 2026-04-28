@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiBase } from '../api/client';
 
 const TABS = [
   { id: 'nodejs', label: 'NODE.JS' },
@@ -6,7 +7,13 @@ const TABS = [
   { id: 'rest', label: 'REST API' },
 ];
 
-const TAB_CONTENT = {
+// The ingest endpoint the customer's SDK must POST to. Falls back to the
+// dashboard origin so this page works in local dev too.
+const INGEST_ORIGIN =
+  apiBase ||
+  (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.host}` : 'http://localhost:8000');
+
+const buildTabContent = (origin) => ({
   nodejs: {
     title: 'Node.js SDK Integration',
     sections: [
@@ -16,14 +23,21 @@ const TAB_CONTENT = {
       },
       {
         heading: '02 // INITIALIZE CLIENT',
+        description: 'The endpoint is required — without it the SDK will POST to localhost and your events will never reach this dashboard.',
         code: `const { TrustFlow } = require('trustflow-sdk');
-const tp = new TrustFlow({ apiKey: process.env.TRUSTFLOW_API_KEY });`,
+const tp = new TrustFlow({
+  apiKey: process.env.TRUSTFLOW_API_KEY,
+  endpoint: '${origin}',
+});`,
       },
       {
         heading: '03 // EXPRESS MIDDLEWARE',
         description: 'Automatically analyze all incoming requests for threats.',
         code: `const { trustFlowMiddleware } = require('trustflow-sdk/express');
-app.use(trustFlowMiddleware({ apiKey: process.env.TRUSTFLOW_API_KEY }));`,
+app.use(trustFlowMiddleware({
+  apiKey: process.env.TRUSTFLOW_API_KEY,
+  endpoint: '${origin}',
+}));`,
       },
     ],
   },
@@ -37,13 +51,20 @@ app.use(trustFlowMiddleware({ apiKey: process.env.TRUSTFLOW_API_KEY }));`,
       {
         heading: '02 // INITIALIZE CLIENT',
         code: `from trustflow import TrustFlow
-tp = TrustFlow(api_key=os.environ['TRUSTFLOW_API_KEY'])`,
+tp = TrustFlow(
+    api_key=os.environ['TRUSTFLOW_API_KEY'],
+    endpoint='${origin}',
+)`,
       },
       {
         heading: '03 // FLASK MIDDLEWARE',
         description: 'Wrap your WSGI application to monitor all requests.',
         code: `from trustflow.middleware import TrustFlowMiddleware
-app.wsgi_app = TrustFlowMiddleware(app.wsgi_app, api_key=os.environ['TRUSTFLOW_API_KEY'])`,
+app.wsgi_app = TrustFlowMiddleware(
+    app.wsgi_app,
+    api_key=os.environ['TRUSTFLOW_API_KEY'],
+    endpoint='${origin}',
+)`,
       },
     ],
   },
@@ -52,7 +73,7 @@ app.wsgi_app = TrustFlowMiddleware(app.wsgi_app, api_key=os.environ['TRUSTFLOW_A
     sections: [
       {
         heading: '01 // ENDPOINT',
-        code: 'POST /api/v1/ingest',
+        code: `POST ${origin}/api/v1/ingest`,
       },
       {
         heading: '02 // HEADERS',
@@ -73,9 +94,17 @@ Content-Type: application/json`,
   }]
 }`,
       },
+      {
+        heading: '04 // CURL TEST',
+        description: 'Verify your API key + endpoint in one shot.',
+        code: `curl -X POST '${origin}/api/v1/ingest' \\
+  -H 'X-API-Key: tf_live_your_key_here' \\
+  -H 'Content-Type: application/json' \\
+  -d '{"events":[{"timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'","user":"test@example.com","ip":"203.0.113.42","action":"GET","status":"success","resource":"/health"}]}'`,
+      },
     ],
   },
-};
+});
 
 function CodeBlock({ code }) {
   const [copied, setCopied] = useState(false);
@@ -184,17 +213,62 @@ function CodeBlock({ code }) {
 
 export default function IntegrationGuidePage() {
   const [activeTab, setActiveTab] = useState('nodejs');
+  const TAB_CONTENT = buildTabContent(INGEST_ORIGIN);
   const content = TAB_CONTENT[activeTab];
+  const [endpointCopied, setEndpointCopied] = useState(false);
+  const copyEndpoint = async () => {
+    try { await navigator.clipboard.writeText(INGEST_ORIGIN); }
+    catch { /* ignore */ }
+    setEndpointCopied(true);
+    setTimeout(() => setEndpointCopied(false), 2000);
+  };
 
   return (
     <div className="page-enter">
       {/* Header */}
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
           INTEGRATION GUIDE
         </div>
         <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
           Connect your applications to TrustFlow
+        </div>
+      </div>
+
+      {/* Endpoint banner — the single most-missed config field */}
+      <div style={{
+        marginBottom: 28,
+        padding: '14px 18px',
+        background: 'rgba(72,187,120,0.06)',
+        border: '1px solid rgba(72,187,120,0.25)',
+        borderRadius: 8,
+        display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+      }}>
+        <div style={{
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#48bb78',
+          letterSpacing: '0.12em', textTransform: 'uppercase',
+        }}>
+          YOUR INGEST ENDPOINT
+        </div>
+        <code style={{
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, color: '#ffffff',
+          background: '#060e14', padding: '6px 12px', borderRadius: 4,
+          border: '1px solid rgba(255,255,255,0.1)', letterSpacing: '0.02em',
+          wordBreak: 'break-all', flex: 1, minWidth: 240,
+        }}>
+          {INGEST_ORIGIN}
+        </code>
+        <button onClick={copyEndpoint} style={{
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
+          padding: '6px 14px', borderRadius: 4, cursor: 'pointer',
+          border: '1px solid rgba(72,187,120,0.4)',
+          background: endpointCopied ? 'rgba(72,187,120,0.2)' : 'rgba(72,187,120,0.08)',
+          color: '#48bb78', letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          {endpointCopied ? 'COPIED' : 'COPY'}
+        </button>
+        <div style={{ flexBasis: '100%', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#a0a0a0', letterSpacing: '0.04em' }}>
+          Pass this as <span style={{ color: '#ffffff' }}>endpoint</span> when initializing the SDK. If omitted, the SDK defaults to localhost and your events never reach this dashboard.
         </div>
       </div>
 
