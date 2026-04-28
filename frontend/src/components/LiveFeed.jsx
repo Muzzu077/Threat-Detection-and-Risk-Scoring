@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSeverity } from '../utils/helpers';
+import { apiBase } from '../api/client';
 
 export default function LiveFeed() {
   const [events, setEvents] = useState([]);
@@ -26,8 +27,8 @@ export default function LiveFeed() {
   useEffect(() => {
     const connect = () => {
       try {
-        const apiOrigin = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.host}`;
-        const wsUrl = apiOrigin.replace(/^http/, 'ws') + '/ws/live-feed';
+        const origin = apiBase || `${window.location.protocol}//${window.location.host}`;
+        const wsUrl = origin.replace(/^http/, 'ws') + '/ws/live-feed';
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 

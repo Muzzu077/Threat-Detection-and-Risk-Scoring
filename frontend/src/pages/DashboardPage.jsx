@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar
 } from 'recharts';
-import { fetchStats, fetchEvents, fetchIncidents, fetchGeoDistribution, fetchMttdMttr } from '../api/client';
+import { fetchStats, fetchEvents, fetchIncidents, fetchGeoDistribution, fetchMttdMttr, apiBase } from '../api/client';
 import { getSeverity, formatDateTime } from '../utils/helpers';
 import { RiskBadge, AttackTypeBadge } from '../components/Badges';
 import LiveFeed from '../components/LiveFeed';
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                 const formData = new FormData();
                 formData.append('file', e.target.files[0]);
                 try {
-                  const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/ingest/csv`, { method: 'POST', body: formData });
+                  const res = await fetch(`${apiBase}/api/ingest/csv`, { method: 'POST', body: formData });
                   if (res.ok) {
                     const data = await res.json();
                     alert(`✅ Real data uploaded! ${data.events_count} events queued for ML ingestion.`);

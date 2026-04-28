@@ -1,9 +1,36 @@
 import axios from 'axios';
 
-// VITE_API_URL is the API origin (e.g. https://trustflowapi.welocalhost.com).
-// When unset (local dev with `vite` proxy or same-origin nginx), falls back
-// to a relative path so requests stay on the current host.
-const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+// API origin resolution order (first non-empty wins):
+//   1. window.__APP_CONFIG__.API_URL  — runtime injection (override)
+//   2. VITE_API_URL                    — build-time env (when actually wired)
+//   3. derived from window.location    — production fallback that doesn't rely
+//      on Dokploy passing build args:  trustflow.* → trustflowapi.*
+//   4. relative '/api'                 — local dev / vite proxy
+const resolveApiOrigin = () => {
+  if (typeof window !== 'undefined') {
+    const injected = window.__APP_CONFIG__?.API_URL;
+    if (injected) return String(injected).replace(/\/$/, '');
+  }
+  const buildEnv = import.meta.env.VITE_API_URL;
+  // Treat the Dockerfile default as "not configured" so we fall through
+  // to the runtime derivation in production.
+  if (buildEnv && !/^https?:\/\/localhost(:|\/|$)/.test(buildEnv)) {
+    return buildEnv.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const { protocol, hostname } = window.location;
+    // trustflow.welocalhost.com  →  trustflowapi.welocalhost.com
+    if (hostname.startsWith('trustflow.')) {
+      return `${protocol}//trustflowapi.${hostname.slice('trustflow.'.length)}`;
+    }
+    if (hostname === 'trustflow.welocalhost.com') {
+      return `${protocol}//trustflowapi.welocalhost.com`;
+    }
+  }
+  return '';
+};
+
+const API_ORIGIN = resolveApiOrigin();
 const BASE = `${API_ORIGIN}/api`;
 
 export const apiBase = API_ORIGIN;
