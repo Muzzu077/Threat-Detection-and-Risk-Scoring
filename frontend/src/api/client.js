@@ -111,6 +111,7 @@ export const fetchApplicationStats = (id) => api.get(`/applications/${id}/stats`
 
 export const fetchAdminUsers = () => api.get('/admin/users').then(r => r.data);
 export const setUserRole = (userId, role) => api.post(`/admin/users/${userId}/role`, { role }).then(r => r.data);
+export const deleteUser  = (userId) => api.delete(`/admin/users/${userId}`).then(r => r.data);
 
 // ─── Notifications ───────────────────────────────────────────────────────────
 

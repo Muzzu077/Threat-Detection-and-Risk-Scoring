@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminUsers, setUserRole } from '../api/client';
+import { fetchAdminUsers, setUserRole, deleteUser } from '../api/client';
 
 function formatDate(s) {
   if (!s) return '—';
@@ -31,6 +31,16 @@ export default function AdminUsersPage() {
       load();
     } catch (e) {
       setErr(e.response?.data?.detail || 'FAILED TO UPDATE ROLE');
+    }
+  };
+
+  const handleDelete = async (u) => {
+    if (!confirm(`PERMANENTLY delete ${u.email}?\n\nThis removes the user and ALL their data: API keys, applications, events, incidents, playbooks, alert prefs.\n\nThis cannot be undone.`)) return;
+    try {
+      await deleteUser(u.id);
+      load();
+    } catch (e) {
+      setErr(e.response?.data?.detail || 'FAILED TO DELETE USER');
     }
   };
 
@@ -90,13 +100,19 @@ export default function AdminUsersPage() {
                       letterSpacing: '0.08em', textTransform: 'uppercase',
                     }}>{u.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
                   </td>
-                  <td>
+                  <td style={{ display: 'flex', gap: 6 }}>
                     <button onClick={() => handleToggleRole(u)} style={{
                       fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, padding: '4px 10px',
                       borderRadius: 3, border: '1px solid rgba(255,255,255,0.15)',
                       background: 'rgba(255,255,255,0.04)', color: '#a0a0a0', cursor: 'pointer',
                       letterSpacing: '0.06em', textTransform: 'uppercase',
                     }}>{u.role === 'admin' ? 'DEMOTE' : 'PROMOTE'}</button>
+                    <button onClick={() => handleDelete(u)} style={{
+                      fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, padding: '4px 10px',
+                      borderRadius: 3, border: '1px solid rgba(229,62,62,0.3)',
+                      background: 'rgba(229,62,62,0.06)', color: '#e53e3e', cursor: 'pointer',
+                      letterSpacing: '0.06em', textTransform: 'uppercase',
+                    }}>DELETE</button>
                   </td>
                 </tr>
               ))}

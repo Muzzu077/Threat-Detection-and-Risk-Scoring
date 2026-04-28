@@ -568,6 +568,48 @@ def set_user_role(user_id: int, body: dict, current_user: User = Depends(require
     finally:
         session.close()
 
+
+@app.delete("/api/admin/users/{user_id}")
+def delete_user(user_id: int, current_user: User = Depends(require_admin)):
+    """Hard-delete a user and every record that hangs off them.
+
+    Wipes (in FK-safe order): incidents, attack chains, log events,
+    custom playbooks, notification prefs, refresh tokens, api keys,
+    applications, and finally the user row. Returns counts so the
+    caller can verify what was removed.
+    """
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    from src.database import Incident, AttackChain, RefreshToken
+    session = db.Session()
+    try:
+        u = session.query(User).filter(User.id == user_id).first()
+        if not u:
+            raise HTTPException(status_code=404, detail="User not found")
+        email = u.email
+
+        # Delete in FK-safe order. tenant_id and user_id both reference users.id.
+        counts = {
+            "incidents":     session.query(Incident).filter(Incident.tenant_id == user_id).delete(synchronize_session=False),
+            "attack_chains": session.query(AttackChain).filter(AttackChain.tenant_id == user_id).delete(synchronize_session=False),
+            "log_events":    session.query(LogEvent).filter(LogEvent.tenant_id == user_id).delete(synchronize_session=False),
+            "playbooks":     session.query(Playbook).filter(Playbook.tenant_id == user_id).delete(synchronize_session=False),
+            "notif_prefs":   session.query(NotificationPreference).filter(NotificationPreference.user_id == user_id).delete(synchronize_session=False),
+            "refresh_tokens": session.query(RefreshToken).filter(RefreshToken.user_id == user_id).delete(synchronize_session=False),
+            "api_keys":      session.query(ApiKey).filter(ApiKey.user_id == user_id).delete(synchronize_session=False),
+            "applications":  session.query(Application).filter(Application.tenant_id == user_id).delete(synchronize_session=False),
+        }
+        session.delete(u)
+        session.commit()
+        return {"success": True, "user_id": user_id, "email": email, "deleted": counts}
+    except HTTPException:
+        raise
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Delete failed: {e}")
+    finally:
+        session.close()
+
 # ─── Application Routes ──────────────────────────────────────────────────────
 
 def _ensure_default_application(user: User) -> Application:
