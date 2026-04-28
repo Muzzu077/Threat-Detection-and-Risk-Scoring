@@ -27,5 +27,9 @@ RUN mkdir -p data models logs_ingest
 # Expose API port
 EXPOSE 8000
 
-# Default command (overridden by docker-compose)
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY startup.sh /app/startup.sh
+RUN chmod +x /app/startup.sh
+
+# Default command — runs optional bootstrap then starts uvicorn
+# Set ADMIN_EMAIL + ADMIN_PASSWORD env vars to auto-promote on first boot
+CMD ["/app/startup.sh"]
