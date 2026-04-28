@@ -923,9 +923,14 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
             "explanation": f"Potential privilege escalation: {action_upper} {resource} from {ip}",
         }
 
-    # Brute force heuristic: failed POST to auth endpoints — HIGH tier
+    # Brute force heuristic: failed auth attempt — HIGH tier.
+    # Matches both HTTP-method style (action="POST", resource="/login") and
+    # semantic style (action="login"/"signin") that SDKs commonly send.
     auth_paths = ("/login", "/signin", "/auth", "/api/auth", "/oauth", "/token")
-    if is_failure and action_upper == "POST" and any(p in resource_lower for p in auth_paths):
+    _semantic_auth = {"login", "signin", "authenticate", "auth", "password", "logon"}
+    is_http_auth_post = action_upper == "POST" and any(p in resource_lower for p in auth_paths)
+    is_semantic_auth  = action_lower in _semantic_auth
+    if is_failure and (is_http_auth_post or is_semantic_auth):
         return {
             "risk_score": round(70.0 + _random.uniform(-4, 15), 1),
             "attack_type": "brute_force",
