@@ -27,8 +27,22 @@ export default function LiveFeed() {
   useEffect(() => {
     const connect = () => {
       try {
+        // The server requires a valid JWT to scope the live feed to the
+        // current tenant. Read it from localStorage and append as ?token=…
+        // (browser WebSockets can't carry an Authorization header).
+        let accessToken = '';
+        try {
+          const raw = localStorage.getItem('tp_tokens');
+          if (raw) accessToken = JSON.parse(raw).access_token || '';
+        } catch { /* ignore */ }
+        if (!accessToken) {
+          // Not logged in — don't open an unauth connection. Retry later;
+          // it'll succeed once the user has a session.
+          setTimeout(connect, 5000);
+          return;
+        }
         const origin = apiBase || `${window.location.protocol}//${window.location.host}`;
-        const wsUrl = origin.replace(/^http/, 'ws') + '/ws/live-feed';
+        const wsUrl = origin.replace(/^http/, 'ws') + '/ws/live-feed?token=' + encodeURIComponent(accessToken);
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 

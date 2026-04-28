@@ -80,23 +80,36 @@ def _tenant_args(user: User) -> dict:
 # ─── WebSocket Connection Manager ────────────────────────────────────────────
 
 class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
+    """Per-tenant WebSocket fan-out.
 
-    async def connect(self, websocket: WebSocket):
+    Each connection carries (tenant_id, user_role). Events are routed
+    only to connections whose tenant matches the event's tenant_id, or
+    to admin connections (which see everything for ops monitoring).
+    """
+    def __init__(self):
+        # connection -> {"tenant_id": int, "user_role": str}
+        self.connections: dict = {}
+
+    async def connect(self, websocket: WebSocket, tenant_id: int, user_role: str):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        self.connections[websocket] = {"tenant_id": tenant_id, "user_role": user_role}
 
     def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
+        self.connections.pop(websocket, None)
 
-    async def broadcast(self, message: dict):
-        for connection in self.active_connections[:]:
+    async def broadcast_to_tenant(self, message: dict, event_tenant_id):
+        """Send message to every connection that should see this event."""
+        dead = []
+        for ws, ctx in list(self.connections.items()):
+            # Admins see all tenants' traffic; users see only their own.
+            if ctx["user_role"] != "admin" and ctx["tenant_id"] != event_tenant_id:
+                continue
             try:
-                await connection.send_json(message)
+                await ws.send_json(message)
             except Exception:
-                self.disconnect(connection)
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
 
 manager = ConnectionManager()
 
@@ -105,20 +118,24 @@ manager = ConnectionManager()
 _last_broadcast_event_id = 0
 
 async def broadcast_live_events():
-    """Poll DB for new events and push to WebSocket clients."""
+    """Poll DB for new events and push to subscribed (per-tenant) clients."""
     global _last_broadcast_event_id
     while True:
         try:
-            events, _ = db.fetch_events_paginated(page=1, limit=10, min_risk=0)
+            # Pull recent events globally, but route them per-tenant below.
+            # user_role="admin" bypasses the DB tenant filter so we can see
+            # every fresh event and decide who to forward it to.
+            events, _ = db.fetch_events_paginated(
+                page=1, limit=10, min_risk=0, tenant_id=None, user_role="admin"
+            )
             new_events = []
             for e in events:
                 if e.id > _last_broadcast_event_id:
                     new_events.append(e)
-                    if e.id > _last_broadcast_event_id:
-                        _last_broadcast_event_id = e.id
+                    _last_broadcast_event_id = e.id
 
             for event in reversed(new_events):
-                await manager.broadcast({
+                payload = {
                     "type": "new_event",
                     "data": {
                         "id": event.id,
@@ -132,7 +149,8 @@ async def broadcast_live_events():
                         "status": event.status,
                         "resource": event.resource
                     }
-                })
+                }
+                await manager.broadcast_to_tenant(payload, event.tenant_id)
         except Exception:
             pass
         await asyncio.sleep(2)
@@ -1787,10 +1805,48 @@ def ml_sequence_anomaly_train(epochs: int = Query(5, ge=1, le=50), current_user:
 # ─── WebSocket ────────────────────────────────────────────────────────────────
 
 @app.websocket("/ws/live-feed")
-async def websocket_live_feed(websocket: WebSocket):
-    await manager.connect(websocket)
+async def websocket_live_feed(websocket: WebSocket, token: str = Query(default="")):
+    """Live event feed.
+
+    Browsers can't set Authorization headers on WebSockets, so the JWT is
+    passed as ?token=... in the URL. The connection is rejected if the
+    token is missing/invalid; otherwise it's tagged with the user's
+    tenant_id so the broadcaster only forwards that tenant's events.
+    """
+    # Authenticate before accepting — close with 1008 (policy violation) on failure.
+    from src.auth import decode_token
+    if not token:
+        await websocket.close(code=1008, reason="Missing token")
+        return
+    if token in _revoked_access_tokens:
+        await websocket.close(code=1008, reason="Token revoked")
+        return
     try:
-        events, _ = db.fetch_events_paginated(page=1, limit=10)
+        payload = decode_token(token)
+        if payload.get("type") != "access":
+            await websocket.close(code=1008, reason="Wrong token type")
+            return
+        user_id = int(payload["sub"])
+    except HTTPException:
+        await websocket.close(code=1008, reason="Invalid token")
+        return
+
+    session = db.Session()
+    try:
+        user = session.query(User).filter(User.id == user_id, User.is_active == True).first()  # noqa: E712
+        if not user:
+            await websocket.close(code=1008, reason="User not found")
+            return
+        tenant_id, user_role = user.id, user.role
+    finally:
+        session.close()
+
+    await manager.connect(websocket, tenant_id=tenant_id, user_role=user_role)
+    try:
+        # Tenant-scoped history: same DB filter as GET /api/events.
+        ta = {"tenant_id": None, "user_role": "admin"} if user_role == "admin" \
+             else {"tenant_id": tenant_id, "user_role": user_role}
+        events, _ = db.fetch_events_paginated(page=1, limit=10, **ta)
         for e in reversed(events):
             await websocket.send_json({
                 "type": "history_event",
@@ -1801,6 +1857,8 @@ async def websocket_live_feed(websocket: WebSocket):
             await asyncio.sleep(30)
             await websocket.send_json({"type": "ping"})
     except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception:
         manager.disconnect(websocket)
 
 
