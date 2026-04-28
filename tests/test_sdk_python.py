@@ -1,7 +1,6 @@
 """
 Tests for sdk/python/trustflow — client and middleware.
 """
-import pytest
 import json
 import threading
 import time

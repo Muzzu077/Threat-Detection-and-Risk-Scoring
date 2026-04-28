@@ -5,52 +5,66 @@ Multi-tenant SaaS with JWT auth and API key support.
 """
 import sys
 import os
-import json
-import asyncio
-from datetime import datetime, timedelta
-from typing import Optional, List
-from contextlib import asynccontextmanager
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # noqa: E402
+
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query, UploadFile, File, Depends, Request, Body
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr
-import pandas as pd
-import io
-import time
+import asyncio  # noqa: E402
+import io  # noqa: E402
+import json  # noqa: E402
+import random as _random  # noqa: E402
+import re as _re  # noqa: E402
+import time  # noqa: E402
+from contextlib import asynccontextmanager  # noqa: E402
+from datetime import datetime, timedelta  # noqa: E402
+from typing import List, Optional  # noqa: E402
+from urllib.parse import unquote as _url_decode  # noqa: E402
 
-from src.database import db, User, ApiKey, Application, NotificationPreference, Playbook
-from src.auth import (
+import pandas as pd  # noqa: E402
+from fastapi import (  # noqa: E402
+    Body,
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    UploadFile,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
+
+from src.database import db, User, ApiKey, Application, NotificationPreference, Playbook, LogEvent  # noqa: E402
+from src.auth import (  # noqa: E402
     hash_password, verify_password,
     create_access_token, create_refresh_token,
-    get_current_user, get_current_user_optional,
-    revoke_refresh_token, validate_refresh_token,
+    get_current_user, revoke_refresh_token, validate_refresh_token,
     require_admin,
 )
-from src.api_keys import generate_api_key, get_api_key_user
-from src.attack_graph import build_graph, graph_to_json, get_attack_chains
-from src.ml_engine import get_ml_metrics
-from src.threat_intel import check_ip, get_known_bad_ips
-from src.response_engine import execute_response, get_response_log, get_blocked_ips, get_disabled_accounts
-from src.mitre_mapping import get_mitre_mapping, get_all_techniques
-from src.explainability_shap import load_cached_shap, get_static_feature_importance
-from src.threat_predictor import get_prediction_from_db_events
-from src.ueba import analyze_event_ueba, get_user_profile, get_all_profiles
-from src.soar_playbooks import get_all_playbooks, evaluate_playbook, execute_playbook
-from src.osint_feeds import get_feed_summary, check_ip_osint, fetch_urlhaus_recent
-from src.feedback_loop import record_feedback, get_feedback_stats, get_drift_metrics
-from src.adversarial_test import run_adversarial_tests, get_cached_results
-from src.threat_intel_extended import extended_check_ip, check_domain_virustotal
-from utils.telegram_alerter import send_system_status, get_bot_info
-from utils.gemini_client import generate_security_summary
-from utils.alert_dispatcher import dispatch_alert, dispatch_alert_for_user
-from utils.log_parsers import parse_log_file
-from utils.telegram_bot import start_polling_thread as start_telegram_bot
+from src.api_keys import generate_api_key, get_api_key_user  # noqa: E402
+from src.attack_graph import build_graph, graph_to_json, get_attack_chains  # noqa: E402
+from src.ml_engine import get_ml_metrics  # noqa: E402
+from src.threat_intel import check_ip, get_known_bad_ips  # noqa: E402
+from src.response_engine import execute_response, get_response_log, get_blocked_ips, get_disabled_accounts  # noqa: E402
+from src.mitre_mapping import get_mitre_mapping, get_all_techniques  # noqa: E402
+from src.explainability_shap import load_cached_shap, get_static_feature_importance  # noqa: E402
+from src.threat_predictor import get_prediction_from_db_events  # noqa: E402
+from src.ueba import analyze_event_ueba, get_user_profile, get_all_profiles  # noqa: E402
+from src.soar_playbooks import get_all_playbooks, evaluate_playbook, execute_playbook  # noqa: E402
+from src.osint_feeds import get_feed_summary, check_ip_osint, fetch_urlhaus_recent  # noqa: E402
+from src.feedback_loop import record_feedback, get_feedback_stats, get_drift_metrics  # noqa: E402
+from src.adversarial_test import run_adversarial_tests, get_cached_results  # noqa: E402
+from src.threat_intel_extended import extended_check_ip, check_domain_virustotal  # noqa: E402
+from utils.telegram_alerter import send_system_status, get_bot_info  # noqa: E402
+from utils.gemini_client import generate_security_summary  # noqa: E402
+from utils.alert_dispatcher import dispatch_alert, dispatch_alert_for_user  # noqa: E402
+from utils.log_parsers import parse_log_file  # noqa: E402
+from utils.telegram_bot import start_polling_thread as start_telegram_bot  # noqa: E402
 
 # ─── Access Token Blacklist (for logout) ─────────────────────────────────────
 _revoked_access_tokens: set = set()
@@ -139,9 +153,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+_cors_default = "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+_cors_env = os.getenv("CORS_ALLOWED_ORIGINS", _cors_default)
+_cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -750,7 +768,6 @@ def _parse_sdk_timestamp(ts_str: str):
         return datetime.utcnow()
     ts_str = ts_str.replace("Z", "+00:00")
     try:
-        from datetime import timezone
         dt = datetime.fromisoformat(ts_str)
         if dt.tzinfo:
             dt = dt.replace(tzinfo=None)  # store as naive UTC
@@ -773,10 +790,6 @@ def _map_http_status(status_str: str) -> str:
     except ValueError:
         return s
 
-
-import re as _re
-import random as _random
-from urllib.parse import unquote as _url_decode
 
 # Patterns for lightweight threat detection on SDK-ingested events
 # Severity tiers: LOW (1-30), MEDIUM (31-65), HIGH (66-100)
