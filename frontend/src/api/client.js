@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-const BASE = '/api';
+// VITE_API_URL is the API origin (e.g. https://trustflowapi.welocalhost.com).
+// When unset (local dev with `vite` proxy or same-origin nginx), falls back
+// to a relative path so requests stay on the current host.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+const BASE = `${API_ORIGIN}/api`;
 
+export const apiBase = API_ORIGIN;
 export const api = axios.create({ baseURL: BASE });
 
 // ─── JWT Interceptors ────────────────────────────────────────────────────────

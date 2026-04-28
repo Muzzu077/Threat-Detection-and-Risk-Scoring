@@ -26,7 +26,9 @@ export default function LiveFeed() {
   useEffect(() => {
     const connect = () => {
       try {
-        const ws = new WebSocket(`ws://${window.location.host}/ws/live-feed`);
+        const apiOrigin = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.host}`;
+        const wsUrl = apiOrigin.replace(/^http/, 'ws') + '/ws/live-feed';
+        const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
         ws.onmessage = (e) => {
