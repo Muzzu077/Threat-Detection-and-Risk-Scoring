@@ -27,7 +27,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Muzammil-Threat-Detection-and-Risk-Scoring"
+    "url": "git+https://github.com/Muzzu077/Threat-Detection-and-Risk-Scoring.git",
+    "directory": "sdk/node"
+  },
+  "homepage": "https://github.com/Muzzu077/Threat-Detection-and-Risk-Scoring#readme",
+  "bugs": {
+    "url": "https://github.com/Muzzu077/Threat-Detection-and-Risk-Scoring/issues"
   },
   "engines": {
     "node": ">=18.0.0"
