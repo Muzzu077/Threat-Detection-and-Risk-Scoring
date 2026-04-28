@@ -1,0 +1,46 @@
+# ─── TrustFlow — Dokploy Deployment Compose ──────────────────────────────────
+# Postgres and Redis are managed by Dokploy (separate services).
+# This file only defines the three application containers.
+# Environment variables are injected by Dokploy via the Environment tab.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs_ingest:/app/logs_ingest
+      - ./models:/app/models
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    volumes:
+      - ./data:/app/data
+      - ./logs_ingest:/app/logs_ingest
+      - ./models:/app/models
+    command: python -m src.ingestion_service
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:80"
+    restart: unless-stopped
