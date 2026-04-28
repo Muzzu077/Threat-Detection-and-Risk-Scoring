@@ -20,8 +20,8 @@ class TestGenerateApiKey:
     def test_key_format(self):
         from src.api_keys import generate_api_key
         full_key, prefix, key_hash = generate_api_key()
-        assert full_key.startswith("tp_live_")
-        assert len(full_key) == 8 + 48  # "tp_live_" + 48 hex chars
+        assert full_key.startswith("tf_live_")
+        assert len(full_key) == 8 + 48  # "tf_live_" + 48 hex chars
 
     def test_prefix_is_first_16_chars(self):
         from src.api_keys import generate_api_key
@@ -46,19 +46,19 @@ class TestGenerateApiKey:
 class TestHashApiKey:
     def test_hash_consistency(self):
         from src.api_keys import hash_api_key
-        h1 = hash_api_key("tp_live_abc123")
-        h2 = hash_api_key("tp_live_abc123")
+        h1 = hash_api_key("tf_live_abc123")
+        h2 = hash_api_key("tf_live_abc123")
         assert h1 == h2
 
     def test_different_keys_different_hashes(self):
         from src.api_keys import hash_api_key
-        h1 = hash_api_key("tp_live_aaa")
-        h2 = hash_api_key("tp_live_bbb")
+        h1 = hash_api_key("tf_live_aaa")
+        h2 = hash_api_key("tf_live_bbb")
         assert h1 != h2
 
     def test_hash_is_sha256(self):
         from src.api_keys import hash_api_key
-        key = "tp_live_test123"
+        key = "tf_live_test123"
         result = hash_api_key(key)
         expected = hashlib.sha256(key.encode()).hexdigest()
         assert result == expected
@@ -84,7 +84,7 @@ class TestGetApiKeyUser:
 
     def test_invalid_key(self, test_db):
         from src.api_keys import get_api_key_user
-        request = self._make_request("tp_live_nonexistent_key_value_here")
+        request = self._make_request("tf_live_nonexistent_key_value_here")
         with pytest.raises(HTTPException) as exc_info:
             get_api_key_user(request)
         assert exc_info.value.status_code == 401

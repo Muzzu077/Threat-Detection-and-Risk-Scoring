@@ -22,9 +22,8 @@ We use sklearn's DBSCAN — HDBSCAN is in requirements as a future upgrade for
 variable-density clusters but we keep DBSCAN here so the module works even if
 HDBSCAN compilation fails on the host.
 """
-import os
 import math
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime
 
 import numpy as np

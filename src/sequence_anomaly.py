@@ -79,7 +79,6 @@ def _heuristic_score(tokens: list) -> float:
         return 0.0
     counts = Counter(tokens)
     n = len(tokens)
-    entropy = -sum((c / n) * math.log2(c / n) for c in counts.values()) if n > 1 else 0
     failures = sum(1 for t in tokens if t.endswith("|F"))
     fail_rate = failures / n
     unique_ratio = len(counts) / n

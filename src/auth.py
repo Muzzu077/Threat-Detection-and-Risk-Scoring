@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 import bcrypt
 import jwt
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException
 
 from src.database import db, User, RefreshToken
 

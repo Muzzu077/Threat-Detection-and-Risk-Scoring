@@ -1,4 +1,3 @@
-import pandas as pd
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import LabelEncoder
 import joblib
@@ -107,6 +106,6 @@ def save_model(model, encoders, filepath='model.pkl'):
 def load_model(filepath='model.pkl'):
     try:
         return joblib.load(filepath)
-    except:
+    except Exception:
         return None, None
 

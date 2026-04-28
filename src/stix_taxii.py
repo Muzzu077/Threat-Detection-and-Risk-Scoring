@@ -15,9 +15,7 @@ before hitting external APIs, giving customers a private feed layer.
 """
 import os
 import re
-import json
-import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from src import redis_cache
 

@@ -14,9 +14,8 @@ Detections:
 """
 import os
 import json
-import math
 import statistics
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 from typing import List, Dict, Optional
 

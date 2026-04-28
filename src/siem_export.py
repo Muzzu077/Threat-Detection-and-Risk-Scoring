@@ -11,7 +11,6 @@ Supported targets (per-tenant config in NotificationPreference):
 All transports are best-effort and time out at 5s. Failures are logged and
 swallowed so they never block the ingest path.
 """
-import os
 import json
 from datetime import datetime
 import requests

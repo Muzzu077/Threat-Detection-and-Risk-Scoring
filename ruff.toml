@@ -1,0 +1,23 @@
+line-length = 120
+target-version = "py311"
+
+[lint]
+# E701 (multi-statement single-line) is used widely in this codebase as a
+# deliberate readability choice for short conditional dispatches like
+# `if 'block' in actions: actions.append('Blocked')`. Allow it project-wide.
+extend-ignore = ["E701"]
+
+[lint.per-file-ignores]
+# SQLAlchemy ORM filters require `Column == True/False` rather than `Column`
+# (Python truthy checks don't translate to SQL the same way).
+"src/api_keys.py" = ["E712"]
+"src/auth.py" = ["E712"]
+
+# ingestion_service and api/main load .env *before* importing local modules
+# that depend on those vars — those imports legitimately come after env setup.
+"src/ingestion_service.py" = ["E402"]
+"api/main.py" = ["E402"]
+
+# Tests intentionally redefine fixture names and import inside test methods
+# (lazy-load to keep collection fast). Don't fight that.
+"tests/**" = ["E402", "F811", "F401"]

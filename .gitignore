@@ -20,3 +20,4 @@ data/osint_feeds_cache.json
 .venv/
 .claude/
 dvwa-stack/.env
+.venv-ci/

@@ -210,7 +210,7 @@ def poll_callbacks():
         print("[Telegram Bot] No TELEGRAM_BOT_TOKEN set. Callback handler disabled.")
         return
 
-    print(f"[Telegram Bot] Polling for button callbacks...")
+    print("[Telegram Bot] Polling for button callbacks...")
     offset = 0
 
     while True:

@@ -12,7 +12,6 @@ Frameworks supported:
 from datetime import datetime, timedelta
 from collections import Counter
 
-from sqlalchemy import func
 
 
 # Mapping of evidence sections → controls covered, per framework

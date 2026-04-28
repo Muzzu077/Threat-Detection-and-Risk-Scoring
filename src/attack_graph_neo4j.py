@@ -18,7 +18,6 @@ the existing NetworkX path keeps serving the API.
 """
 import os
 from datetime import datetime
-from contextlib import contextmanager
 
 
 def _config():

@@ -2,8 +2,6 @@
 Threat Prediction Module — LSTM + Isolation Forest time-series prediction.
 Detects escalating attack patterns and predicts likely next attack within 5 minutes.
 """
-import os
-import json
 import numpy as np
 from datetime import datetime, timedelta
 from collections import deque

@@ -198,10 +198,9 @@ def compute_and_save_ensemble_metrics() -> dict:
     Train (if needed) and compare LGBM, XGB, and the averaged ensemble on a held-out split.
     Saves to ml_ensemble_metrics.json so /api/ml/ensemble can serve it cheaply.
     """
-    from sklearn.preprocessing import LabelEncoder, StandardScaler
     from sklearn.model_selection import train_test_split
     from sklearn.metrics import accuracy_score, f1_score
-    from src.ml_engine import CATEGORICAL_COLS, NETWORK_FEATURES, ML_MODEL_PATH, ML_ENCODERS_PATH
+    from src.ml_engine import CATEGORICAL_COLS, NETWORK_FEATURES
 
     data_path = os.path.join(_PROJECT_ROOT, "data", "labeled_logs.csv")
     if not os.path.exists(data_path):

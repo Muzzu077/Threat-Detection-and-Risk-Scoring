@@ -27,7 +27,7 @@ def verify_openrouter():
         with open("verification_result.txt", "w", encoding="utf-8") as f:
             f.write(summary)
             
-        print(f"   ✅ OpenRouter Response received and saved to verification_result.txt")
+        print("   ✅ OpenRouter Response received and saved to verification_result.txt")
         if "Error" in summary:
             print("   ⚠️  Warning: OpenRouter returned an error message.")
         else:

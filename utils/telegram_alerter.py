@@ -180,7 +180,7 @@ def send_alert(event: dict, incident_id: int, response_actions: str = '') -> boo
             print(f"⚠️ Telegram send attempt {attempt+1}/3 failed: {e}")
         if attempt < 2:
             time.sleep(2 * (attempt + 1))  # Exponential backoff: 2s, 4s
-    print(f"❌ Telegram send ultimately failed after 3 attempts.")
+    print("❌ Telegram send ultimately failed after 3 attempts.")
     return False
 
 

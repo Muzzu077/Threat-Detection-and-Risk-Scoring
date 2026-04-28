@@ -61,7 +61,7 @@ def compute_shap_values(model, encoders, df: pd.DataFrame) -> dict:
             result = _build_importance_dict(features.columns.tolist(), feature_importance, source="shap")
             _cache_shap(result)
             return result
-        except Exception as e:
+        except Exception:
             pass  # Fall through to model importance
 
     # Fallback: use built-in feature_importances_ from LightGBM/RandomForest

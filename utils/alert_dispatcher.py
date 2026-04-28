@@ -8,7 +8,6 @@ so that credentials added after startup (e.g. TELEGRAM_CHAT_ID) take effect imme
 without restarting the services.
 """
 import os
-import json
 import requests
 from datetime import datetime
 from dotenv import load_dotenv

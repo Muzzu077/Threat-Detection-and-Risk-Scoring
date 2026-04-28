@@ -92,7 +92,7 @@ Use the exact format above with the bold headings. Be specific and actionable. D
 
         except requests.exceptions.Timeout:
             continue
-        except Exception as e:
+        except Exception:
             continue
 
     return "AI summary unavailable — all models failed. Check your OpenRouter API key."

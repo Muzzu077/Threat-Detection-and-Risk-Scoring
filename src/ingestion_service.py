@@ -31,8 +31,6 @@ from src.anomaly_detection import check_rule_based_anomalies
 # NEW: Extended modules
 from src.ml_engine import load_ml_engine, predict_attack_type
 from src.threat_intel import check_ip
-from src.response_engine import execute_response
-from src.attack_graph import get_attack_chains, build_graph
 
 from utils.alert_dispatcher import dispatch_alert
 from utils.gemini_client import generate_security_summary

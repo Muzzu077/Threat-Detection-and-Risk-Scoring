@@ -4,7 +4,6 @@ Conditional response playbooks based on attack type and risk level.
 Each playbook defines a sequence of automated response actions.
 """
 import os
-import json
 from datetime import datetime
 
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

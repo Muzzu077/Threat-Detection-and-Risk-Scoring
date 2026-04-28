@@ -199,7 +199,7 @@ class TestApiKeyEndpoints:
         resp = client.post("/api/keys", json={"name": "My Key"}, headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
-        assert data["key"].startswith("tp_live_")
+        assert data["key"].startswith("tf_live_")
         assert data["name"] == "My Key"
         assert "prefix" in data
 
@@ -284,7 +284,7 @@ class TestSDKIngest:
                 {"timestamp": "2024-01-01T00:00:00Z", "user": "x", "ip": "1.1.1.1",
                  "action": "a", "status": "s", "resource": "r"}
             ]},
-            headers={"X-API-Key": "tp_live_invalid_key_here"},
+            headers={"X-API-Key": "tf_live_invalid_key_here"},
         )
         assert resp.status_code == 401
 

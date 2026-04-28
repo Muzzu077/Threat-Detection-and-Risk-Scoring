@@ -13,11 +13,9 @@ Output: list of normalized event dicts compatible with the ingestion pipeline.
 import re
 import os
 import csv
-import json
 import gzip
-from datetime import datetime, timezone
-from typing import List, Optional, Iterator
-import io
+from datetime import datetime
+from typing import List
 
 
 # ── Normalized event schema ───────────────────────────────────────────────────

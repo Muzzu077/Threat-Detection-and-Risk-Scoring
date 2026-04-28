@@ -4,10 +4,7 @@ Uses NetworkX to build directed graphs from security events.
 Groups events into kill chains by shared IP/user within a time window.
 Exports graph data as JSON for D3.js visualization.
 """
-import json
 from datetime import datetime, timedelta
-from typing import List, Optional
-from collections import defaultdict
 
 try:
     import networkx as nx

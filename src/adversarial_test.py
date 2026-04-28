@@ -20,7 +20,7 @@ def run_adversarial_tests(model, encoders) -> dict:
     if model is None or encoders is None:
         return {"error": "Model not loaded", "tests": []}
 
-    from src.ml_engine import predict_attack_type, CATEGORICAL_COLS
+    from src.ml_engine import predict_attack_type
 
     tests = []
 
