@@ -68,7 +68,13 @@ def get_api_key_user(request: Request) -> User:
         if not user:
             raise HTTPException(status_code=401, detail="API key owner not found or inactive")
 
+        # Attach the calling key's application_id so the ingest endpoint can
+        # stamp every event/incident with the correct app scope.
+        application_id = ak.application_id
         session.expunge(user)
+        # SQLAlchemy InstanceState forbids ad-hoc attrs on detached instances
+        # via __setattr__; use object.__setattr__ to bypass.
+        object.__setattr__(user, "_tf_application_id", application_id)
         return user
     finally:
         session.close()

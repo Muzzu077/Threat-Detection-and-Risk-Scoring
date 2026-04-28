@@ -1,19 +1,65 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+// nav schema:
+//   path, label, sub, icon, group ('operations' | 'developer' | 'admin'),
+//   adminOnly (true → admins only)
 const NAV = [
-  { path: '/', label: 'Operations', sub: 'Dashboard', icon: '\u25C8' },
-  { path: '/incidents', label: 'Incidents', sub: 'Active Threats', icon: '\u26A0' },
-  { path: '/attack-graph', label: 'Kill Chain', sub: 'Attack Graph', icon: '\u2B21' },
-  { path: '/ml-metrics', label: 'ML Engine', sub: 'Model Metrics', icon: '\u25CE' },
-  { path: '/threat-intel', label: 'Threat Intel', sub: 'IP Reputation', icon: '\u25C9' },
-  { path: '/response', label: 'SOAR', sub: 'Auto Response', icon: '\u26A1' },
-  { path: '/playbooks', label: 'Playbooks', sub: 'SOAR Flows', icon: '\u25B6' },
-  { path: '/api-keys', label: 'API Keys', sub: 'Key Management', icon: '\u26BF' },
-  { path: '/integration', label: 'Integration', sub: 'SDK Setup Guide', icon: '\u25C7' },
+  // ── Operations: visible to every authenticated user ─────────────────────────
+  { path: '/',             label: 'Operations',  sub: 'Dashboard',      icon: '◈', group: 'operations' },
+  { path: '/applications', label: 'Applications', sub: 'Your Integrations', icon: '▢', group: 'operations' },
+  { path: '/incidents',    label: 'Incidents',   sub: 'Active Threats', icon: '⚠', group: 'operations' },
+  { path: '/attack-graph', label: 'Kill Chain',  sub: 'Attack Graph',   icon: '⬡', group: 'operations' },
+  { path: '/threat-intel', label: 'Threat Intel', sub: 'IP Reputation', icon: '◉', group: 'operations' },
+
+  // ── Developer: visible to every authenticated user ──────────────────────────
+  { path: '/api-keys',      label: 'API Keys',     sub: 'Key Management',   icon: '⚿', group: 'developer' },
+  { path: '/integration',   label: 'Integration',  sub: 'SDK Setup Guide',  icon: '◇', group: 'developer' },
+  { path: '/notifications', label: 'Notifications', sub: 'Alert Channels',  icon: '⌬', group: 'developer' },
+  { path: '/playbook-builder', label: 'Playbooks',  sub: 'SOAR Builder',     icon: '▶', group: 'developer' },
+
+  // ── Admin: only role=admin ─────────────────────────────────────────────────
+  { path: '/ml-metrics',   label: 'ML Engine',     sub: 'Model Metrics',  icon: '◎', group: 'admin', adminOnly: true },
+  { path: '/ml-lab',       label: 'ML Lab',        sub: 'Phase 2 Models', icon: '⌬', group: 'admin', adminOnly: true },
+  { path: '/compliance',   label: 'Compliance',    sub: 'SOC 2 / ISO',    icon: '⛓', group: 'admin', adminOnly: true },
+  { path: '/response',     label: 'SOAR',          sub: 'Auto Response',  icon: '⚡', group: 'admin', adminOnly: true },
+  { path: '/playbooks',    label: 'Playbooks',     sub: 'SOAR Flows',     icon: '▶', group: 'admin', adminOnly: true },
+  { path: '/admin/users',  label: 'Users',         sub: 'Tenant Admin',   icon: '○', group: 'admin', adminOnly: true },
 ];
 
-export default function Sidebar() {
+function NavGroup({ items, location, navigate, label }) {
+  if (items.length === 0) return null;
+  return (
+    <>
+      <div className="nav-section-label">{label}</div>
+      {items.map(item => {
+        const isActive = location.pathname === item.path ||
+          (item.path !== '/' && location.pathname.startsWith(item.path));
+        return (
+          <div
+            key={item.path}
+            className={`nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => navigate(item.path)}
+            style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '10px 16px' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+              <span className="nav-icon" style={{ fontSize: 14 }}>{item.icon}</span>
+              <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>{item.label}</span>
+              {isActive && (
+                <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #ffffff' }} />
+              )}
+            </div>
+            <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
+              {item.sub}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+export default function Sidebar({ role = 'user' }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [time, setTime] = useState(new Date());
@@ -24,6 +70,11 @@ export default function Sidebar() {
   }, []);
 
   const timeStr = time.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const visible = NAV.filter(n => !n.adminOnly || role === 'admin');
+  const ops      = visible.filter(n => n.group === 'operations');
+  const dev      = visible.filter(n => n.group === 'developer');
+  const admin    = visible.filter(n => n.group === 'admin');
 
   return (
     <aside className="sidebar">
@@ -49,54 +100,9 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar-nav">
-        <div className="nav-section-label">Operations</div>
-        {NAV.slice(0, 7).map(item => {
-          const isActive = location.pathname === item.path ||
-            (item.path !== '/' && location.pathname.startsWith(item.path));
-          return (
-            <div
-              key={item.path}
-              className={`nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '10px 16px' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                <span className="nav-icon" style={{ fontSize: 14 }}>{item.icon}</span>
-                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>{item.label}</span>
-                {isActive && (
-                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #ffffff' }} />
-                )}
-              </div>
-              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
-                {item.sub}
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="nav-section-label" style={{ marginTop: 12 }}>Developer</div>
-        {NAV.slice(7).map(item => {
-          const isActive = location.pathname === item.path;
-          return (
-            <div
-              key={item.path}
-              className={`nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => navigate(item.path)}
-              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1, padding: '10px 16px' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                <span className="nav-icon" style={{ fontSize: 14 }}>{item.icon}</span>
-                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>{item.label}</span>
-                {isActive && (
-                  <span style={{ marginLeft: 'auto', width: 4, height: 4, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 6px #ffffff' }} />
-                )}
-              </div>
-              <div style={{ paddingLeft: 28, fontSize: 9, color: isActive ? 'rgba(255,255,255,0.5)' : 'rgba(61,96,117,0.7)', letterSpacing: 2, textTransform: 'uppercase' }}>
-                {item.sub}
-              </div>
-            </div>
-          );
-        })}
+        <NavGroup items={ops}   location={location} navigate={navigate} label="Operations" />
+        <NavGroup items={dev}   location={location} navigate={navigate} label="Developer" />
+        <NavGroup items={admin} location={location} navigate={navigate} label="Admin" />
       </nav>
 
       {/* Footer */}

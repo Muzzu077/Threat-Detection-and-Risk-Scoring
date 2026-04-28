@@ -100,6 +100,14 @@ def get_current_user(request: Request) -> User:
         session.close()
 
 
+def require_admin(request: Request) -> User:
+    """FastAPI dependency — only allow users with role='admin'."""
+    user = get_current_user(request)
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin role required")
+    return user
+
+
 def get_current_user_optional(request: Request):
     """Returns User or None — for backward-compatible endpoints."""
     auth_header = request.headers.get("Authorization", "")

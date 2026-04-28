@@ -24,12 +24,13 @@ import pandas as pd
 import io
 import time
 
-from src.database import db, User, ApiKey
+from src.database import db, User, ApiKey, Application, NotificationPreference, Playbook
 from src.auth import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
     get_current_user, get_current_user_optional,
     revoke_refresh_token, validate_refresh_token,
+    require_admin,
 )
 from src.api_keys import generate_api_key, get_api_key_user
 from src.attack_graph import build_graph, graph_to_json, get_attack_chains
@@ -47,7 +48,7 @@ from src.adversarial_test import run_adversarial_tests, get_cached_results
 from src.threat_intel_extended import extended_check_ip, check_domain_virustotal
 from utils.telegram_alerter import send_system_status, get_bot_info
 from utils.gemini_client import generate_security_summary
-from utils.alert_dispatcher import dispatch_alert
+from utils.alert_dispatcher import dispatch_alert, dispatch_alert_for_user
 from utils.log_parsers import parse_log_file
 from utils.telegram_bot import start_polling_thread as start_telegram_bot
 
@@ -183,6 +184,64 @@ class LogoutRequest(BaseModel):
 
 class CreateApiKeyRequest(BaseModel):
     name: Optional[str] = "Default"
+    application_id: Optional[int] = None
+
+class CreateApplicationRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    environment: Optional[str] = "production"
+
+class UpdateApplicationRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    environment: Optional[str] = None
+    status: Optional[str] = None
+
+
+class NotificationPrefsRequest(BaseModel):
+    telegram_chat_id: Optional[str] = None
+    whatsapp_number: Optional[str] = None
+    email_address: Optional[str] = None
+    enable_telegram: Optional[bool] = None
+    enable_whatsapp: Optional[bool] = None
+    enable_email: Optional[bool] = None
+    min_severity: Optional[str] = None
+    # SIEM export (Phase 3)
+    siem_type:   Optional[str] = None
+    siem_url:    Optional[str] = None
+    siem_token:  Optional[str] = None
+    siem_index:  Optional[str] = None
+    enable_siem: Optional[bool] = None
+
+
+class NotificationTestRequest(BaseModel):
+    channel: str  # "telegram" | "whatsapp" | "email"
+
+
+class PlaybookStep(BaseModel):
+    type: str
+    params: Optional[dict] = {}
+
+class CustomPlaybookRequest(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    enabled: Optional[bool] = True
+    trigger_attack_types: Optional[str] = ""
+    trigger_min_risk: Optional[float] = 70.0
+    trigger_application_id: Optional[int] = None
+    steps: List[PlaybookStep] = []
+
+class CustomPlaybookUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    enabled: Optional[bool] = None
+    trigger_attack_types: Optional[str] = None
+    trigger_min_risk: Optional[float] = None
+    trigger_application_id: Optional[int] = None
+    steps: Optional[List[PlaybookStep]] = None
+
+class PlaybookDryRunRequest(BaseModel):
+    sample_event: dict
 
 class IngestEvent(BaseModel):
     timestamp: str
@@ -239,6 +298,26 @@ def serialize_user(user: User) -> dict:
         "role": user.role,
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }
+
+def serialize_application(app: Application, stats: dict = None) -> dict:
+    return {
+        "id": app.id,
+        "tenant_id": app.tenant_id,
+        "name": app.name,
+        "slug": app.slug,
+        "description": app.description or "",
+        "environment": app.environment,
+        "status": app.status,
+        "created_at": app.created_at.isoformat() if app.created_at else None,
+        "updated_at": app.updated_at.isoformat() if app.updated_at else None,
+        "stats": stats or {},
+    }
+
+
+def _slugify(name: str, suffix: int = 0) -> str:
+    import re as _re_local
+    s = _re_local.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") or "app"
+    return f"{s}-{suffix}" if suffix else s
 
 # ─── Auth Routes ─────────────────────────────────────────────────────────────
 
@@ -307,15 +386,299 @@ def auth_logout(request: Request, body: LogoutRequest = Body(default=None)):
 def auth_me(current_user: User = Depends(get_current_user)):
     return {"user": serialize_user(current_user)}
 
+# ─── Admin: User Management ──────────────────────────────────────────────────
+
+@app.get("/api/admin/users")
+def list_users(current_user: User = Depends(require_admin)):
+    session = db.Session()
+    try:
+        users = session.query(User).order_by(User.created_at.desc()).all()
+        out = []
+        for u in users:
+            apps = session.query(Application).filter(Application.tenant_id == u.id).count()
+            out.append({**serialize_user(u), "is_active": u.is_active, "applications_count": apps})
+        return {"data": out}
+    finally:
+        session.close()
+
+# ─── Notification Preferences ────────────────────────────────────────────────
+
+_VALID_SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW")
+
+def serialize_notification_prefs(pref: NotificationPreference) -> dict:
+    if pref is None:
+        return {
+            "telegram_chat_id": "",
+            "whatsapp_number": "",
+            "email_address": "",
+            "enable_telegram": False,
+            "enable_whatsapp": False,
+            "enable_email": False,
+            "min_severity": "HIGH",
+            "siem_type": "",
+            "siem_url": "",
+            "siem_token": "",
+            "siem_index": "trustflow",
+            "enable_siem": False,
+            "configured": False,
+        }
+    # Mask the SIEM token in API responses — return only a short prefix
+    token = pref.siem_token or ""
+    masked_token = (token[:6] + "…" + token[-4:]) if len(token) > 12 else ("•" * len(token) if token else "")
+    return {
+        "telegram_chat_id": pref.telegram_chat_id or "",
+        "whatsapp_number": pref.whatsapp_number or "",
+        "email_address": pref.email_address or "",
+        "enable_telegram": bool(pref.enable_telegram),
+        "enable_whatsapp": bool(pref.enable_whatsapp),
+        "enable_email": bool(pref.enable_email),
+        "min_severity": pref.min_severity or "HIGH",
+        "siem_type": pref.siem_type or "",
+        "siem_url": pref.siem_url or "",
+        "siem_token": masked_token,
+        "siem_token_set": bool(token),
+        "siem_index": pref.siem_index or "trustflow",
+        "enable_siem": bool(pref.enable_siem),
+        "configured": True,
+        "updated_at": pref.updated_at.isoformat() if pref.updated_at else None,
+    }
+
+
+@app.get("/api/notifications/preferences")
+def get_notification_prefs(current_user: User = Depends(get_current_user)):
+    pref = db.get_notification_preferences(current_user.id)
+    return serialize_notification_prefs(pref)
+
+
+_VALID_SIEM_TYPES = ("", "splunk", "elastic", "datadog", "webhook")
+
+@app.put("/api/notifications/preferences")
+def update_notification_prefs(body: NotificationPrefsRequest, current_user: User = Depends(get_current_user)):
+    if body.min_severity is not None and body.min_severity.upper() not in _VALID_SEVERITIES:
+        raise HTTPException(status_code=400, detail=f"min_severity must be one of {_VALID_SEVERITIES}")
+    if body.siem_type is not None and body.siem_type.lower() not in _VALID_SIEM_TYPES:
+        raise HTTPException(status_code=400, detail=f"siem_type must be one of {_VALID_SIEM_TYPES}")
+
+    fields = body.dict(exclude_unset=True)
+    if "min_severity" in fields and fields["min_severity"]:
+        fields["min_severity"] = fields["min_severity"].upper()
+    if "siem_type" in fields and fields["siem_type"]:
+        fields["siem_type"] = fields["siem_type"].lower()
+
+    # Drop the token field if it looks masked (user re-saved without retyping it)
+    token = fields.get("siem_token")
+    if token is not None and ("…" in token or all(c == "•" for c in token)):
+        fields.pop("siem_token", None)
+
+    pref = db.upsert_notification_preferences(current_user.id, **fields)
+    return serialize_notification_prefs(pref)
+
+
+@app.post("/api/siem/test")
+def siem_test_connection(current_user: User = Depends(get_current_user)):
+    """Send a heartbeat event to the user's configured SIEM."""
+    from src.siem_export import test_connection
+    pref = db.get_notification_preferences(current_user.id)
+    if not pref or not pref.siem_type:
+        raise HTTPException(status_code=400, detail="No SIEM configured")
+    return test_connection(pref)
+
+
+@app.post("/api/notifications/test")
+def send_test_notification(body: NotificationTestRequest, current_user: User = Depends(get_current_user)):
+    """Send a test alert via the requested channel using the user's saved preferences."""
+    from utils.alert_dispatcher import dispatch_alert_for_user
+
+    channel = body.channel.lower()
+    if channel not in ("telegram", "whatsapp", "email"):
+        raise HTTPException(status_code=400, detail="channel must be telegram, whatsapp, or email")
+
+    pref = db.get_notification_preferences(current_user.id)
+    if not pref:
+        raise HTTPException(status_code=400, detail="No notification preferences set yet")
+
+    test_event = {
+        "user": current_user.email,
+        "ip": "test.test.test.test",
+        "risk_score": 99.0,
+        "attack_type": "test_alert",
+        "explanation": f"This is a TrustFlow test alert from your {channel} channel — if you got it, you're wired up.",
+    }
+
+    result = dispatch_alert_for_user(
+        test_event,
+        incident_id=0,
+        user=current_user,
+        prefs=pref,
+        only_channel=channel,
+    )
+    return {"channel": channel, "delivered": result.get(channel, False), "all": result}
+
+@app.post("/api/admin/users/{user_id}/role")
+def set_user_role(user_id: int, body: dict, current_user: User = Depends(require_admin)):
+    role = body.get("role", "")
+    if role not in ("user", "admin"):
+        raise HTTPException(status_code=400, detail="role must be 'user' or 'admin'")
+    if user_id == current_user.id and role != "admin":
+        raise HTTPException(status_code=400, detail="Cannot demote yourself")
+    session = db.Session()
+    try:
+        u = session.query(User).filter(User.id == user_id).first()
+        if not u:
+            raise HTTPException(status_code=404, detail="User not found")
+        u.role = role
+        session.commit()
+        return {"success": True, "user_id": user_id, "role": role}
+    finally:
+        session.close()
+
+# ─── Application Routes ──────────────────────────────────────────────────────
+
+def _ensure_default_application(user: User) -> Application:
+    """Get-or-create a Default Application for the given user."""
+    apps = db.list_applications(tenant_id=user.id, user_role=user.role)
+    own = [a for a in apps if a.tenant_id == user.id]
+    if own:
+        return own[0]
+    return db.create_application(
+        tenant_id=user.id,
+        name="Default Application",
+        slug=_slugify("default", suffix=user.id),
+        description="Auto-created default application.",
+        environment="production",
+    )
+
+
+@app.get("/api/applications")
+def list_applications(current_user: User = Depends(get_current_user)):
+    apps = db.list_applications(tenant_id=current_user.id, user_role=current_user.role)
+    out = []
+    for a in apps:
+        stats = db.get_application_stats(a.id, tenant_id=current_user.id, user_role=current_user.role)
+        out.append(serialize_application(a, stats))
+    return {"data": out}
+
+
+@app.post("/api/applications")
+def create_application(body: CreateApplicationRequest, current_user: User = Depends(get_current_user)):
+    if not body.name or not body.name.strip():
+        raise HTTPException(status_code=400, detail="Application name is required")
+    if body.environment not in ("production", "staging", "development"):
+        raise HTTPException(status_code=400, detail="environment must be production, staging, or development")
+
+    # Build a unique slug per-tenant
+    base_slug = _slugify(body.name)
+    existing_slugs = {a.slug for a in db.list_applications(tenant_id=current_user.id, user_role="user")}
+    slug = base_slug
+    n = 1
+    while slug in existing_slugs:
+        n += 1
+        slug = f"{base_slug}-{n}"
+
+    app_obj = db.create_application(
+        tenant_id=current_user.id,
+        name=body.name.strip(),
+        slug=slug,
+        description=body.description or "",
+        environment=body.environment,
+    )
+    return serialize_application(app_obj, {})
+
+
+@app.get("/api/applications/{app_id}")
+def get_application(app_id: int, current_user: User = Depends(get_current_user)):
+    app_obj = db.get_application(app_id, tenant_id=current_user.id, user_role=current_user.role)
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Application not found")
+    stats = db.get_application_stats(app_id, tenant_id=current_user.id, user_role=current_user.role)
+    return serialize_application(app_obj, stats)
+
+
+@app.patch("/api/applications/{app_id}")
+def update_application(app_id: int, body: UpdateApplicationRequest, current_user: User = Depends(get_current_user)):
+    if body.environment is not None and body.environment not in ("production", "staging", "development"):
+        raise HTTPException(status_code=400, detail="invalid environment")
+    if body.status is not None and body.status not in ("active", "paused", "archived"):
+        raise HTTPException(status_code=400, detail="invalid status")
+
+    app_obj = db.update_application(
+        app_id,
+        tenant_id=current_user.id,
+        user_role=current_user.role,
+        name=body.name,
+        description=body.description,
+        environment=body.environment,
+        status=body.status,
+    )
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return serialize_application(app_obj, {})
+
+
+@app.delete("/api/applications/{app_id}")
+def delete_application(app_id: int, current_user: User = Depends(get_current_user)):
+    app_obj = db.delete_application(app_id, tenant_id=current_user.id, user_role=current_user.role)
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return {"success": True, "id": app_id, "status": "archived"}
+
+
+@app.get("/api/applications/{app_id}/stats")
+def application_stats(app_id: int, current_user: User = Depends(get_current_user)):
+    app_obj = db.get_application(app_id, tenant_id=current_user.id, user_role=current_user.role)
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return db.get_application_stats(app_id, tenant_id=current_user.id, user_role=current_user.role)
+
+
+@app.get("/api/applications/{app_id}/keys")
+def list_application_keys(app_id: int, current_user: User = Depends(get_current_user)):
+    app_obj = db.get_application(app_id, tenant_id=current_user.id, user_role=current_user.role)
+    if not app_obj:
+        raise HTTPException(status_code=404, detail="Application not found")
+    session = db.Session()
+    try:
+        keys = session.query(ApiKey).filter(
+            ApiKey.application_id == app_id,
+        ).order_by(ApiKey.created_at.desc()).all()
+        return {
+            "data": [
+                {
+                    "id": k.id,
+                    "name": k.name,
+                    "prefix": k.prefix,
+                    "application_id": k.application_id,
+                    "created_at": k.created_at.isoformat() if k.created_at else None,
+                    "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
+                    "is_active": k.is_active,
+                }
+                for k in keys
+            ]
+        }
+    finally:
+        session.close()
+
+
 # ─── API Key Routes ──────────────────────────────────────────────────────────
 
 @app.post("/api/keys")
 def create_api_key_endpoint(body: CreateApiKeyRequest, current_user: User = Depends(get_current_user)):
+    # Resolve application_id: explicit or fall back to default app
+    if body.application_id is not None:
+        app_obj = db.get_application(body.application_id, tenant_id=current_user.id, user_role=current_user.role)
+        if not app_obj or app_obj.tenant_id != current_user.id:
+            raise HTTPException(status_code=404, detail="Application not found")
+        application_id = app_obj.id
+    else:
+        default_app = _ensure_default_application(current_user)
+        application_id = default_app.id
+
     full_key, prefix, key_hash = generate_api_key()
     session = db.Session()
     try:
         ak = ApiKey(
             user_id=current_user.id,
+            application_id=application_id,
             name=body.name,
             prefix=prefix,
             key_hash=key_hash,
@@ -328,6 +691,7 @@ def create_api_key_endpoint(body: CreateApiKeyRequest, current_user: User = Depe
             "prefix": prefix,
             "name": ak.name,
             "id": ak.id,
+            "application_id": application_id,
             "created_at": ak.created_at.isoformat() if ak.created_at else None,
         }
     finally:
@@ -337,6 +701,10 @@ def create_api_key_endpoint(body: CreateApiKeyRequest, current_user: User = Depe
 def list_api_keys(current_user: User = Depends(get_current_user)):
     session = db.Session()
     try:
+        # Build a lookup of application names for this tenant
+        apps = session.query(Application).filter(Application.tenant_id == current_user.id).all()
+        app_names = {a.id: a.name for a in apps}
+
         keys = session.query(ApiKey).filter(
             ApiKey.user_id == current_user.id
         ).order_by(ApiKey.created_at.desc()).all()
@@ -346,6 +714,8 @@ def list_api_keys(current_user: User = Depends(get_current_user)):
                     "id": k.id,
                     "name": k.name,
                     "prefix": k.prefix,
+                    "application_id": k.application_id,
+                    "application_name": app_names.get(k.application_id, "—"),
                     "created_at": k.created_at.isoformat() if k.created_at else None,
                     "last_used_at": k.last_used_at.isoformat() if k.last_used_at else None,
                     "is_active": k.is_active,
@@ -664,11 +1034,26 @@ def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
             "threat_intel_reason": "",
             "response_actions": "",
             "tenant_id": api_user.id,
+            "application_id": getattr(api_user, "_tf_application_id", None),
         }
 
         event_id, incident_id = db.insert_event(event_dict)
         if event_id:
             inserted += 1
+            # Phase 4: stream to Kafka if KAFKA_BROKERS is configured (no-op otherwise)
+            try:
+                from src.kafka_stream import publish_event, is_enabled
+                if is_enabled():
+                    publish_event(event_dict, incident_id or 0)
+            except Exception:
+                pass
+            # Phase 4: mirror to Neo4j if configured
+            try:
+                from src.attack_graph_neo4j import upsert_event as neo_upsert, is_configured as neo_ready
+                if neo_ready() and (event_dict.get("risk_score") or 0) >= 30:
+                    neo_upsert(event_dict, tenant_id=api_user.id)
+            except Exception:
+                pass
         if incident_id:
             incidents_created += 1
             # Generate AI summary for high-risk incidents
@@ -689,9 +1074,36 @@ def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_user)):
                 db.update_incident_response(incident_id, response_json)
             except Exception:
                 pass
-            # Dispatch alerts
+            # Dispatch alerts to the tenant's configured channels (multi-tenant)
             try:
-                dispatch_alert(event_dict, incident_id, response_json)
+                prefs = db.get_notification_preferences(api_user.id)
+                if prefs:
+                    dispatch_alert_for_user(
+                        event_dict, incident_id,
+                        user=api_user, prefs=prefs,
+                        response_actions=response_json,
+                    )
+                else:
+                    # Legacy fallback: global env-based dispatch (admin/system events)
+                    dispatch_alert(event_dict, incident_id, response_json)
+            except Exception:
+                pass
+            # SIEM export — push to customer's Splunk/Elastic/Datadog
+            try:
+                if prefs and prefs.enable_siem:
+                    from src.siem_export import export_event
+                    export_event(prefs, event_dict, incident_id)
+            except Exception:
+                pass
+            # Custom playbooks — run any tenant-defined SOAR flows that match
+            try:
+                from src.playbook_runner import run_matching_playbooks
+                run_matching_playbooks(
+                    event_dict, incident_id,
+                    tenant_id=api_user.id,
+                    application_id=event_dict.get("application_id"),
+                    db=db, prefs=prefs,
+                )
             except Exception:
                 pass
 
@@ -836,7 +1248,7 @@ def trigger_response(incident_id: int, body: ResponseTrigger = Body(default=None
     return response
 
 @app.get("/api/response/log")
-def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user: User = Depends(get_current_user)):
+def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user: User = Depends(require_admin)):
     raw = get_response_log(limit=limit)
     # Flatten: each action becomes its own entry with context
     flat = []
@@ -856,11 +1268,11 @@ def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user
     return {"data": flat[:limit]}
 
 @app.get("/api/response/blocked-ips")
-def get_blocked_ips_endpoint(current_user: User = Depends(get_current_user)):
+def get_blocked_ips_endpoint(current_user: User = Depends(require_admin)):
     return {"data": get_blocked_ips()}
 
 @app.get("/api/response/disabled-accounts")
-def get_disabled_accounts_endpoint(current_user: User = Depends(get_current_user)):
+def get_disabled_accounts_endpoint(current_user: User = Depends(require_admin)):
     return {"data": get_disabled_accounts()}
 
 # Attack Graph
@@ -880,9 +1292,9 @@ def get_attack_chains_endpoint(current_user: User = Depends(get_current_user)):
     chains = get_attack_chains(events, window_minutes=15)
     return {"data": chains, "count": len(chains)}
 
-# ML Metrics
+# ML Metrics (admin-only)
 @app.get("/api/ml-metrics")
-def get_ml_metrics_endpoint(current_user: User = Depends(get_current_user)):
+def get_ml_metrics_endpoint(current_user: User = Depends(require_admin)):
     metrics = get_ml_metrics()
     if not metrics:
         return {"message": "No ML metrics found. Run utils/train_ml_engine.py first."}
@@ -943,7 +1355,7 @@ def get_ml_metrics_endpoint(current_user: User = Depends(get_current_user)):
 
 # Threat Intelligence
 @app.get("/api/threat-intel/known-bad")
-def get_known_bad(current_user: User = Depends(get_current_user)):
+def get_known_bad(current_user: User = Depends(require_admin)):
     return {"data": get_known_bad_ips()}
 
 @app.get("/api/threat-intel/{ip}")
@@ -1136,6 +1548,224 @@ def get_events_with_mitre(
         })
     return {"data": result, "total": total}
 
+# ─── Phase 4: Neo4j Attack-Graph Backend ─────────────────────────────────────
+
+@app.get("/api/attack-graph/neo4j")
+def attack_graph_neo4j(current_user: User = Depends(get_current_user)):
+    """Neo4j-backed graph (falls back gracefully if NEO4J_URI is not set)."""
+    from src.attack_graph_neo4j import get_graph, is_configured
+    if not is_configured():
+        # Graceful degradation — fall through to NetworkX
+        ta = _tenant_args(current_user)
+        events = db.get_recent_events_for_graph(limit=200, **ta)
+        if not events:
+            return {"backend": "networkx", "configured": False, "nodes": [], "links": [], "node_count": 0, "link_count": 0}
+        from src.attack_graph import build_graph, graph_to_json
+        G = build_graph(events)
+        out = graph_to_json(G)
+        out["backend"] = "networkx"
+        out["configured"] = False
+        return out
+    tenant_id = current_user.id if current_user.role != "admin" else None
+    out = get_graph(tenant_id=tenant_id, limit=200)
+    out["backend"] = "neo4j"
+    return out
+
+
+@app.get("/api/attack-graph/neo4j/stats")
+def attack_graph_neo4j_stats(current_user: User = Depends(require_admin)):
+    from src.attack_graph_neo4j import stats
+    return stats()
+
+
+# ─── Phase 4: STIX/TAXII Threat-Intel Feed ───────────────────────────────────
+
+@app.get("/api/stix/indicators")
+def stix_indicators(current_user: User = Depends(get_current_user)):
+    """Return the cached STIX indicator bundle (read-only, all users)."""
+    from src.stix_taxii import get_cached_indicators, is_configured
+    out = get_cached_indicators()
+    out["server_configured"] = is_configured()
+    return out
+
+
+@app.post("/api/stix/pull")
+def stix_pull(max_indicators: int = Query(1000, ge=1, le=10000),
+              current_user: User = Depends(require_admin)):
+    """Trigger a fresh pull from the configured TAXII server."""
+    from src.stix_taxii import pull_feeds
+    return pull_feeds(max_indicators=max_indicators)
+
+
+# ─── Phase 3: Compliance Reports ─────────────────────────────────────────────
+
+@app.get("/api/compliance/report")
+def compliance_report_endpoint(
+    framework: str = Query("soc2", regex="^(soc2|iso27001)$"),
+    days: int = Query(90, ge=1, le=730),
+    current_user: User = Depends(require_admin),
+):
+    """SOC 2 / ISO 27001 evidence report covering the trailing N days."""
+    from src.compliance_report import generate_report
+    end = datetime.utcnow()
+    start = end - timedelta(days=days)
+    return generate_report(db, framework=framework, period_start=start, period_end=end)
+
+
+# ─── Phase 3: Custom Playbook Builder ────────────────────────────────────────
+
+_VALID_STEP_TYPES = {
+    "block_ip", "disable_account", "dispatch_alert", "run_webhook",
+    "set_incident_status", "siem_export", "delay",
+}
+
+
+def serialize_playbook(pb: Playbook) -> dict:
+    try:
+        steps = json.loads(pb.steps or "[]")
+    except Exception:
+        steps = []
+    return {
+        "id": pb.id,
+        "tenant_id": pb.tenant_id,
+        "name": pb.name,
+        "description": pb.description or "",
+        "enabled": bool(pb.enabled),
+        "trigger_attack_types": pb.trigger_attack_types or "",
+        "trigger_min_risk": pb.trigger_min_risk or 0,
+        "trigger_application_id": pb.trigger_application_id,
+        "steps": steps,
+        "step_count": len(steps),
+        "created_at": pb.created_at.isoformat() if pb.created_at else None,
+        "updated_at": pb.updated_at.isoformat() if pb.updated_at else None,
+    }
+
+
+def _validate_steps(steps: list) -> list:
+    """Normalise step list and reject unknown types."""
+    out = []
+    for s in steps:
+        if hasattr(s, "dict"):
+            s = s.dict()
+        stype = (s.get("type") or "").lower()
+        if stype not in _VALID_STEP_TYPES:
+            raise HTTPException(status_code=400, detail=f"unknown step type: {s.get('type')}")
+        out.append({"type": stype, "params": s.get("params") or {}})
+    return out
+
+
+@app.get("/api/playbooks/custom")
+def list_custom_playbooks(current_user: User = Depends(get_current_user)):
+    pbs = db.list_playbooks(tenant_id=current_user.id)
+    return {"data": [serialize_playbook(p) for p in pbs]}
+
+
+@app.post("/api/playbooks/custom")
+def create_custom_playbook(body: CustomPlaybookRequest, current_user: User = Depends(get_current_user)):
+    if not body.name.strip():
+        raise HTTPException(status_code=400, detail="name required")
+    steps_json = json.dumps(_validate_steps(body.steps))
+    pb = db.create_playbook(
+        tenant_id=current_user.id,
+        name=body.name.strip(),
+        description=body.description or "",
+        enabled=bool(body.enabled),
+        trigger_attack_types=body.trigger_attack_types or "",
+        trigger_min_risk=float(body.trigger_min_risk or 70.0),
+        trigger_application_id=body.trigger_application_id,
+        steps=steps_json,
+    )
+    return serialize_playbook(pb)
+
+
+@app.get("/api/playbooks/custom/{pb_id}")
+def get_custom_playbook(pb_id: int, current_user: User = Depends(get_current_user)):
+    pb = db.get_playbook(pb_id, current_user.id)
+    if not pb:
+        raise HTTPException(status_code=404, detail="playbook not found")
+    return serialize_playbook(pb)
+
+
+@app.patch("/api/playbooks/custom/{pb_id}")
+def update_custom_playbook(pb_id: int, body: CustomPlaybookUpdate, current_user: User = Depends(get_current_user)):
+    fields = body.dict(exclude_unset=True)
+    if "steps" in fields and fields["steps"] is not None:
+        fields["steps"] = json.dumps(_validate_steps(fields["steps"]))
+    pb = db.update_playbook(pb_id, current_user.id, **fields)
+    if not pb:
+        raise HTTPException(status_code=404, detail="playbook not found")
+    return serialize_playbook(pb)
+
+
+@app.delete("/api/playbooks/custom/{pb_id}")
+def delete_custom_playbook(pb_id: int, current_user: User = Depends(get_current_user)):
+    ok = db.delete_playbook(pb_id, current_user.id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="playbook not found")
+    return {"success": True, "id": pb_id}
+
+
+@app.post("/api/playbooks/custom/{pb_id}/dry-run")
+def dry_run_custom_playbook(pb_id: int, body: PlaybookDryRunRequest, current_user: User = Depends(get_current_user)):
+    pb = db.get_playbook(pb_id, current_user.id)
+    if not pb:
+        raise HTTPException(status_code=404, detail="playbook not found")
+    from src.playbook_runner import dry_run
+    return dry_run(serialize_playbook(pb), body.sample_event)
+
+
+# ─── Phase 2: Advanced ML ────────────────────────────────────────────────────
+
+@app.get("/api/ml/ensemble")
+def ml_ensemble_metrics(current_user: User = Depends(require_admin)):
+    """Return saved LGBM vs XGB vs combined-ensemble comparison."""
+    from src.ensemble_engine import get_ensemble_metrics, compute_and_save_ensemble_metrics
+    cached = get_ensemble_metrics()
+    if cached.get("per_model"):
+        return cached
+    try:
+        return compute_and_save_ensemble_metrics()
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/api/ml/ensemble/train")
+def ml_ensemble_train(current_user: User = Depends(require_admin)):
+    """Train XGBoost and recompute ensemble metrics."""
+    from src.ensemble_engine import train_xgboost, compute_and_save_ensemble_metrics
+    xgb_metrics = train_xgboost()
+    ensemble = compute_and_save_ensemble_metrics()
+    return {"xgb": xgb_metrics, "ensemble": ensemble}
+
+
+@app.get("/api/ml/zero-day")
+def ml_zero_day(current_user: User = Depends(get_current_user)):
+    """Cluster recent normal-but-suspicious events to surface candidate zero-days."""
+    from src.zero_day_detector import cluster_zero_day_events
+    ta = _tenant_args(current_user)
+    events = db.get_recent_events_for_graph(limit=1000, **ta)
+    # We want all events (including risk < 50) for zero-day analysis,
+    # so refetch via fetch_events_paginated which doesn't pre-filter.
+    events, _ = db.fetch_events_paginated(page=1, limit=2000, min_risk=0, **ta)
+    return cluster_zero_day_events(events)
+
+
+@app.get("/api/ml/sequence-anomaly")
+def ml_sequence_anomaly(top_k: int = Query(10, ge=1, le=50), current_user: User = Depends(get_current_user)):
+    """Score user sessions for transformer-based sequence anomaly."""
+    from src.sequence_anomaly import score_sessions
+    ta = _tenant_args(current_user)
+    events, _ = db.fetch_events_paginated(page=1, limit=2000, min_risk=0, **ta)
+    return score_sessions(events, top_k=top_k)
+
+
+@app.post("/api/ml/sequence-anomaly/train")
+def ml_sequence_anomaly_train(epochs: int = Query(5, ge=1, le=50), current_user: User = Depends(require_admin)):
+    """Train the transformer on the platform's full event history (admin)."""
+    from src.sequence_anomaly import train_sequence_transformer
+    events, _ = db.fetch_events_paginated(page=1, limit=10000, min_risk=0, tenant_id=None, user_role="admin")
+    return train_sequence_transformer(events, epochs=epochs)
+
+
 # ─── WebSocket ────────────────────────────────────────────────────────────────
 
 @app.websocket("/ws/live-feed")
@@ -1181,11 +1811,11 @@ def check_domain(domain: str, current_user: User = Depends(get_current_user)):
 # ── Feedback Loop / Online Learning ─────────────────────────────────────────
 
 @app.get("/api/feedback/stats")
-def get_feedback_statistics(current_user: User = Depends(get_current_user)):
+def get_feedback_statistics(current_user: User = Depends(require_admin)):
     return get_feedback_stats()
 
 @app.get("/api/model/drift")
-def get_model_drift(current_user: User = Depends(get_current_user)):
+def get_model_drift(current_user: User = Depends(require_admin)):
     return get_drift_metrics()
 
 @app.post("/api/feedback/{incident_id}")
@@ -1217,7 +1847,7 @@ def submit_feedback(incident_id: int, body: dict, current_user: User = Depends(g
 # ── Adversarial Robustness ──────────────────────────────────────────────────
 
 @app.get("/api/adversarial/results")
-def get_adversarial_results(current_user: User = Depends(get_current_user)):
+def get_adversarial_results(current_user: User = Depends(require_admin)):
     cached = get_cached_results()
     if cached.get("tests") and len(cached["tests"]) > 0:
         return cached
@@ -1232,7 +1862,7 @@ def get_adversarial_results(current_user: User = Depends(get_current_user)):
     return cached
 
 @app.post("/api/adversarial/run")
-def run_adversarial(current_user: User = Depends(get_current_user)):
+def run_adversarial(current_user: User = Depends(require_admin)):
     from src.ml_engine import load_ml_engine
     model, encoders = load_ml_engine()
     if model is None:
@@ -1243,7 +1873,7 @@ def run_adversarial(current_user: User = Depends(get_current_user)):
 # ── Telegram Bot Endpoints ────────────────────────────────────────────────────
 
 @app.get("/api/telegram/status")
-def telegram_status(current_user: User = Depends(get_current_user)):
+def telegram_status(current_user: User = Depends(require_admin)):
     info = get_bot_info()
     configured = bool(os.getenv("TELEGRAM_BOT_TOKEN")) and bool(os.getenv("TELEGRAM_CHAT_ID"))
     if info:
@@ -1251,7 +1881,7 @@ def telegram_status(current_user: User = Depends(get_current_user)):
     return {"status": "offline", "configured": configured, "bot_name": "N/A", "error": "Bot not reachable — check TELEGRAM_BOT_TOKEN"}
 
 @app.post("/api/telegram/test")
-def telegram_test_message(current_user: User = Depends(get_current_user)):
+def telegram_test_message(current_user: User = Depends(require_admin)):
     ok = send_system_status(
         "TrustFlow Telegram integration is working!\n\nThis is a test message from your SOC platform."
     )
@@ -1346,7 +1976,7 @@ def execute_playbook_endpoint(incident_id: int, current_user: User = Depends(get
 # ── OSINT Threat Feeds ──────────────────────────────────────────────────────
 
 @app.get("/api/osint/feeds")
-def get_osint_feeds(current_user: User = Depends(get_current_user)):
+def get_osint_feeds(current_user: User = Depends(require_admin)):
     from src.osint_feeds import fetch_tor_exit_nodes, fetch_emerging_threats_ips, fetch_urlhaus_recent as fetch_urlhaus
     # Trigger fetches if cache is empty
     try:

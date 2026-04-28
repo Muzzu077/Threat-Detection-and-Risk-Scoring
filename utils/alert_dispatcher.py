@@ -214,3 +214,82 @@ def dispatch_alert(event: dict, incident_id: int, response_actions: str = '') ->
 def trigger_alert(event: dict, incident_id: int) -> dict:
     """Backward-compatible multi-channel dispatch."""
     return dispatch_alert(event, incident_id)
+
+
+# ── Per-tenant Dispatch (multi-tenant SaaS) ───────────────────────────────────
+
+_SEVERITY_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3}
+
+
+def _passes_severity_threshold(event: dict, threshold: str) -> bool:
+    """Compare event severity against the user's min_severity threshold."""
+    risk = float(event.get("risk_score", 0))
+    event_sev = _get_severity(risk)
+    return _SEVERITY_ORDER.get(event_sev, 0) >= _SEVERITY_ORDER.get((threshold or "HIGH").upper(), 2)
+
+
+def dispatch_alert_for_user(event: dict, incident_id: int, user, prefs,
+                            response_actions: str = "", only_channel: str = None) -> dict:
+    """
+    Dispatch alert to a specific user's configured channels.
+
+    Args:
+        event:          threat event dict
+        incident_id:    incident id (0 for test alerts)
+        user:           User SQLAlchemy object (for fallback email)
+        prefs:          NotificationPreference object (or None)
+        response_actions: SOAR actions JSON string
+        only_channel:   if set ('telegram'|'whatsapp'|'email'), send only that channel
+                        and bypass the severity filter (used by test-alert button)
+
+    Returns:
+        {channel: success_bool} for each channel attempted
+    """
+    if prefs is None:
+        return {}
+
+    # Severity gating (skip for explicit test sends)
+    if not only_channel and not _passes_severity_threshold(event, prefs.min_severity):
+        return {"skipped": True, "reason": f"below threshold {prefs.min_severity}"}
+
+    # Snapshot existing env so we can restore it after
+    saved = {k: os.environ.get(k) for k in (
+        "TELEGRAM_CHAT_ID", "TO_WHATSAPP", "EMAIL_TO",
+        "ENABLE_TELEGRAM", "ENABLE_WHATSAPP", "ENABLE_EMAIL",
+    )}
+
+    results = {}
+    try:
+        # Override channel destinations to the user's prefs
+        if prefs.telegram_chat_id: os.environ["TELEGRAM_CHAT_ID"] = prefs.telegram_chat_id
+        if prefs.whatsapp_number:  os.environ["TO_WHATSAPP"]      = prefs.whatsapp_number
+        if prefs.email_address:    os.environ["EMAIL_TO"]         = prefs.email_address
+        os.environ["ENABLE_TELEGRAM"] = "true" if prefs.enable_telegram else "false"
+        os.environ["ENABLE_WHATSAPP"] = "true" if prefs.enable_whatsapp else "false"
+        os.environ["ENABLE_EMAIL"]    = "true" if prefs.enable_email    else "false"
+
+        # If only_channel is requested, force just that one
+        if only_channel == "telegram" and prefs.telegram_chat_id:
+            results["telegram"] = _send_telegram(event, incident_id, response_actions)
+        elif only_channel == "whatsapp" and prefs.whatsapp_number:
+            results["whatsapp"] = _send_whatsapp(event, incident_id, response_actions)
+        elif only_channel == "email" and prefs.email_address:
+            results["email"] = _send_email(event, incident_id, response_actions)
+        elif only_channel:
+            results[only_channel] = False  # destination not configured
+        else:
+            if prefs.enable_telegram and prefs.telegram_chat_id:
+                results["telegram"] = _send_telegram(event, incident_id, response_actions)
+            if prefs.enable_whatsapp and prefs.whatsapp_number:
+                results["whatsapp"] = _send_whatsapp(event, incident_id, response_actions)
+            if prefs.enable_email and prefs.email_address:
+                results["email"] = _send_email(event, incident_id, response_actions)
+    finally:
+        # Restore env
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    return results

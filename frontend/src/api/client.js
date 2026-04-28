@@ -61,8 +61,54 @@ export const authLogout = (refresh_token) =>
 // ─── API Keys ────────────────────────────────────────────────────────────────
 
 export const fetchApiKeys = () => api.get('/keys').then(r => r.data);
-export const createApiKey = (name) => api.post('/keys', { name }).then(r => r.data);
+export const createApiKey = (name, applicationId = null) =>
+  api.post('/keys', { name, application_id: applicationId }).then(r => r.data);
 export const revokeApiKey = (id) => api.delete(`/keys/${id}`).then(r => r.data);
+
+// ─── Applications ────────────────────────────────────────────────────────────
+
+export const fetchApplications = () => api.get('/applications').then(r => r.data);
+export const fetchApplication = (id) => api.get(`/applications/${id}`).then(r => r.data);
+export const createApplication = (payload) => api.post('/applications', payload).then(r => r.data);
+export const updateApplication = (id, payload) => api.patch(`/applications/${id}`, payload).then(r => r.data);
+export const deleteApplication = (id) => api.delete(`/applications/${id}`).then(r => r.data);
+export const fetchApplicationKeys = (id) => api.get(`/applications/${id}/keys`).then(r => r.data);
+export const fetchApplicationStats = (id) => api.get(`/applications/${id}/stats`).then(r => r.data);
+
+// ─── Admin ───────────────────────────────────────────────────────────────────
+
+export const fetchAdminUsers = () => api.get('/admin/users').then(r => r.data);
+export const setUserRole = (userId, role) => api.post(`/admin/users/${userId}/role`, { role }).then(r => r.data);
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export const fetchNotificationPrefs = () => api.get('/notifications/preferences').then(r => r.data);
+export const updateNotificationPrefs = (payload) => api.put('/notifications/preferences', payload).then(r => r.data);
+export const sendTestAlert = (channel) => api.post('/notifications/test', { channel }).then(r => r.data);
+export const testSiemConnection = () => api.post('/siem/test').then(r => r.data);
+
+// ─── Phase 2: Advanced ML ────────────────────────────────────────────────────
+
+export const fetchEnsembleMetrics = () => api.get('/ml/ensemble').then(r => r.data);
+export const trainEnsemble = () => api.post('/ml/ensemble/train').then(r => r.data);
+export const fetchZeroDayClusters = () => api.get('/ml/zero-day').then(r => r.data);
+export const fetchSequenceAnomaly = (topK = 10) => api.get('/ml/sequence-anomaly', { params: { top_k: topK } }).then(r => r.data);
+export const trainSequenceModel = (epochs = 5) => api.post('/ml/sequence-anomaly/train', null, { params: { epochs } }).then(r => r.data);
+
+// ─── Phase 3: Compliance ──────────────────────────────────────────────────────
+
+export const fetchComplianceReport = (framework = 'soc2', days = 90) =>
+  api.get('/compliance/report', { params: { framework, days } }).then(r => r.data);
+
+// ─── Phase 3: Custom Playbooks ───────────────────────────────────────────────
+
+export const fetchCustomPlaybooks = () => api.get('/playbooks/custom').then(r => r.data);
+export const fetchCustomPlaybook  = (id) => api.get(`/playbooks/custom/${id}`).then(r => r.data);
+export const createCustomPlaybook = (payload) => api.post('/playbooks/custom', payload).then(r => r.data);
+export const updateCustomPlaybook = (id, payload) => api.patch(`/playbooks/custom/${id}`, payload).then(r => r.data);
+export const deleteCustomPlaybook = (id) => api.delete(`/playbooks/custom/${id}`).then(r => r.data);
+export const dryRunCustomPlaybook = (id, sample_event) =>
+  api.post(`/playbooks/custom/${id}/dry-run`, { sample_event }).then(r => r.data);
 
 // ─── Events ──────────────────────────────────────────────────────────────────
 

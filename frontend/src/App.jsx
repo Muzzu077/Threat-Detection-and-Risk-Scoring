@@ -16,7 +16,34 @@ import PlaybooksPage from './pages/PlaybooksPage';
 import ApiKeysPage from './pages/ApiKeysPage';
 import IntegrationGuidePage from './pages/IntegrationGuidePage';
 import LandingPage from './pages/LandingPage';
+import ApplicationsPage from './pages/ApplicationsPage';
+import ApplicationDetailPage from './pages/ApplicationDetailPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import NotificationsPage from './pages/NotificationsPage';
+import MLLabPage from './pages/MLLabPage';
+import CompliancePage from './pages/CompliancePage';
+import PlaybookBuilderPage from './pages/PlaybookBuilderPage';
 import { authMe, authLogout } from './api/client';
+
+function AdminOnly({ user, children }) {
+  if (user?.role !== 'admin') {
+    return (
+      <div style={{
+        padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace',
+        color: '#a0a0a0', fontSize: 13,
+      }}>
+        <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.4 }}>&#128274;</div>
+        <div style={{ color: '#e53e3e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
+          Access Denied
+        </div>
+        <div style={{ fontSize: 11, color: '#555555' }}>
+          This section requires administrator privileges.
+        </div>
+      </div>
+    );
+  }
+  return children;
+}
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
@@ -80,7 +107,7 @@ function App() {
         </Routes>
       ) : (
         <div className="app-layout">
-        <Sidebar />
+        <Sidebar role={user?.role} />
         <main className="main-content">
           {/* Top Bar */}
           <div style={{
@@ -103,15 +130,25 @@ function App() {
 
           <Routes>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/applications" element={<ApplicationsPage />} />
+            <Route path="/applications/:id" element={<ApplicationDetailPage />} />
             <Route path="/incidents" element={<IncidentsPage />} />
             <Route path="/incidents/:id" element={<InvestigationPage />} />
             <Route path="/attack-graph" element={<AttackGraphPage />} />
-            <Route path="/ml-metrics" element={<MLMetricsPage />} />
-            <Route path="/threat-intel" element={<ThreatIntelPage />} />
-            <Route path="/response" element={<ResponsePage />} />
-            <Route path="/playbooks" element={<PlaybooksPage />} />
             <Route path="/api-keys" element={<ApiKeysPage />} />
             <Route path="/integration" element={<IntegrationGuidePage />} />
+            <Route path="/threat-intel" element={<ThreatIntelPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/playbook-builder" element={<PlaybookBuilderPage />} />
+
+            {/* Admin-only routes — render Access Denied for non-admins */}
+            <Route path="/ml-metrics"   element={<AdminOnly user={user}><MLMetricsPage /></AdminOnly>} />
+            <Route path="/ml-lab"       element={<AdminOnly user={user}><MLLabPage /></AdminOnly>} />
+            <Route path="/compliance"   element={<AdminOnly user={user}><CompliancePage /></AdminOnly>} />
+            <Route path="/response"     element={<AdminOnly user={user}><ResponsePage /></AdminOnly>} />
+            <Route path="/playbooks"    element={<AdminOnly user={user}><PlaybooksPage /></AdminOnly>} />
+            <Route path="/admin/users"  element={<AdminOnly user={user}><AdminUsersPage /></AdminOnly>} />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

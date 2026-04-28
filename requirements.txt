@@ -12,6 +12,8 @@ fastapi
 uvicorn[standard]
 python-multipart
 lightgbm
+xgboost
+hdbscan
 networkx
 psycopg2-binary
 shap
@@ -20,3 +22,7 @@ aiofiles
 bcrypt
 PyJWT
 redis>=5.0
+aiokafka>=0.10
+neo4j>=5.0
+taxii2-client>=2.3
+stix2>=3.0

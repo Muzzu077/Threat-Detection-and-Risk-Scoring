@@ -1,0 +1,40 @@
+{
+  "per_model": {
+    "lgbm": {
+      "accuracy": 97.0,
+      "f1": 97.0
+    },
+    "xgb": {
+      "accuracy": 96.7,
+      "f1": 96.7
+    },
+    "ensemble": {
+      "accuracy": 97.2,
+      "f1": 97.2,
+      "members": [
+        "lgbm",
+        "xgb"
+      ],
+      "method": "averaged_probabilities"
+    }
+  },
+  "evaluated_at": "2026-04-28T01:56:14.050122",
+  "classes": [
+    "brute_force",
+    "command_injection",
+    "credential_stuffing",
+    "data_exfiltration",
+    "directory_traversal",
+    "dos_attack",
+    "insider_threat",
+    "malware",
+    "normal",
+    "port_scan",
+    "privilege_escalation",
+    "session_hijacking",
+    "sql_injection",
+    "ssrf",
+    "xss"
+  ],
+  "test_set_size": 2000
+}
