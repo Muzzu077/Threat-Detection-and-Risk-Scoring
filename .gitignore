@@ -21,3 +21,7 @@ data/osint_feeds_cache.json
 .claude/
 dvwa-stack/.env
 .venv-ci/
+
+# ML model binaries — large files, regenerated at startup
+*.pkl
+*.joblib
