@@ -411,7 +411,13 @@ def auth_refresh(body: RefreshRequest):
     revoke_refresh_token(body.refresh_token)
     access_token = create_access_token(user.id, user.email)
     new_refresh = create_refresh_token(user.id)
-    return {"access_token": access_token, "refresh_token": new_refresh}
+    # Return the current user payload too — clients use this to refresh role
+    # after a promotion/demotion without forcing a logout.
+    return {
+        "access_token": access_token,
+        "refresh_token": new_refresh,
+        "user": serialize_user(user),
+    }
 
 @app.post("/api/auth/logout")
 def auth_logout(request: Request, body: LogoutRequest = Body(default=None)):
@@ -1338,6 +1344,11 @@ def update_incident_status(incident_id: int, body: StatusUpdate, current_user: U
     return {"success": True, "incident_id": incident_id, "new_status": body.status}
 
 # SOAR Response
+def _soar_scope(current_user: User) -> Optional[int]:
+    """Returns tenant_id to filter SOAR data by, or None for admins (global view)."""
+    return None if current_user.role == "admin" else current_user.id
+
+
 @app.post("/api/response/{incident_id}")
 def trigger_response(incident_id: int, body: ResponseTrigger = Body(default=None), current_user: User = Depends(get_current_user)):
     ta = _tenant_args(current_user)
@@ -1348,21 +1359,30 @@ def trigger_response(incident_id: int, body: ResponseTrigger = Body(default=None
     if body and not body.force and incident.response_actions:
         return {"message": "Response already executed", "actions": json.loads(incident.response_actions or "[]")}
 
+    # Tenant context: admins fall back to the incident's owning tenant so the
+    # action gets logged against the right bucket.
+    tenant_id = current_user.id
+    if current_user.role == "admin":
+        owning = getattr(incident, "tenant_id", None)
+        if owning is not None:
+            tenant_id = owning
+
     event_dict = {
         "user": incident.user,
         "action": incident.action,
         "ip": log_event.ip if log_event else "unknown",
         "risk_score": incident.risk_score,
         "explanation": log_event.explanation if log_event else "",
-        "attack_type": incident.attack_type or "unknown"
+        "attack_type": incident.attack_type or "unknown",
+        "tenant_id": tenant_id,
     }
-    response = execute_response(event_dict, incident_id)
+    response = execute_response(event_dict, incident_id, tenant_id=tenant_id)
     db.update_incident_response(incident_id, json.dumps(response.get("actions_taken", [])))
     return response
 
 @app.get("/api/response/log")
-def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user: User = Depends(require_admin)):
-    raw = get_response_log(limit=limit)
+def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user: User = Depends(get_current_user)):
+    raw = get_response_log(limit=limit, tenant_id=_soar_scope(current_user))
     # Flatten: each action becomes its own entry with context
     flat = []
     for entry in raw:
@@ -1370,6 +1390,7 @@ def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user
             flat.append({
                 "timestamp": entry.get("timestamp"),
                 "incident_id": entry.get("incident_id"),
+                "tenant_id": entry.get("tenant_id"),
                 "user": entry.get("user"),
                 "ip": entry.get("ip"),
                 "risk_score": entry.get("risk_score"),
@@ -1378,15 +1399,21 @@ def get_response_log_endpoint(limit: int = Query(50, ge=1, le=200), current_user
                 "status": action_item.get("status", "unknown"),
                 "message": action_item.get("message", ""),
             })
-    return {"data": flat[:limit]}
+    return {"data": flat[:limit], "scope": "all" if current_user.role == "admin" else "tenant"}
 
 @app.get("/api/response/blocked-ips")
-def get_blocked_ips_endpoint(current_user: User = Depends(require_admin)):
-    return {"data": get_blocked_ips()}
+def get_blocked_ips_endpoint(current_user: User = Depends(get_current_user)):
+    return {
+        "data": get_blocked_ips(tenant_id=_soar_scope(current_user)),
+        "scope": "all" if current_user.role == "admin" else "tenant",
+    }
 
 @app.get("/api/response/disabled-accounts")
-def get_disabled_accounts_endpoint(current_user: User = Depends(require_admin)):
-    return {"data": get_disabled_accounts()}
+def get_disabled_accounts_endpoint(current_user: User = Depends(get_current_user)):
+    return {
+        "data": get_disabled_accounts(tenant_id=_soar_scope(current_user)),
+        "scope": "all" if current_user.role == "admin" else "tenant",
+    }
 
 # Attack Graph
 @app.get("/api/attack-graph")

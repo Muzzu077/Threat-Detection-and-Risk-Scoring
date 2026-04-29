@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchPlaybooks, previewPlaybook } from '../api/client';
 
 const PLAYBOOK_COLORS = {
@@ -159,6 +160,101 @@ function StepFlow({ steps, color }) {
   );
 }
 
+function HowItWorks({ open, onToggle }) {
+  return (
+    <div style={{
+      background: '#0a0a0a', border: '1px solid rgba(122,155,176,0.25)',
+      borderRadius: 10, marginBottom: 20, overflow: 'hidden',
+    }}>
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '14px 22px', background: 'transparent', border: 'none',
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#7a9bb0',
+          letterSpacing: 3, textTransform: 'uppercase', cursor: 'pointer',
+        }}
+      >
+        <span>{open ? '−' : '+'}&nbsp;&nbsp;How SOAR Playbooks Work — Setup &amp; Usage Guide</span>
+        <span style={{ fontSize: 9, color: '#555555' }}>{open ? 'COLLAPSE' : 'EXPAND'}</span>
+      </button>
+      {open && (
+        <div style={{
+          padding: '6px 22px 22px 22px',
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11.5, color: '#cbd5e0',
+          lineHeight: 1.75,
+        }}>
+          <Section title="WHAT IS A PLAYBOOK?">
+            A playbook is a named sequence of automated security actions (block IP, disable
+            account, rate-limit, generate firewall rule, notify the SOC) that runs when an
+            incoming event matches its trigger. Think of it as an &ldquo;if-this-then-that&rdquo;
+            rule for security responses.
+          </Section>
+
+          <Section title="WHEN DO THEY FIRE?">
+            Playbooks fire automatically during ingestion, in two cases:
+            <ul style={{ margin: '6px 0 0 22px', padding: 0 }}>
+              <li>An event&apos;s detected <code style={c}>attack_type</code> matches a built-in playbook (e.g. <code style={c}>brute_force</code>, <code style={c}>sql_injection</code>) AND</li>
+              <li>The event&apos;s computed <code style={c}>risk_score</code> exceeds <strong>90</strong>.</li>
+            </ul>
+            Each step inside the playbook then has its own threshold — only steps whose
+            condition (<code style={c}>risk &ge; N</code>) is satisfied actually execute.
+            The slider above lets you preview which steps fire at any given risk score.
+          </Section>
+
+          <Section title="HOW TO USE THIS PAGE">
+            <ol style={{ margin: '6px 0 0 22px', padding: 0 }}>
+              <li>Pick a playbook on the left to see its action flow.</li>
+              <li>Drag the <em>Risk Score</em> slider — steps light up when the condition matches and grey out when it doesn&apos;t.</li>
+              <li>The MITRE ATT&amp;CK technique tag tells you what attacker behavior the playbook responds to.</li>
+            </ol>
+          </Section>
+
+          <Section title="ARE THESE REAL ACTIONS?">
+            All built-in actions are <strong>simulated</strong> for safety: blocked IPs go to a
+            tenant-scoped JSON store, &ldquo;disabled accounts&rdquo; are tracked in the same way,
+            firewall rules are emitted as text only. Nothing touches your actual infrastructure.
+            Use the <strong>SOAR Auto Response</strong> page to see what was simulated against your tenant.
+          </Section>
+
+          <Section title="WANT YOUR OWN PLAYBOOKS?">
+            Built-in playbooks cover the 15 most common attack patterns. To add your own
+            triggers, conditions, and actions (including real webhooks, SIEM exports, and
+            custom alerts), use the{' '}
+            <Link to="/playbook-builder" style={{ color: '#63b3ed', textDecoration: 'underline' }}>
+              Playbook Builder
+            </Link>
+            . Custom playbooks are tenant-scoped and run alongside the built-ins.
+          </Section>
+
+          <Section title="LIMITATIONS">
+            Built-in playbooks cannot currently be disabled or reconfigured per-tenant — they
+            ship as a curated default set. If you need to override behavior, create a custom
+            playbook with the same trigger and a higher priority.
+          </Section>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const c = {
+  background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: 3,
+  border: '1px solid rgba(255,255,255,0.08)', fontSize: 10.5, color: '#e8f4f8',
+};
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{
+        fontSize: 9.5, color: '#7a9bb0', letterSpacing: 2.5, textTransform: 'uppercase',
+        marginBottom: 6, fontWeight: 600,
+      }}>{title}</div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
 export default function PlaybooksPage() {
   const [playbooks, setPlaybooks] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -166,6 +262,7 @@ export default function PlaybooksPage() {
   const [riskScore, setRiskScore] = useState(80);
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [howOpen, setHowOpen] = useState(true);
 
   useEffect(() => {
     fetchPlaybooks().then(res => {
@@ -220,6 +317,8 @@ export default function PlaybooksPage() {
           </div>
         </div>
       </div>
+
+      <HowItWorks open={howOpen} onToggle={() => setHowOpen(o => !o)} />
 
       {/* Risk Score Slider */}
       <div style={{

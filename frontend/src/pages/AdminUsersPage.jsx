@@ -10,6 +10,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const [notice, setNotice] = useState('');
 
   const load = async () => {
     try {
@@ -28,6 +29,14 @@ export default function AdminUsersPage() {
     if (!confirm(`Change ${u.email} to ${newRole.toUpperCase()}?`)) return;
     try {
       await setUserRole(u.id, newRole);
+      setErr('');
+      setNotice(
+        newRole === 'admin'
+          ? `${u.email} promoted to ADMIN. They must reload the page (or log out & back in) for admin features to appear in their session.`
+          : `${u.email} demoted to USER. Their session will lose admin access on next request.`
+      );
+      // Refresh self-role too — in case the admin demoted/promoted themselves.
+      window.dispatchEvent(new CustomEvent('tp:role-may-have-changed'));
       load();
     } catch (e) {
       setErr(e.response?.data?.detail || 'FAILED TO UPDATE ROLE');
@@ -63,6 +72,18 @@ export default function AdminUsersPage() {
           padding: '10px 16px', marginBottom: 20,
           background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: 6,
         }}>&#9888; {err}</div>
+      )}
+
+      {notice && (
+        <div style={{
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#7a9bb0',
+          padding: '10px 16px', marginBottom: 20, lineHeight: 1.6,
+          background: 'rgba(122,155,176,0.08)', border: '1px solid rgba(122,155,176,0.25)', borderRadius: 6,
+          display: 'flex', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div><span style={{ color: '#ffffff', marginRight: 8 }}>i</span>{notice}</div>
+          <button onClick={() => setNotice('')} style={{ background: 'none', border: 'none', color: '#555', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>&times;</button>
+        </div>
       )}
 
       {loading ? (

@@ -246,12 +246,17 @@ def evaluate_playbook(attack_type: str, risk_score: float) -> dict:
     }
 
 
-def execute_playbook(event_dict: dict, incident_id: int = None) -> dict:
+def execute_playbook(event_dict: dict, incident_id: int = None,
+                     tenant_id: int = None) -> dict:
     """
     Execute the appropriate SOAR playbook based on attack type and risk.
-    Uses the existing response engine for actual actions.
+    `tenant_id` defaults to event_dict["tenant_id"] so per-tenant isolation
+    is preserved through the response engine.
     """
     from src.response_engine import block_ip, disable_account, apply_rate_limit, generate_firewall_rule, _log_response
+
+    if tenant_id is None:
+        tenant_id = event_dict.get("tenant_id")
 
     attack_type = event_dict.get("attack_type", "unknown")
     risk_score = event_dict.get("risk_score", 0)
@@ -263,9 +268,9 @@ def execute_playbook(event_dict: dict, incident_id: int = None) -> dict:
     actions_taken = []
 
     action_handlers = {
-        "block_ip": lambda: block_ip(ip),
-        "disable_account": lambda: disable_account(user),
-        "rate_limit": lambda: apply_rate_limit(ip, user),
+        "block_ip": lambda: block_ip(ip, tenant_id=tenant_id),
+        "disable_account": lambda: disable_account(user, tenant_id=tenant_id),
+        "rate_limit": lambda: apply_rate_limit(ip, user, tenant_id=tenant_id),
         "firewall_rule": lambda: generate_firewall_rule(ip, action),
         "notify": lambda: {"action": "notify", "status": "sent", "message": f"SOC team notified about INC-{incident_id}"},
     }
@@ -278,10 +283,11 @@ def execute_playbook(event_dict: dict, incident_id: int = None) -> dict:
                 result["playbook_step"] = step["description"]
                 actions_taken.append(result)
 
-    _log_response(incident_id, actions_taken, event_dict)
+    _log_response(incident_id, actions_taken, event_dict, tenant_id=tenant_id)
 
     return {
         "incident_id": incident_id,
+        "tenant_id": int(tenant_id) if tenant_id is not None else None,
         "playbook": evaluation["playbook_name"],
         "attack_type": attack_type,
         "risk_score": risk_score,

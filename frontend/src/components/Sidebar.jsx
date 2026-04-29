@@ -18,12 +18,14 @@ const NAV = [
   { path: '/notifications', label: 'Notifications', sub: 'Alert Channels',  icon: '⌬', group: 'developer' },
   { path: '/playbook-builder', label: 'Playbooks',  sub: 'SOAR Builder',     icon: '▶', group: 'developer' },
 
+  // ── SOAR: scoped to the current tenant for non-admins; admins see global ────
+  { path: '/response',     label: 'SOAR',          sub: 'Auto Response',  icon: '⚡', group: 'developer' },
+  { path: '/playbooks',    label: 'Playbooks',     sub: 'SOAR Flows',     icon: '▶', group: 'developer' },
+
   // ── Admin: only role=admin ─────────────────────────────────────────────────
   { path: '/ml-metrics',   label: 'ML Engine',     sub: 'Model Metrics',  icon: '◎', group: 'admin', adminOnly: true },
   { path: '/ml-lab',       label: 'ML Lab',        sub: 'Phase 2 Models', icon: '⌬', group: 'admin', adminOnly: true },
   { path: '/compliance',   label: 'Compliance',    sub: 'SOC 2 / ISO',    icon: '⛓', group: 'admin', adminOnly: true },
-  { path: '/response',     label: 'SOAR',          sub: 'Auto Response',  icon: '⚡', group: 'admin', adminOnly: true },
-  { path: '/playbooks',    label: 'Playbooks',     sub: 'SOAR Flows',     icon: '▶', group: 'admin', adminOnly: true },
   { path: '/admin/users',  label: 'Users',         sub: 'Tenant Admin',   icon: '○', group: 'admin', adminOnly: true },
 ];
 

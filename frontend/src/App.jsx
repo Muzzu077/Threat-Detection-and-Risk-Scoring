@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import './index.css';
 
 import Sidebar from './components/Sidebar';
@@ -37,12 +37,30 @@ function AdminOnly({ user, children }) {
           Access Denied
         </div>
         <div style={{ fontSize: 11, color: '#555555' }}>
-          This section requires administrator privileges.
+          This section requires administrator privileges. If you were just promoted,
+          your session needs to refresh — try navigating away and back, or log out and back in.
         </div>
       </div>
     );
   }
   return children;
+}
+
+// Re-fetch the current user from the backend on every navigation. This
+// ensures a freshly promoted/demoted user picks up their new role without
+// having to log out and back in.
+function UserRefresher({ onUser }) {
+  const location = useLocation();
+  const lastPathRef = useRef(null);
+  useEffect(() => {
+    if (!localStorage.getItem('tp_tokens')) return;
+    if (lastPathRef.current === location.pathname) return;
+    lastPathRef.current = location.pathname;
+    authMe()
+      .then((data) => { if (data?.user) onUser(data.user); })
+      .catch(() => {});
+  }, [location.pathname, onUser]);
+  return null;
 }
 
 function App() {
@@ -66,6 +84,16 @@ function App() {
     } else {
       setLoading(false);
     }
+  }, []);
+
+  // When any API call hints that the role changed, re-sync from backend.
+  useEffect(() => {
+    const handler = () => {
+      if (!localStorage.getItem('tp_tokens')) return;
+      authMe().then((data) => { if (data?.user) setUser(data.user); }).catch(() => {});
+    };
+    window.addEventListener('tp:role-may-have-changed', handler);
+    return () => window.removeEventListener('tp:role-may-have-changed', handler);
   }, []);
 
   const handleLogin = (userData) => {
@@ -107,6 +135,7 @@ function App() {
         </Routes>
       ) : (
         <div className="app-layout">
+        <UserRefresher onUser={setUser} />
         <Sidebar role={user?.role} />
         <main className="main-content">
           {/* Top Bar */}
@@ -141,12 +170,14 @@ function App() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/playbook-builder" element={<PlaybookBuilderPage />} />
 
+            {/* Tenant-scoped SOAR pages — every authenticated user sees their own */}
+            <Route path="/response"     element={<ResponsePage user={user} />} />
+            <Route path="/playbooks"    element={<PlaybooksPage user={user} />} />
+
             {/* Admin-only routes — render Access Denied for non-admins */}
             <Route path="/ml-metrics"   element={<AdminOnly user={user}><MLMetricsPage /></AdminOnly>} />
             <Route path="/ml-lab"       element={<AdminOnly user={user}><MLLabPage /></AdminOnly>} />
             <Route path="/compliance"   element={<AdminOnly user={user}><CompliancePage /></AdminOnly>} />
-            <Route path="/response"     element={<AdminOnly user={user}><ResponsePage /></AdminOnly>} />
-            <Route path="/playbooks"    element={<AdminOnly user={user}><PlaybooksPage /></AdminOnly>} />
             <Route path="/admin/users"  element={<AdminOnly user={user}><AdminUsersPage /></AdminOnly>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />

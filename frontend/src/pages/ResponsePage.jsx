@@ -20,10 +20,11 @@ function ActionTag({ action }) {
   );
 }
 
-export default function ResponsePage() {
+export default function ResponsePage({ user }) {
   const [log, setLog] = useState([]);
   const [blocked, setBlocked] = useState([]);
   const [disabled, setDisabled] = useState([]);
+  const [scope, setScope] = useState('tenant');
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -32,6 +33,7 @@ export default function ResponsePage() {
       setLog(l.data || []);
       setBlocked(b.data || []);
       setDisabled(d.data || []);
+      setScope(l.scope || b.scope || d.scope || (user?.role === 'admin' ? 'all' : 'tenant'));
     } catch {}
     setLoading(false);
   };
@@ -53,7 +55,29 @@ export default function ResponsePage() {
             Security Orchestration, Automation & Response
           </div>
         </div>
-        <button className="btn btn-ghost" onClick={load} style={{ fontSize: 11 }}>↺ REFRESH</button>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{
+            fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
+            padding: '4px 10px', borderRadius: 4, letterSpacing: 1.5,
+            color: scope === 'all' ? '#e53e3e' : '#7a9bb0',
+            background: scope === 'all' ? 'rgba(229,62,62,0.10)' : 'rgba(122,155,176,0.10)',
+            border: `1px solid ${scope === 'all' ? 'rgba(229,62,62,0.3)' : 'rgba(122,155,176,0.3)'}`,
+          }}>
+            {scope === 'all' ? 'GLOBAL VIEW (ADMIN)' : 'YOUR TENANT'}
+          </span>
+          <button className="btn btn-ghost" onClick={load} style={{ fontSize: 11 }}>↺ REFRESH</button>
+        </div>
+      </div>
+
+      <div style={{
+        fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0',
+        padding: '10px 14px', marginBottom: 20, lineHeight: 1.6,
+        background: 'rgba(122,155,176,0.04)', borderLeft: '2px solid rgba(122,155,176,0.4)',
+        borderRadius: 4,
+      }}>
+        {scope === 'all'
+          ? 'Showing automated SOAR actions across every tenant. Switch to a tenant role to see only one tenant.'
+          : 'Showing only the SOAR actions taken in response to events ingested through your own API keys. Each tenant sees a separate action log.'}
       </div>
 
       {/* KPI Row */}

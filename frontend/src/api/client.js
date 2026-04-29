@@ -73,6 +73,15 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    // 403 with an admin-role detail means the user's role on the server is
+    // out of sync with what the SPA cached at login. Nudge the app to re-read
+    // the role from /auth/me so the sidebar and gate components update.
+    if (error.response?.status === 403) {
+      const detail = String(error.response?.data?.detail || '');
+      if (/admin/i.test(detail) && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tp:role-may-have-changed'));
+      }
+    }
     return Promise.reject(error);
   }
 );

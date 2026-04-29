@@ -8,7 +8,9 @@ logs_ingest/
 frontend/node_modules/
 frontend/dist/
 data/blocked_ips.txt
+data/blocked_ips.json
 data/disabled_accounts.txt
+data/disabled_accounts.json
 data/rate_limits.json
 data/response_log.jsonl
 data/threat_intel_cache.json

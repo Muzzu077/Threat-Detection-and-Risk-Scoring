@@ -172,7 +172,11 @@ class LogHandler(FileSystemEventHandler):
                         try:
                             print(f"   🤖 SOAR: Triggering automated response for incident {incident_id}")
                             from src.soar_playbooks import execute_playbook
-                            response = execute_playbook(event_dict, incident_id)
+                            response = execute_playbook(
+                                event_dict,
+                                incident_id,
+                                tenant_id=event_dict.get("tenant_id"),
+                            )
                             response_json = json.dumps([a.get("action", "") for a in response.get("actions_taken", [])])
                             if incident_id:
                                 db.update_incident_response(incident_id, response_json)
