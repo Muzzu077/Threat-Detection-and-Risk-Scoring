@@ -501,7 +501,7 @@ def update_notification_prefs(body: NotificationPrefsRequest, current_user: User
     if body.siem_type is not None and body.siem_type.lower() not in _VALID_SIEM_TYPES:
         raise HTTPException(status_code=400, detail=f"siem_type must be one of {_VALID_SIEM_TYPES}")
 
-    fields = body.dict(exclude_unset=True)
+    fields = body.model_dump(exclude_unset=True)
     if "min_severity" in fields and fields["min_severity"]:
         fields["min_severity"] = fields["min_severity"].upper()
     if "siem_type" in fields and fields["siem_type"]:
@@ -1714,7 +1714,7 @@ def stix_pull(max_indicators: int = Query(1000, ge=1, le=10000),
 
 @app.get("/api/compliance/report")
 def compliance_report_endpoint(
-    framework: str = Query("soc2", regex="^(soc2|iso27001)$"),
+    framework: str = Query("soc2", pattern="^(soc2|iso27001)$"),
     days: int = Query(90, ge=1, le=730),
     current_user: User = Depends(require_admin),
 ):
@@ -1801,7 +1801,7 @@ def get_custom_playbook(pb_id: int, current_user: User = Depends(get_current_use
 
 @app.patch("/api/playbooks/custom/{pb_id}")
 def update_custom_playbook(pb_id: int, body: CustomPlaybookUpdate, current_user: User = Depends(get_current_user)):
-    fields = body.dict(exclude_unset=True)
+    fields = body.model_dump(exclude_unset=True)
     if "steps" in fields and fields["steps"] is not None:
         fields["steps"] = json.dumps(_validate_steps(fields["steps"]))
     pb = db.update_playbook(pb_id, current_user.id, **fields)

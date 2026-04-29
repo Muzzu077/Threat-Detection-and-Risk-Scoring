@@ -25,3 +25,14 @@ dvwa-stack/.env
 # ML model binaries — large files, regenerated at startup
 *.pkl
 *.joblib
+# Added by code-review-graph
+.code-review-graph/
+
+# Playwright test artifacts
+test-results/
+frontend/test-results/
+frontend/playwright-report/
+
+# Demo dependencies
+examples/express-demo/node_modules/
+examples/flask-demo/.venv/

@@ -18,8 +18,9 @@ from sqlalchemy.pool import StaticPool
 from src.database import Base, Database, User, ApiKey
 
 
-class TestDatabase(Database):
+class _InMemoryDB(Database):
     """In-memory DB for endpoint tests."""
+    __test__ = False  # don't let pytest mistake this for a test case
     def __init__(self):
         self.engine = create_engine(
             "sqlite:///:memory:",
@@ -37,7 +38,7 @@ class TestDatabase(Database):
 @pytest.fixture(autouse=True)
 def patch_db(monkeypatch):
     """Replace the global db singleton with an in-memory version for all endpoint tests."""
-    tdb = TestDatabase()
+    tdb = _InMemoryDB()
 
     import src.database
     monkeypatch.setattr(src.database, "db", tdb)
