@@ -122,6 +122,10 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     container_name: trustflow-frontend
+    environment:
+      # Injected into nginx.conf at container start via envsubst.
+      # On Dokploy, override this with the real API domain in the Environment tab.
+      API_URL: ${API_URL:-http://api:8000}
     ports:
       - "80:80"
       - "443:443"
