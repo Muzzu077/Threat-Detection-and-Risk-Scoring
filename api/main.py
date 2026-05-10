@@ -77,6 +77,135 @@ def _tenant_args(user: User) -> dict:
         return {"tenant_id": None, "user_role": "admin"}
     return {"tenant_id": user.id, "user_role": user.role}
 
+# ─── Self-Logging: track TrustFlow's own auth events ────────────────────────
+
+def _get_client_ip(request: Request) -> str:
+    """Extract the real client IP from proxy headers, falling back to direct connection."""
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP", "")
+    if real_ip:
+        return real_ip.strip()
+    if request.client:
+        return request.client.host
+    return "unknown"
+
+
+async def _log_auth_event(
+    *,
+    email: str,
+    ip: str,
+    action: str,
+    resource: str,
+    status: str,
+    tenant_id: int | None = None,
+    detail: str = "",
+):
+    """Record a TrustFlow platform auth event as a LogEvent.
+
+    Runs the same threat-detection pipeline that SDK-ingested events go
+    through, so failed logins trigger brute-force detection, show up on
+    the live feed, and create incidents when risk exceeds the threshold.
+    """
+    from datetime import datetime as _dt
+
+    ts = _dt.utcnow()
+    status_norm = "failure" if status == "failure" else "success"
+
+    # Run the same lightweight threat detection used for SDK events.
+    # _analyze_sdk_event is defined further down; it's available at call
+    # time because this function is only called from route handlers.
+    analysis = _analyze_sdk_event(action, status_norm, resource, ip)
+    country = _ip_to_country(ip)
+    risk = analysis["risk_score"]
+
+    # UEBA analysis
+    try:
+        ueba_event = {
+            "user": email or "anonymous",
+            "ip": ip,
+            "country": country,
+            "action": action,
+            "resource": resource,
+            "hour": ts.hour,
+            "timestamp": ts.isoformat(),
+        }
+        ueba_anomalies = analyze_event_ueba(ueba_event)
+        for anomaly in ueba_anomalies:
+            risk = min(100, risk + anomaly.get("risk_boost", 0))
+    except Exception:
+        pass
+
+    # Tier clamping (same logic as SDK ingest)
+    _MEDIUM_ATTACKS = {"xss", "directory_traversal", "ssrf", "port_scan"}
+    _HIGH_ATTACKS = {"sql_injection", "command_injection", "malware_upload",
+                     "data_exfiltration", "privilege_escalation", "brute_force"}
+    atype = analysis["attack_type"]
+    if atype == "normal":
+        risk = min(risk, 30.0)
+    elif atype in _MEDIUM_ATTACKS:
+        risk = max(31.0, min(risk, 65.0))
+    elif atype in _HIGH_ATTACKS:
+        risk = max(66.0, risk)
+
+    explanation = analysis["explanation"]
+    if detail:
+        explanation = f"{explanation} | {detail}"
+
+    event_dict = {
+        "timestamp": ts,
+        "user": email or "anonymous",
+        "role": "platform",
+        "ip": ip,
+        "action": action,
+        "status": status_norm,
+        "resource": resource,
+        "anomaly_score": 0.0,
+        "risk_score": risk,
+        "time_risk": 0.0,
+        "role_risk": 0.0,
+        "resource_risk": 0.0,
+        "explanation": explanation,
+        "attack_type": analysis["attack_type"],
+        "ml_confidence": analysis["ml_confidence"],
+        "country": country,
+        "threat_intel_score": 0.0,
+        "threat_intel_reason": "",
+        "response_actions": "",
+        "tenant_id": tenant_id,
+        "application_id": None,
+    }
+
+    event_id, incident_id = db.insert_event(event_dict)
+
+    # Broadcast to live feed (same as SDK ingest)
+    if event_id:
+        try:
+            live_payload = {
+                "type": "new_event",
+                "data": {
+                    "id": event_id,
+                    "timestamp": ts.isoformat(),
+                    "user": event_dict["user"],
+                    "action": event_dict["action"],
+                    "ip": event_dict["ip"],
+                    "risk_score": round(risk, 1),
+                    "attack_type": event_dict["attack_type"],
+                    "country": country,
+                    "status": status_norm,
+                    "resource": resource,
+                },
+            }
+            global _last_broadcast_event_id
+            if event_id > _last_broadcast_event_id:
+                _last_broadcast_event_id = event_id
+            await manager.broadcast_to_tenant(live_payload, tenant_id)
+        except Exception:
+            pass
+
+    return event_id, incident_id
+
 # ─── WebSocket Connection Manager ────────────────────────────────────────────
 
 class ConnectionManager:
@@ -364,7 +493,8 @@ def _slugify(name: str, suffix: int = 0) -> str:
 # ─── Auth Routes ─────────────────────────────────────────────────────────────
 
 @app.post("/api/auth/register")
-def auth_register(body: RegisterRequest):
+async def auth_register(body: RegisterRequest, request: Request):
+    ip = _get_client_ip(request)
     if len(body.password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     existing = db.get_user_by_email(body.email)
@@ -379,6 +509,15 @@ def auth_register(body: RegisterRequest):
     )
     access_token = create_access_token(user.id, user.email)
     refresh_token = create_refresh_token(user.id)
+
+    # Self-log: new account registration
+    await _log_auth_event(
+        email=body.email, ip=ip, action="register",
+        resource="/api/auth/register", status="success",
+        tenant_id=user.id,
+        detail=f"New account created: {body.email}",
+    )
+
     return {
         "user": serialize_user(user),
         "access_token": access_token,
@@ -386,15 +525,38 @@ def auth_register(body: RegisterRequest):
     }
 
 @app.post("/api/auth/login")
-def auth_login(body: LoginRequest):
+async def auth_login(body: LoginRequest, request: Request):
+    ip = _get_client_ip(request)
     user = db.get_user_by_email(body.email)
     if not user or not verify_password(body.password, user.password_hash):
+        # Self-log: FAILED login — this triggers brute-force detection
+        await _log_auth_event(
+            email=body.email, ip=ip, action="POST",
+            resource="/api/auth/login", status="failure",
+            tenant_id=user.id if user else None,
+            detail=f"Failed login attempt for {body.email}",
+        )
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_active:
+        await _log_auth_event(
+            email=body.email, ip=ip, action="POST",
+            resource="/api/auth/login", status="failure",
+            tenant_id=user.id,
+            detail=f"Login attempt on deactivated account: {body.email}",
+        )
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
     access_token = create_access_token(user.id, user.email)
     refresh_token = create_refresh_token(user.id)
+
+    # Self-log: SUCCESSFUL login
+    await _log_auth_event(
+        email=body.email, ip=ip, action="login",
+        resource="/api/auth/login", status="success",
+        tenant_id=user.id,
+        detail=f"Successful login: {body.email}",
+    )
+
     return {
         "user": serialize_user(user),
         "access_token": access_token,
@@ -402,7 +564,8 @@ def auth_login(body: LoginRequest):
     }
 
 @app.post("/api/auth/refresh")
-def auth_refresh(body: RefreshRequest):
+async def auth_refresh(body: RefreshRequest, request: Request):
+    ip = _get_client_ip(request)
     user_id = validate_refresh_token(body.refresh_token)
     user = db.get_user_by_id(user_id)
     if not user:
@@ -411,6 +574,15 @@ def auth_refresh(body: RefreshRequest):
     revoke_refresh_token(body.refresh_token)
     access_token = create_access_token(user.id, user.email)
     new_refresh = create_refresh_token(user.id)
+
+    # Self-log: token refresh
+    await _log_auth_event(
+        email=user.email, ip=ip, action="token_refresh",
+        resource="/api/auth/refresh", status="success",
+        tenant_id=user.id,
+        detail=f"Token refreshed for {user.email}",
+    )
+
     # Return the current user payload too — clients use this to refresh role
     # after a promotion/demotion without forcing a logout.
     return {
@@ -420,14 +592,31 @@ def auth_refresh(body: RefreshRequest):
     }
 
 @app.post("/api/auth/logout")
-def auth_logout(request: Request, body: LogoutRequest = Body(default=None)):
+async def auth_logout(request: Request, body: LogoutRequest = Body(default=None)):
+    ip = _get_client_ip(request)
     # Revoke refresh token if provided
     if body and body.refresh_token:
         revoke_refresh_token(body.refresh_token)
     # Blacklist the access token so it can't be reused
     auth_header = request.headers.get("Authorization", "")
+    token_user_email = "unknown"
     if auth_header.startswith("Bearer "):
         _revoked_access_tokens.add(auth_header[7:])
+        # Try to extract email from the JWT for logging
+        try:
+            import jwt
+            payload = jwt.decode(auth_header[7:], options={"verify_signature": False})
+            token_user_email = payload.get("email", payload.get("sub", "unknown"))
+        except Exception:
+            pass
+
+    # Self-log: logout
+    await _log_auth_event(
+        email=token_user_email, ip=ip, action="logout",
+        resource="/api/auth/logout", status="success",
+        detail=f"User logged out: {token_user_email}",
+    )
+
     return {"success": True}
 
 @app.get("/api/auth/me")
