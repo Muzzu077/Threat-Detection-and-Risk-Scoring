@@ -120,7 +120,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.frontend
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_API_URL: ${VITE_API_URL:-/}
     container_name: trustflow-frontend
     environment:
       # Injected into nginx.conf at container start via envsubst.
@@ -128,7 +128,6 @@ services:
       API_URL: ${API_URL:-http://api:8000}
     ports:
       - "80:80"
-      - "443:443"
     depends_on:
       api:
         condition: service_healthy
