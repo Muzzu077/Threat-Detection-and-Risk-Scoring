@@ -1,0 +1,45 @@
+.star-border-container {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.border-gradient-bottom {
+  position: absolute;
+  width: 300%;
+  height: 300%;
+  bottom: -50%;
+  left: -50%;
+  transform-origin: 50% 50%;
+  animation: star-border-spin linear infinite;
+  z-index: 0;
+}
+
+.border-gradient-top {
+  position: absolute;
+  width: 300%;
+  height: 300%;
+  top: -50%;
+  right: -50%;
+  transform-origin: 50% 50%;
+  animation: star-border-spin linear infinite;
+  animation-delay: -3s; /* Assuming default 6s speed */
+  z-index: 0;
+}
+
+.inner-content {
+  position: relative;
+  z-index: 1;
+  background: inherit;
+  border-radius: inherit;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes star-border-spin {
+  100% { transform: rotate(360deg); }
+}

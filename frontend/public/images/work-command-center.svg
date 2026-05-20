@@ -1,0 +1,41 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="800" rx="44" fill="#F7FBFF"/>
+  <rect x="44" y="48" width="1192" height="704" rx="34" fill="white" stroke="#DCE7F3" stroke-width="2"/>
+  <circle cx="1086" cy="142" r="170" fill="#E8FAFF"/>
+  <circle cx="184" cy="658" r="190" fill="#FFF0E9"/>
+  <rect x="90" y="94" width="252" height="612" rx="26" fill="#142033"/>
+  <rect x="120" y="130" width="128" height="18" rx="9" fill="#FFFFFF"/>
+  <rect x="120" y="180" width="174" height="12" rx="6" fill="#87A3C5"/>
+  <rect x="120" y="220" width="140" height="12" rx="6" fill="#87A3C5"/>
+  <rect x="120" y="260" width="188" height="12" rx="6" fill="#87A3C5"/>
+  <rect x="120" y="330" width="172" height="58" rx="18" fill="#23324B"/>
+  <rect x="120" y="408" width="172" height="58" rx="18" fill="#23324B"/>
+  <rect x="120" y="486" width="172" height="58" rx="18" fill="#23324B"/>
+  <rect x="388" y="104" width="292" height="154" rx="28" fill="#EAFBFF" stroke="#CDEEF6"/>
+  <rect x="718" y="104" width="226" height="154" rx="28" fill="#FFF4E8" stroke="#FFE0C4"/>
+  <rect x="982" y="104" width="194" height="154" rx="28" fill="#F0EEFF" stroke="#DCD7FF"/>
+  <text x="424" y="160" font-family="IBM Plex Sans, Arial" font-size="26" font-weight="700" fill="#142033">Threat volume</text>
+  <text x="754" y="160" font-family="IBM Plex Sans, Arial" font-size="26" font-weight="700" fill="#142033">Risk score</text>
+  <text x="1018" y="160" font-family="IBM Plex Sans, Arial" font-size="26" font-weight="700" fill="#142033">Open</text>
+  <text x="424" y="218" font-family="IBM Plex Sans, Arial" font-size="48" font-weight="800" fill="#00A7C2">18,420</text>
+  <text x="754" y="218" font-family="IBM Plex Sans, Arial" font-size="48" font-weight="800" fill="#FF6D3A">91</text>
+  <text x="1018" y="218" font-family="IBM Plex Sans, Arial" font-size="48" font-weight="800" fill="#6B5CFF">24</text>
+  <rect x="388" y="300" width="454" height="406" rx="28" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <rect x="882" y="300" width="294" height="406" rx="28" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <path d="M430 630C479 514 516 550 560 472C596 408 642 434 686 356C718 300 748 344 800 320" stroke="#00A7C2" stroke-width="10" stroke-linecap="round"/>
+  <path d="M430 650C500 604 538 620 594 565C654 506 690 542 800 460" stroke="#FFB020" stroke-width="8" stroke-linecap="round"/>
+  <path d="M430 670C502 642 574 686 638 630C690 585 740 600 800 552" stroke="#6B5CFF" stroke-width="8" stroke-linecap="round"/>
+  <g fill="#142033">
+    <rect x="924" y="348" width="156" height="14" rx="7"/>
+    <rect x="924" y="404" width="198" height="14" rx="7" opacity=".55"/>
+    <rect x="924" y="460" width="172" height="14" rx="7" opacity=".55"/>
+    <rect x="924" y="516" width="210" height="14" rx="7" opacity=".55"/>
+    <rect x="924" y="572" width="134" height="14" rx="7" opacity=".55"/>
+  </g>
+  <g>
+    <circle cx="900" cy="410" r="10" fill="#FF6D3A"/>
+    <circle cx="900" cy="466" r="10" fill="#FFB020"/>
+    <circle cx="900" cy="522" r="10" fill="#18A874"/>
+    <circle cx="900" cy="578" r="10" fill="#00A7C2"/>
+  </g>
+</svg>

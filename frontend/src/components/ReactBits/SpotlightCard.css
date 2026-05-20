@@ -1,0 +1,11 @@
+.spotlight-card {
+  position: relative;
+}
+
+.spotlight-card:hover {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.spotlight-card-content {
+  height: 100%;
+}

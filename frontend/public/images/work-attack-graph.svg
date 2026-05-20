@@ -1,0 +1,27 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="800" rx="44" fill="#F9FCFF"/>
+  <path d="M118 642C250 488 322 530 448 372C592 190 742 304 898 176C1012 82 1126 110 1210 64" stroke="#E3EEF8" stroke-width="46" stroke-linecap="round"/>
+  <path d="M162 610C292 476 372 512 486 382C612 238 746 310 886 202C1000 114 1096 126 1180 92" stroke="#00A7C2" stroke-width="8" stroke-linecap="round" stroke-dasharray="18 18"/>
+  <g filter="url(#shadow)">
+    <circle cx="180" cy="604" r="54" fill="#FFFFFF" stroke="#BFEAF2" stroke-width="4"/>
+    <circle cx="424" cy="458" r="64" fill="#FFFFFF" stroke="#D8D2FF" stroke-width="4"/>
+    <circle cx="626" cy="294" r="58" fill="#FFFFFF" stroke="#FFD8BD" stroke-width="4"/>
+    <circle cx="872" cy="208" r="72" fill="#FFFFFF" stroke="#C7F2E4" stroke-width="4"/>
+    <circle cx="1094" cy="124" r="60" fill="#FFFFFF" stroke="#F9D08A" stroke-width="4"/>
+  </g>
+  <g font-family="IBM Plex Sans, Arial" font-weight="800" text-anchor="middle">
+    <text x="180" y="596" font-size="22" fill="#142033">T1190</text><text x="180" y="626" font-size="16" fill="#62708A">Exploit</text>
+    <text x="424" y="452" font-size="22" fill="#142033">T1110</text><text x="424" y="482" font-size="16" fill="#62708A">Brute force</text>
+    <text x="626" y="288" font-size="22" fill="#142033">T1078</text><text x="626" y="318" font-size="16" fill="#62708A">Account</text>
+    <text x="872" y="202" font-size="22" fill="#142033">T1041</text><text x="872" y="232" font-size="16" fill="#62708A">Exfil</text>
+    <text x="1094" y="118" font-size="22" fill="#142033">SOAR</text><text x="1094" y="148" font-size="16" fill="#62708A">Blocked</text>
+  </g>
+  <rect x="88" y="96" width="332" height="138" rx="28" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <text x="124" y="150" font-family="IBM Plex Sans, Arial" font-size="28" font-weight="800" fill="#142033">Attack chain</text>
+  <text x="124" y="192" font-family="IBM Plex Sans, Arial" font-size="20" fill="#62708A">5 mapped techniques, 1 contained incident</text>
+  <rect x="804" y="548" width="356" height="128" rx="28" fill="#142033"/>
+  <rect x="836" y="584" width="148" height="14" rx="7" fill="#FFFFFF"/>
+  <rect x="836" y="620" width="260" height="12" rx="6" fill="#87A3C5"/>
+  <circle cx="1112" cy="612" r="30" fill="#18A874"/>
+  <defs><filter id="shadow" x="80" y="20" width="1100" height="690" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="22" stdDeviation="20" flood-color="#1E3656" flood-opacity=".16"/></filter></defs>
+</svg>

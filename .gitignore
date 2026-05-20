@@ -38,3 +38,6 @@ frontend/playwright-report/
 # Demo dependencies
 examples/express-demo/node_modules/
 examples/flask-demo/.venv/
+
+.gemini/
+gha-creds-*.json

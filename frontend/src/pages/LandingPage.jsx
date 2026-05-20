@@ -1,521 +1,1084 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
+import { motion, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
+import { 
+  Shield, Activity, Zap, Server, Lock, Cpu, Command, 
+  ArrowRight, Github, Twitter, Fingerprint, 
+  TerminalSquare, BarChart, FileJson, Play, RefreshCw, AlertTriangle, CheckCircle2
+} from 'lucide-react';
+import Particles from '../components/ReactBits/Particles';
+import StarBorder from '../components/ReactBits/StarBorder';
+import DecryptedText from '../components/ReactBits/DecryptedText';
+import SpotlightCard from '../components/ReactBits/SpotlightCard';
 
-/* ─── Animated Grid Background ──────────────────────────────────────────── */
-function HexGrid() {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const c = canvasRef.current, ctx = c.getContext('2d');
-    let w, h, cols, rows, frame = 0, pulses = [];
-    const HEX = 28, GAP = 4;
-    const resize = () => { w = c.width = window.innerWidth; h = c.height = window.innerHeight; cols = Math.ceil(w / (HEX * 1.75)) + 2; rows = Math.ceil(h / (HEX * 1.55)) + 2; };
-    resize();
-    window.addEventListener('resize', resize);
-    const drawHex = (x, y, r, alpha) => {
-      ctx.beginPath();
-      for (let i = 0; i < 6; i++) { const a = (Math.PI / 3) * i - Math.PI / 6; ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a)); }
-      ctx.closePath(); ctx.strokeStyle = `rgba(255,255,255,${alpha})`; ctx.lineWidth = 0.5; ctx.stroke();
-    };
-    const animate = () => {
-      frame++;
-      ctx.fillStyle = 'rgba(2,7,12,0.15)';
-      ctx.fillRect(0, 0, w, h);
-      if (frame % 90 === 0) pulses.push({ cx: Math.random() * w, cy: Math.random() * h, r: 0, maxR: 200 + Math.random() * 300 });
-      pulses = pulses.filter(p => p.r < p.maxR);
-      pulses.forEach(p => p.r += 2.5);
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-          const x = col * HEX * 1.75 + (row % 2) * HEX * 0.875;
-          const y = row * HEX * 1.55;
-          let alpha = 0.03;
-          for (const p of pulses) { const d = Math.hypot(x - p.cx, y - p.cy); if (Math.abs(d - p.r) < 40) alpha = Math.max(alpha, 0.18 * (1 - Math.abs(d - p.r) / 40)); }
-          drawHex(x, y, HEX / 2 - GAP / 2, alpha);
-        }
-      }
-      requestAnimationFrame(animate);
-    };
-    const id = requestAnimationFrame(animate);
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', resize); };
-  }, []);
-  return <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, zIndex: 0 }} />;
-}
+/* ─── Aesthetics & Theme ────────────────────────────────────────────────── */
+const THEME = {
+  bg: '#000000',
+  bgCard: '#050505',
+  bgCardHover: '#0A0A0A',
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderHover: 'rgba(255, 255, 255, 0.2)',
+  textMain: '#EDEDED',
+  textMuted: '#888888',
+  accent: '#FFFFFF',
+};
 
-/* ─── Floating Orbs ─────────────────────────────────────────────────────── */
-function Orbs() {
+/* ─── Utility Components ────────────────────────────────────────────────── */
+const FadeIn = ({ children, delay = 0, y = 30, className = '', style = {} }) => (
+  <motion.div
+    initial={{ opacity: 0, y }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-50px" }}
+    transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
+    className={className}
+    style={style}
+  >
+    {children}
+  </motion.div>
+);
+
+const Button = ({ children, variant = 'primary', icon: Icon, onClick, className = '' }) => {
+  const isPrimary = variant === 'primary';
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.07) 0%, transparent 70%)', animation: 'orbFloat1 25s ease-in-out infinite' }} />
-      <div style={{ position: 'absolute', bottom: '-15%', right: '-10%', width: 900, height: 900, borderRadius: '50%', background: 'radial-gradient(circle, rgba(61,142,240,0.05) 0%, transparent 70%)', animation: 'orbFloat2 30s ease-in-out infinite' }} />
-      <div style={{ position: 'absolute', top: '40%', left: '60%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(229,62,62,0.04) 0%, transparent 70%)', animation: 'orbFloat3 20s ease-in-out infinite' }} />
-    </div>
-  );
-}
-
-/* ─── Stat Counter ──────────────────────────────────────────────────────── */
-function StatCounter({ value, suffix = '', label, delay = 0 }) {
-  const [count, setCount] = useState(0);
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-  useEffect(() => {
-    if (!visible) return;
-    const timer = setTimeout(() => {
-      let start = 0;
-      const step = Math.max(1, Math.ceil(value / 60));
-      const interval = setInterval(() => { start += step; if (start >= value) { setCount(value); clearInterval(interval); } else setCount(start); }, 16);
-      return () => clearInterval(interval);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [visible, value, delay]);
-  return (
-    <div ref={ref} style={{ textAlign: 'center' }}>
-      <div style={{ fontFamily: '"Syne Mono", monospace', fontSize: 48, fontWeight: 400, color: '#ffffff', lineHeight: 1, textShadow: '0 0 30px rgba(255,255,255,0.3)', letterSpacing: -2 }}>
-        {count}{suffix}
-      </div>
-      <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginTop: 8 }}>{label}</div>
-    </div>
-  );
-}
-
-/* ─── Feature Card ──────────────────────────────────────────────────────── */
-function FeatureCard({ icon, title, desc, accent = '#ffffff', delay = 0 }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.15 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-  return (
-    <div ref={ref} style={{
-      background: 'rgba(8,18,24,0.7)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 12, padding: '32px 28px', position: 'relative', overflow: 'hidden',
-      opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(30px)',
-      transition: `opacity 0.6s ease ${delay}s, transform 0.6s ease ${delay}s`,
-    }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${accent}40, transparent)` }} />
-      <div style={{ fontSize: 28, marginBottom: 16, filter: `drop-shadow(0 0 8px ${accent}40)` }}>{icon}</div>
-      <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 14, fontWeight: 600, color: '#f0f0f0', marginBottom: 10, letterSpacing: 0.5 }}>{title}</div>
-      <div style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 13, color: '#a0a0a0', lineHeight: 1.7 }}>{desc}</div>
-    </div>
-  );
-}
-
-/* ─── Attack Type Ticker ────────────────────────────────────────────────── */
-function AttackTicker() {
-  const attacks = [
-    'SQL Injection', 'XSS', 'Brute Force', 'Credential Stuffing', 'Privilege Escalation',
-    'DDoS Attack', 'Data Exfiltration', 'Session Hijacking', 'Command Injection', 'Port Scan',
-    'SSRF', 'Directory Traversal', 'Malware Upload', 'Insider Threat', 'Ransomware',
-  ];
-  return (
-    <div style={{ overflow: 'hidden', position: 'relative', padding: '16px 0' }}>
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(90deg, #02070c, transparent)', zIndex: 2 }} />
-      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(270deg, #02070c, transparent)', zIndex: 2 }} />
-      <div style={{ display: 'flex', gap: 24, animation: 'tickerScroll 40s linear infinite', width: 'max-content' }}>
-        {[...attacks, ...attacks, ...attacks].map((a, i) => (
-          <div key={i} style={{
-            fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, letterSpacing: 2,
-            color: '#555555', textTransform: 'uppercase', whiteSpace: 'nowrap',
-            padding: '6px 16px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4,
-            background: 'rgba(255,255,255,0.02)',
-          }}>
-            {a}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Architecture Diagram ──────────────────────────────────────────────── */
-function ArchDiagram() {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold: 0.2 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-  const steps = [
-    { label: 'SDK / Log Ingestion', sub: 'Node.js & Python SDK', color: '#3d8ef0' },
-    { label: 'ML Detection Engine', sub: 'LightGBM + TF Autoencoder', color: '#9b59f0' },
-    { label: 'Threat Intelligence', sub: 'AbuseIPDB + OSINT Feeds', color: '#f0a500' },
-    { label: 'SOAR Automation', sub: 'Auto-block, Rate Limit', color: '#e53e3e' },
-    { label: 'SOC Dashboard', sub: 'Real-time Visualization', color: '#ffffff' },
-  ];
-  return (
-    <div ref={ref} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, flexWrap: 'wrap', padding: '20px 0' }}>
-      {steps.map((s, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', opacity: visible ? 1 : 0, transform: visible ? 'translateX(0)' : 'translateX(-20px)', transition: `all 0.5s ease ${i * 0.15}s` }}>
-          <div style={{ textAlign: 'center', padding: '20px 24px', background: `${s.color}08`, border: `1px solid ${s.color}20`, borderRadius: 10, minWidth: 160 }}>
-            <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, fontWeight: 600, color: s.color, marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 9, color: '#555555', letterSpacing: 1 }}>{s.sub}</div>
-          </div>
-          {i < steps.length - 1 && (
-            <div style={{ fontFamily: '"Syne Mono", monospace', fontSize: 16, color: '#555555', padding: '0 8px' }}>&rarr;</div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Pricing Card ──────────────────────────────────────────────────────── */
-function PricingCard({ name, price, period, features, accent, highlighted, onCta }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`btn-${variant} ${className}`}
       style={{
-        background: highlighted ? 'rgba(255,255,255,0.03)' : 'rgba(8,18,24,0.7)',
-        backdropFilter: 'blur(12px)',
-        border: `1px solid ${highlighted ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)'}`,
-        borderRadius: 14, padding: '40px 32px', position: 'relative', overflow: 'hidden',
-        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-        transition: 'all 0.3s ease', flex: '1 1 300px', maxWidth: 380,
-        boxShadow: highlighted ? '0 0 40px rgba(255,255,255,0.06)' : 'none',
+        padding: '0.8rem 1.5rem',
+        background: isPrimary ? '#FFFFFF' : 'transparent',
+        color: isPrimary ? '#000000' : THEME.textMain,
+        border: isPrimary ? '1px solid #FFFFFF' : `1px solid ${THEME.border}`,
+        borderRadius: '6px',
+        fontFamily: '"Inter", sans-serif',
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        transition: 'all 0.3s ease',
+        boxShadow: isPrimary ? '0 0 20px rgba(255,255,255,0.2)' : 'none',
+        position: 'relative',
+        overflow: 'hidden'
       }}
     >
-      {highlighted && <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, #ffffff, transparent)' }} />}
-      {highlighted && (
-        <div style={{ position: 'absolute', top: 16, right: 20, fontFamily: '"IBM Plex Mono", monospace', fontSize: 9, letterSpacing: 2, color: '#ffffff', background: 'rgba(255,255,255,0.08)', padding: '3px 10px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)' }}>
-          POPULAR
-        </div>
+      <span style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        {children}
+        {Icon && <Icon size={16} />}
+      </span>
+      {isPrimary && (
+        <div className="btn-glow" style={{ position: 'absolute', top: 0, left: '-100%', width: '100%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent)', transition: '0.5s' }} />
       )}
-      <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, letterSpacing: 3, color: '#555555', textTransform: 'uppercase', marginBottom: 12 }}>{name}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 24 }}>
-        <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 42, color: accent, lineHeight: 1 }}>{price}</span>
-        {period && <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, color: '#555555' }}>/{period}</span>}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-        {features.map((f, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 13, color: '#a0a0a0' }}>
-            <span style={{ color: '#ffffff', fontSize: 10 }}>&#9670;</span> {f}
-          </div>
-        ))}
-      </div>
-      <button onClick={onCta} style={{
-        width: '100%', padding: '14px 0', border: highlighted ? 'none' : '1px solid rgba(255,255,255,0.2)',
-        borderRadius: 8, fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, letterSpacing: 2, cursor: 'pointer',
-        background: highlighted ? 'linear-gradient(135deg, #ffffff, #cccccc)' : 'transparent',
-        color: highlighted ? '#050505' : '#ffffff', fontWeight: 600,
-        transition: 'all 0.2s ease',
-      }}>
-        GET STARTED
-      </button>
-    </div>
+    </motion.button>
   );
-}
+};
 
-/* ─── Testimonial ───────────────────────────────────────────────────────── */
-function Testimonial({ quote, name, role, company }) {
+/* ─── 3D Spatial Components ─────────────────────────────────────────────── */
+
+const TiltCard = ({ children, className = '', delay = 0 }) => {
+  const ref = useRef(null);
+  
+  // Motion values for tilt
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const xSpring = useSpring(x, { stiffness: 400, damping: 40 });
+  const ySpring = useSpring(y, { stiffness: 400, damping: 40 });
+  const rotateX = useTransform(ySpring, [-0.5, 0.5], ["5deg", "-5deg"]);
+  const rotateY = useTransform(xSpring, [-0.5, 0.5], ["-5deg", "5deg"]);
+
+  // Motion values for radial glow
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const handleMouseMove = (e) => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const localX = e.clientX - rect.left;
+    const localY = e.clientY - rect.top;
+    
+    x.set(localX / width - 0.5);
+    y.set(localY / height - 0.5);
+    mouseX.set(localX);
+    mouseY.set(localY);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+    // Move glow off-screen smoothly
+    mouseX.set(-1000);
+    mouseY.set(-1000);
+  };
+
   return (
-    <div style={{
-      background: 'rgba(8,18,24,0.5)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: 12, padding: '32px 28px', position: 'relative',
-    }}>
-      <div style={{ fontFamily: '"Syne Mono", monospace', fontSize: 32, color: 'rgba(255,255,255,0.15)', position: 'absolute', top: 16, left: 20 }}>"</div>
-      <div style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 14, color: '#a0a0a0', lineHeight: 1.8, fontStyle: 'italic', marginBottom: 20, paddingTop: 8 }}>
-        {quote}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #ffffff, #3d8ef0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"IBM Plex Mono", monospace', fontSize: 13, fontWeight: 600, color: '#050505' }}>
-          {name[0]}
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
+      style={{ perspective: 1200 }}
+      className={`bento-card-wrapper ${className}`}
+    >
+      <motion.div
+        ref={ref}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+        className="bento-card"
+      >
+        {/* Animated Radial Glow */}
+        <motion.div
+          className="bento-glow"
+          style={{
+            background: useMotionTemplate`radial-gradient(350px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.06), transparent 80%)`,
+          }}
+        />
+        
+        {/* Border Gradient overlay that follows mouse */}
+        <motion.div
+          className="bento-border-glow"
+          style={{
+            background: useMotionTemplate`radial-gradient(200px circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.4), transparent 70%)`,
+          }}
+        />
+        
+        <div className="bento-inner" style={{ transform: "translateZ(40px)" }}>
+          {children}
         </div>
-        <div>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, color: '#f0f0f0' }}>{name}</div>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#555555' }}>{role}, {company}</div>
-        </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
-}
+};
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LANDING PAGE
-   ═══════════════════════════════════════════════════════════════════════════ */
-export default function LandingPage() {
+/* ─── Page Sections ─────────────────────────────────────────────────────── */
+
+function Header() {
   const navigate = useNavigate();
-  const [scrollY, setScrollY] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handler = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div style={{ background: '#02070c', minHeight: '100vh', overflow: 'hidden', position: 'relative' }}>
-      <HexGrid />
-      <Orbs />
-
-      {/* inject keyframes */}
-      <style>{`
-        @import url("https://fonts.googleapis.com/css2?family=Syne+Mono&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap");
-        @keyframes orbFloat1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px, 30px); } }
-        @keyframes orbFloat2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-50px, -40px); } }
-        @keyframes orbFloat3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px, -20px); } }
-        @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-33.333%); } }
-        @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 20px rgba(255,255,255,0.15); } 50% { box-shadow: 0 0 40px rgba(255,255,255,0.3); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scanline { 0% { transform: translateY(-100%); } 100% { transform: translateY(100vh); } }
-        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
-        .landing-cta:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 32px rgba(255,255,255,0.25) !important; }
-        .landing-cta-ghost:hover { background: rgba(255,255,255,0.08) !important; }
-        .nav-link { transition: color 0.2s; }
-        .nav-link:hover { color: #ffffff !important; }
-      `}</style>
-
-      {/* ─── Navbar ─────────────────────────────────────────────── */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 48px', height: 64,
-        background: scrollY > 40 ? 'rgba(2,7,12,0.85)' : 'transparent',
-        backdropFilter: scrollY > 40 ? 'blur(16px)' : 'none',
-        borderBottom: scrollY > 40 ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
-        transition: 'all 0.3s ease',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <span style={{ fontSize: 22, filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.4))' }}>&#128737;</span>
-          <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 16, fontWeight: 400, color: '#f0f0f0', letterSpacing: 2 }}>TRUSTFLOW</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          {['Features', 'Architecture', 'Pricing'].map(s => (
-            <a key={s} href={`#${s.toLowerCase()}`} className="nav-link" style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, color: '#a0a0a0', textDecoration: 'none', letterSpacing: 1.5, textTransform: 'uppercase' }}>{s}</a>
-          ))}
-          <button onClick={() => navigate('/login')} style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, letterSpacing: 2, color: '#ffffff', background: 'transparent', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 6, padding: '8px 20px', cursor: 'pointer', transition: 'all 0.2s' }} className="landing-cta-ghost">
-            LOG IN
-          </button>
-          <button onClick={() => navigate('/register')} className="landing-cta" style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 11, letterSpacing: 2, color: '#050505', fontWeight: 600, background: 'linear-gradient(135deg, #ffffff, #cccccc)', border: 'none', borderRadius: 6, padding: '8px 24px', cursor: 'pointer', transition: 'all 0.2s' }}>
-            START FREE
-          </button>
-        </div>
-      </nav>
-
-      {/* ─── Hero Section ───────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '120px 24px 80px' }}>
-        {/* Live badge */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 18px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, marginBottom: 32, animation: 'fadeUp 0.6s ease both', background: 'rgba(255,255,255,0.03)' }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 8px #ffffff', animation: 'blink 2s ease infinite' }} />
-          <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#ffffff', letterSpacing: 2 }}>NOW IN PUBLIC BETA</span>
-        </div>
-
-        {/* Title */}
-        <h1 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(36px, 6vw, 72px)', fontWeight: 400, color: '#f0f0f0', lineHeight: 1.1, maxWidth: 900, marginBottom: 24, animation: 'fadeUp 0.8s ease 0.1s both', letterSpacing: -1 }}>
-          AI-Powered Threat<br />
-          <span style={{ color: '#ffffff', textShadow: '0 0 40px rgba(255,255,255,0.25)' }}>Detection</span> & <span style={{ color: '#3d8ef0' }}>Response</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 'clamp(14px, 1.8vw, 18px)', color: '#a0a0a0', maxWidth: 640, lineHeight: 1.8, marginBottom: 40, animation: 'fadeUp 0.8s ease 0.2s both' }}>
-          Deploy TrustFlow on your infrastructure in minutes. Our ML engine detects 15 attack types in real-time, maps to MITRE ATT&CK, and auto-remediates with SOAR playbooks.
-        </p>
-
-        {/* CTA buttons */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 64, animation: 'fadeUp 0.8s ease 0.3s both' }}>
-          <button onClick={() => navigate('/register')} className="landing-cta" style={{
-            fontFamily: '"IBM Plex Mono", monospace', fontSize: 13, letterSpacing: 2, fontWeight: 600,
-            color: '#050505', background: 'linear-gradient(135deg, #ffffff, #cccccc)',
-            border: 'none', borderRadius: 8, padding: '16px 40px', cursor: 'pointer', transition: 'all 0.25s ease',
-          }}>
-            START FOR FREE &rarr;
-          </button>
-          <button onClick={() => { const el = document.getElementById('features'); el?.scrollIntoView({ behavior: 'smooth' }); }} className="landing-cta-ghost" style={{
-            fontFamily: '"IBM Plex Mono", monospace', fontSize: 13, letterSpacing: 2,
-            color: '#a0a0a0', background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '16px 32px', cursor: 'pointer', transition: 'all 0.2s',
-          }}>
-            SEE HOW IT WORKS
-          </button>
-        </div>
-
-        {/* Trusted by */}
-        <div style={{ animation: 'fadeUp 0.8s ease 0.4s both' }}>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 9, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Trusted by security teams worldwide</div>
-          <div style={{ display: 'flex', gap: 40, alignItems: 'center', justifyContent: 'center', opacity: 0.3 }}>
-            {['FINTECH CO', 'HEALTHSEC', 'GOV-CERT', 'CLOUDSHIELD', 'DATAFORT'].map(name => (
-              <span key={name} style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, color: '#555555', letterSpacing: 3 }}>{name}</span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Attack Ticker ──────────────────────────────────────── */}
-      <div style={{ position: 'relative', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <AttackTicker />
+    <header style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+      padding: '1rem 5vw', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      background: scrolled ? 'rgba(0,0,0,0.7)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(16px)' : 'none',
+      borderBottom: scrolled ? `1px solid ${THEME.border}` : '1px solid transparent',
+      transition: 'all 0.4s ease'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => window.scrollTo(0,0)}>
+        <Shield size={22} color="#FFFFFF" strokeWidth={2.5} />
+        <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.1rem', fontWeight: 600, letterSpacing: '-0.02em', color: THEME.textMain }}>
+          TrustFlow
+        </span>
       </div>
 
-      {/* ─── Stats Bar ──────────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '80px 48px', display: 'flex', justifyContent: 'center', gap: 80, flexWrap: 'wrap' }}>
-        <StatCounter value={15} label="Attack Types Detected" delay={0} />
-        <StatCounter value={98} suffix="%" label="ML Precision" delay={100} />
-        <StatCounter value={45} suffix="+" label="API Endpoints" delay={200} />
-        <StatCounter value={200} suffix="ms" label="Avg Response Time" delay={300} />
-      </section>
+      <nav style={{ gap: '2.5rem' }} className="desktop-nav">
+        {['Platform', 'Integrations', 'Process', 'Contact'].map((item) => (
+          <a key={item} href={`#${item.toLowerCase()}`} style={{
+            fontFamily: '"Inter", sans-serif', fontSize: '0.85rem', fontWeight: 500, color: THEME.textMuted, textDecoration: 'none',
+            transition: 'color 0.2s'
+          }} className="nav-link">
+            {item}
+          </a>
+        ))}
+      </nav>
 
-      {/* ─── Features Grid ──────────────────────────────────────── */}
-      <section id="features" style={{ position: 'relative', zIndex: 1, padding: '80px 48px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 4, color: '#ffffff', textTransform: 'uppercase', marginBottom: 12 }}>Capabilities</div>
-          <h2 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(24px, 3.5vw, 40px)', color: '#f0f0f0', fontWeight: 400 }}>
-            Full-Stack Cyber Defense
-          </h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
-          <FeatureCard delay={0} icon="&#9881;" title="ML Detection Engine" desc="Multi-layer pipeline: TensorFlow autoencoder for anomaly detection + LightGBM classifier identifying 15 attack types with 98% precision. Real-time risk scoring on every event." accent="#9b59f0" />
-          <FeatureCard delay={0.1} icon="&#9889;" title="SOAR Automation" desc="15 automated playbooks execute in under 200ms. IP blocking, account lockdown, rate limiting, and firewall rule injection — all triggered without human intervention." accent="#e53e3e" />
-          <FeatureCard delay={0.2} icon="&#128269;" title="Threat Intelligence" desc="Live enrichment from AbuseIPDB, AlienVault OTX, and VirusTotal. Every IP gets a reputation score, country mapping, and historical abuse data before risk scoring." accent="#f0a500" />
-          <FeatureCard delay={0.3} icon="&#9878;" title="MITRE ATT&CK Mapping" desc="Every detected attack maps to MITRE technique IDs and tactics. See exactly where adversaries are in the kill chain — from initial access to data exfiltration." accent="#3d8ef0" />
-          <FeatureCard delay={0.4} icon="&#128200;" title="Attack Graph Visualization" desc="D3.js force-directed graphs reveal kill chains and lateral movement. See attacker IP clusters, compromised accounts, and pivot points in real time." accent="#48bb78" />
-          <FeatureCard delay={0.5} icon="&#128274;" title="Multi-Tenant Isolation" desc="Full data isolation per tenant. Generate API keys, install our Node.js or Python SDK, and your events flow into your own scoped dashboard. Zero cross-tenant leakage." accent="#ffffff" />
-        </div>
-      </section>
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <Button variant="outline" onClick={() => navigate('/login')} className="hidden-mobile">Log In</Button>
+      </div>
+    </header>
+  );
+}
 
-      {/* ─── Architecture ───────────────────────────────────────── */}
-      <section id="architecture" style={{ position: 'relative', zIndex: 1, padding: '80px 48px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 4, color: '#3d8ef0', textTransform: 'uppercase', marginBottom: 12 }}>Architecture</div>
-          <h2 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(24px, 3.5vw, 40px)', color: '#f0f0f0', fontWeight: 400 }}>
-            How TrustFlow Works
-          </h2>
-        </div>
-        <ArchDiagram />
-        {/* SDK snippet */}
-        <div style={{ maxWidth: 600, margin: '48px auto 0', background: 'rgba(8,18,24,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e53e3e' }} />
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#f0a500' }} />
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#48bb78' }} />
-            </div>
-            <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#555555' }}>integration.js</span>
-          </div>
-          <pre style={{ padding: '20px 24px', margin: 0, fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, lineHeight: 1.8, color: '#a0a0a0', overflow: 'auto' }}>
-{`const { trustFlowMiddleware } = require(`}<span style={{ color: '#f0a500' }}>'trustflow-sdk/express'</span>{`);
+function CyberConsole() {
+  const [logs, setLogs] = useState([
+    { id: 1, type: 'info', text: 'SYS // Stream ingestion engine initialized successfully.' },
+    { id: 2, type: 'info', text: 'ML  // Neural classifier baseline active across 15 vectors.' },
+    { id: 3, type: 'success', text: 'SLA // SOC telemetry latency stabilized at 114ms.' },
+    { id: 4, type: 'info', text: 'SOAR// Hot-standby playbooks synchronized with gateway.' },
+  ]);
+  const [attackState, setAttackState] = useState('idle'); // idle, triggered, detecting, mitigating, secured
+  const [riskLevel, setRiskLevel] = useState(0.12);
+  const terminalEndRef = useRef(null);
 
-app.use(trustFlowMiddleware({
-  apiKey: process.env.`}<span style={{ color: '#ffffff' }}>TRUSTFLOW_API_KEY</span>{`
-}));
+  // Auto scroll terminal logs
+  useEffect(() => {
+    if (terminalEndRef.current) {
+      terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
 
-`}<span style={{ color: '#555555' }}>// That's it. Every request is now monitored.</span>
-          </pre>
-        </div>
-      </section>
+  // Periodic random background telemetry log additions
+  useEffect(() => {
+    const defaultMessages = [
+      'SYS // Ingesting 25,482 EPS from cloudwatch-us-east-1.',
+      'SYS // Kafka consumer groups healthy. Zero log lag.',
+      'ML  // Processing classification tensor array (batch size 128).',
+      'SLA // Telemetry round-trip latency verified: 121ms.',
+      'AUDIT// Continuous compliance scan generated for SOC 2 Trust Criteria.',
+    ];
 
-      {/* ─── Testimonials ───────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '80px 48px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 4, color: '#f0a500', textTransform: 'uppercase', marginBottom: 12 }}>Testimonials</div>
-          <h2 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(24px, 3.5vw, 36px)', color: '#f0f0f0', fontWeight: 400 }}>
-            What Security Teams Say
-          </h2>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-          <Testimonial quote="TrustFlow cut our incident response time from hours to seconds. The SOAR playbooks caught a brute force campaign at 3AM that would've gone unnoticed until morning." name="Sarah Chen" role="SOC Lead" company="FinGuard Capital" />
-          <Testimonial quote="We replaced three separate tools with TrustFlow. The MITRE ATT&CK mapping gives our team a common language, and the ML engine catches things our rule-based SIEM missed entirely." name="Marcus Rivera" role="CISO" company="MedSecure Health" />
-          <Testimonial quote="Setting up the SDK took 5 minutes. We were seeing our Express traffic analyzed and threat-scored in real-time before lunch. The kill chain graphs are incredible for investigations." name="Aiko Tanaka" role="Security Engineer" company="CloudForge" />
-        </div>
-      </section>
+    const interval = setInterval(() => {
+      if (attackState !== 'idle') return;
+      const randomMsg = defaultMessages[Math.floor(Math.random() * defaultMessages.length)];
+      setLogs(prev => [
+        ...prev,
+        { id: Date.now(), type: 'info', text: randomMsg }
+      ]);
+    }, 4500);
 
-      {/* ─── Pricing ────────────────────────────────────────────── */}
-      <section id="pricing" style={{ position: 'relative', zIndex: 1, padding: '80px 48px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 4, color: '#9b59f0', textTransform: 'uppercase', marginBottom: 12 }}>Pricing</div>
-          <h2 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(24px, 3.5vw, 40px)', color: '#f0f0f0', fontWeight: 400 }}>
-            Start Free, Scale Securely
-          </h2>
-        </div>
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'stretch' }}>
-          <PricingCard
-            name="Starter" price="$0" period="forever" accent="#a0a0a0"
-            features={['10,000 events/month', '1 API key', '5 SOAR playbooks', 'Community support', '7-day data retention']}
-            onCta={() => navigate('/register')}
-          />
-          <PricingCard highlighted
-            name="Pro" price="$49" period="month" accent="#ffffff"
-            features={['500,000 events/month', 'Unlimited API keys', 'All 15 SOAR playbooks', 'Priority support', '90-day data retention', 'MITRE ATT&CK mapping', 'Custom alert channels']}
-            onCta={() => navigate('/register')}
-          />
-          <PricingCard
-            name="Enterprise" price="Custom" accent="#3d8ef0"
-            features={['Unlimited events', 'Dedicated infrastructure', 'SSO & RBAC', 'On-premise deployment', '1-year data retention', 'Custom ML model training', 'SLA guarantee']}
-            onCta={() => navigate('/register')}
-          />
-        </div>
-      </section>
+    return () => clearInterval(interval);
+  }, [attackState]);
 
-      {/* ─── Final CTA ──────────────────────────────────────────── */}
-      <section style={{ position: 'relative', zIndex: 1, padding: '100px 48px', textAlign: 'center' }}>
-        <div style={{
-          maxWidth: 700, margin: '0 auto', padding: '64px 48px', borderRadius: 20,
-          background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)',
-          position: 'relative', overflow: 'hidden',
-        }}>
-          <div style={{ position: 'absolute', top: 0, left: '20%', right: '20%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }} />
-          <h2 style={{ fontFamily: '"Syne Mono", monospace', fontSize: 'clamp(22px, 3vw, 36px)', color: '#f0f0f0', fontWeight: 400, marginBottom: 16 }}>
-            Your network is being scanned<br /><span style={{ color: '#e53e3e' }}>right now</span>.
-          </h2>
-          <p style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 15, color: '#a0a0a0', marginBottom: 32, lineHeight: 1.7 }}>
-            Deploy TrustFlow in 5 minutes. No credit card required.
-          </p>
-          <button onClick={() => navigate('/register')} className="landing-cta" style={{
-            fontFamily: '"IBM Plex Mono", monospace', fontSize: 14, letterSpacing: 2, fontWeight: 600,
-            color: '#050505', background: 'linear-gradient(135deg, #ffffff, #cccccc)',
-            border: 'none', borderRadius: 8, padding: '18px 48px', cursor: 'pointer', transition: 'all 0.25s ease',
-            animation: 'pulseGlow 3s ease infinite',
+  const triggerAttack = () => {
+    if (attackState !== 'idle') return;
+    setAttackState('triggered');
+    setRiskLevel(98.4);
+    
+    // Add logs step-by-step
+    setLogs(prev => [
+      ...prev,
+      { id: Date.now(), type: 'danger', text: 'CRITICAL // Threat incident detected: lateral movement on subnet 10.0.4.0/24.' }
+    ]);
+
+    setTimeout(() => {
+      setAttackState('detecting');
+      setLogs(prev => [
+        ...prev,
+        { id: Date.now() + 1, type: 'warning', text: 'ML // Classification complete: classified CVE-2026-9812 Zero-Day RCE.' }
+      ]);
+    }, 1500);
+
+    setTimeout(() => {
+      setAttackState('mitigating');
+      setLogs(prev => [
+        ...prev,
+        { id: Date.now() + 2, type: 'info', text: 'SOAR // Executing Autonomous Playbook [GATEWAY_ISOLATE_SUBNET].' }
+      ]);
+    }, 3000);
+
+    setTimeout(() => {
+      setAttackState('secured');
+      setRiskLevel(0.08);
+      setLogs(prev => [
+        ...prev,
+        { id: Date.now() + 3, type: 'success', text: 'SUCCESS // Subnet 10.0.4.0 isolated, risk mitigated in 142ms.' }
+      ]);
+    }, 4800);
+  };
+
+  const resetAttack = () => {
+    setAttackState('idle');
+    setRiskLevel(0.12);
+    setLogs([
+      { id: Date.now(), type: 'info', text: 'SYS // Operations console telemetry reset.' },
+      { id: Date.now() + 1, type: 'info', text: 'SYS // Stream ingestion engine active.' },
+      { id: Date.now() + 2, type: 'success', text: 'SLA // Telemetry stabilized at 112ms.' }
+    ]);
+  };
+
+  // Node Map Colors based on state
+  const getNodeColor = (nodeId) => {
+    if (attackState === 'secured') return '#00E676';
+    if (attackState === 'mitigating') {
+      if (nodeId === 'soar') return '#29B6F6';
+      return '#EDEDED';
+    }
+    if (attackState === 'triggered' || attackState === 'detecting') {
+      if (nodeId === 'subnet') return '#FF5252';
+      return '#333';
+    }
+    return '#EDEDED';
+  };
+
+  const getLineColor = (from, to) => {
+    if (attackState === 'secured') return '#00E676';
+    if (attackState === 'mitigating') return '#29B6F6';
+    if (attackState === 'triggered' || attackState === 'detecting') {
+      if (from === 'subnet' || to === 'subnet') return '#FF5252';
+      return '#222';
+    }
+    return 'rgba(255,255,255,0.08)';
+  };
+
+  return (
+    <SpotlightCard 
+      spotlightColor="rgba(255, 255, 255, 0.03)" 
+      borderColor="rgba(255, 255, 255, 0.12)"
+      style={{
+        width: '100%',
+        background: 'rgba(5, 5, 5, 0.85)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 30px 60px rgba(0,0,0,0.8)',
+        borderRadius: '16px',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Console Top Header */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'rgba(0,0,0,0.3)'
+      }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#FF5252' }} />
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#FFD740' }} />
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#00E676' }} />
+          <span style={{ 
+            marginLeft: '1rem', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.8rem', 
+            color: '#888888', letterSpacing: '0.1em' 
           }}>
-            START FOR FREE &rarr;
-          </button>
+            TRUSTFLOW // THREAT_OPS_CENTER v2.0
+          </span>
         </div>
-      </section>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{
+            fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', 
+            background: 'rgba(255,255,255,0.05)', padding: '0.25rem 0.6rem', 
+            borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)',
+            color: attackState === 'triggered' || attackState === 'detecting' ? '#FF5252' : '#00E676',
+            display: 'flex', alignItems: 'center', gap: '6px'
+          }}>
+            <div style={{ 
+              width: '6px', height: '6px', borderRadius: '50%', 
+              background: attackState === 'triggered' || attackState === 'detecting' ? '#FF5252' : '#00E676',
+              animation: 'pulse 1.5s infinite' 
+            }} />
+            {attackState === 'triggered' ? 'CRITICAL INCIDENT' : attackState === 'detecting' ? 'CLASSIFYING THREAT' : attackState === 'mitigating' ? 'SOAR MITIGATION ACTIVE' : 'SYSTEM HEALTHY'}
+          </div>
+        </div>
+      </div>
 
-      {/* ─── Footer ─────────────────────────────────────────────── */}
-      <footer style={{ position: 'relative', zIndex: 1, borderTop: '1px solid rgba(255,255,255,0.06)', padding: '48px 48px 32px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 40 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <span style={{ fontSize: 18 }}>&#128737;</span>
-              <span style={{ fontFamily: '"Syne Mono", monospace', fontSize: 14, color: '#f0f0f0', letterSpacing: 2 }}>TRUSTFLOW</span>
+      {/* Main Console Content */}
+      <div style={{ display: 'flex', height: '420px', flexWrap: 'wrap' }} className="console-layout">
+        
+        {/* Left Side: Scrolling Security Terminal Logs */}
+        <div style={{
+          flex: '1 1 500px', borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+          padding: '1.5rem', background: 'rgba(0,0,0,0.2)', overflowY: 'auto',
+          display: 'flex', flexDirection: 'column', gap: '0.8rem', height: '100%'
+        }} className="terminal-logs">
+          <div style={{
+            fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', 
+            color: '#666', borderBottom: '1px solid rgba(255,255,255,0.04)',
+            paddingBottom: '0.5rem', display: 'flex', justifyContent: 'space-between'
+          }}>
+            <span>SYSTEM CONSOLE FEED</span>
+            <span>SECURE LINK_CONNECTED</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flexGrow: 1 }}>
+            {logs.map((log) => (
+              <div key={log.id} style={{
+                fontFamily: '"JetBrains Mono", monospace', fontSize: '0.85rem',
+                lineHeight: 1.4, display: 'flex', gap: '10px',
+                color: log.type === 'danger' ? '#FF5252' : log.type === 'warning' ? '#FFD740' : log.type === 'success' ? '#00E676' : '#EDEDED'
+              }}>
+                <span style={{ color: '#555', userSelect: 'none' }}>&gt;</span>
+                <span style={{ wordBreak: 'break-all' }}>
+                  {log.text.startsWith('CRITICAL') || log.text.startsWith('ML') || log.text.startsWith('SOAR') || log.text.startsWith('SUCCESS') ? (
+                    <DecryptedText text={log.text} animateOn="mount" speed={30} maxIterations={8} />
+                  ) : (
+                    log.text
+                  )}
+                </span>
+              </div>
+            ))}
+            <div ref={terminalEndRef} />
+          </div>
+        </div>
+
+        {/* Right Side: Visual SVG Node Network Graph */}
+        <div style={{
+          flex: '1 1 400px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', padding: '2rem',
+          position: 'relative', height: '100%', background: 'rgba(5, 5, 5, 0.2)'
+        }} className="network-map">
+          
+          <div style={{
+            position: 'absolute', top: '1.5rem', left: '1.5rem',
+            fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', color: '#666'
+          }}>
+            THREAT TOPOGRAPHY VISUALIZER
+          </div>
+
+          {/* Radar sweeping backdrop */}
+          <div className="radar-sweep" style={{
+            position: 'absolute', width: '280px', height: '280px',
+            borderRadius: '50%', border: '1px solid rgba(255,255,255,0.03)',
+            pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <div style={{ width: '200px', height: '200px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.02)' }} />
+            <div style={{ width: '100px', height: '100px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.01)' }} />
+          </div>
+
+          {/* SVG Topology Nodes and Connections */}
+          <svg width="340" height="280" style={{ position: 'relative', zIndex: 5 }}>
+            <defs>
+              <linearGradient id="glow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#00E676" />
+                <stop offset="100%" stopColor="#29B6F6" />
+              </linearGradient>
+            </defs>
+
+            {/* Connecting Lines */}
+            <line x1="60" y1="140" x2="170" y2="140" stroke={getLineColor('kafka', 'gateway')} strokeWidth={1.5} />
+            <line x1="170" y1="140" x2="170" y2="50" stroke={getLineColor('gateway', 'auth')} strokeWidth={1.5} />
+            <line x1="170" y1="140" x2="280" y2="100" stroke={getLineColor('gateway', 'subnet')} strokeWidth={1.5} />
+            <line x1="170" y1="140" x2="170" y2="230" stroke={getLineColor('gateway', 'soar')} strokeWidth={1.5} />
+            <line x1="280" y1="100" x2="170" y2="230" stroke={getLineColor('subnet', 'soar')} strokeWidth={1.5} />
+
+            {/* Animated Data Packets Flowing */}
+            {attackState === 'idle' && (
+              <>
+                <circle r="3" fill="#FFF">
+                  <animateMotion dur="4s" repeatCount="indefinite" path="M60,140 L170,140" />
+                </circle>
+                <circle r="3" fill="#FFF">
+                  <animateMotion dur="3s" repeatCount="indefinite" path="M170,140 L170,50" />
+                </circle>
+                <circle r="3" fill="#FFF">
+                  <animateMotion dur="5s" repeatCount="indefinite" path="M170,140 L280,100" />
+                </circle>
+              </>
+            )}
+
+            {attackState === 'triggered' && (
+              <circle r="4" fill="#FF5252">
+                <animateMotion dur="1s" repeatCount="indefinite" path="M280,100 L170,140" />
+              </circle>
+            )}
+
+            {attackState === 'mitigating' && (
+              <>
+                <circle r="5" fill="#29B6F6">
+                  <animateMotion dur="0.8s" repeatCount="indefinite" path="M170,230 L280,100" />
+                </circle>
+                <circle r="5" fill="#29B6F6">
+                  <animateMotion dur="0.8s" repeatCount="indefinite" path="M170,230 L170,140" />
+                </circle>
+              </>
+            )}
+
+            {/* Nodes */}
+            {/* Kafka Ingestion Node */}
+            <circle cx="60" cy="140" r="16" fill="#0A0A0A" stroke={getNodeColor('kafka')} strokeWidth="2" style={{ transition: 'all 0.5s' }} />
+            <text x="60" y="145" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">KFK</text>
+            
+            {/* Auth Server Node */}
+            <circle cx="170" cy="50" r="16" fill="#0A0A0A" stroke={getNodeColor('auth')} strokeWidth="2" style={{ transition: 'all 0.5s' }} />
+            <text x="170" y="55" textAnchor="middle" fill="#888" fontSize="9" fontFamily="monospace">ATH</text>
+
+            {/* Gateway Central Node */}
+            <circle cx="170" cy="140" r="22" fill="#0A0A0A" stroke={getNodeColor('gateway')} strokeWidth="2.5" style={{ transition: 'all 0.5s' }} />
+            <text x="170" y="144" textAnchor="middle" fill="#EDEDED" fontSize="10" fontFamily="monospace">GTW</text>
+
+            {/* Vulnerable subnet/DB Cluster Node */}
+            <circle cx="280" cy="100" r="20" fill="#0A0A0A" stroke={getNodeColor('subnet')} strokeWidth="2" className={attackState === 'triggered' || attackState === 'detecting' ? 'node-alert-flash' : ''} style={{ transition: 'all 0.5s' }} />
+            <text x="280" y="104" textAnchor="middle" fill={attackState === 'triggered' || attackState === 'detecting' ? '#FF5252' : '#888'} fontSize="10" fontFamily="monospace">SUB</text>
+
+            {/* SOAR Playbook Mitigator Node */}
+            <circle cx="170" cy="230" r="18" fill="#0A0A0A" stroke={getNodeColor('soar')} strokeWidth="2" style={{ transition: 'all 0.5s' }} />
+            <text x="170" y="234" textAnchor="middle" fill="#888" fontSize="10" fontFamily="monospace">SAR</text>
+          </svg>
+
+          {/* Attack Alert Banner */}
+          {(attackState === 'triggered' || attackState === 'detecting') && (
+            <div style={{
+              position: 'absolute', bottom: '2rem', background: 'rgba(255,82,82,0.15)',
+              border: '1px solid #FF5252', color: '#FF5252', padding: '0.5rem 1rem',
+              borderRadius: '8px', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.8rem',
+              display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10,
+              boxShadow: '0 10px 20px rgba(255,82,82,0.2)'
+            }}>
+              <AlertTriangle size={16} className="pulse-alert" />
+              <span>ALERT // INTRUSION DETECTED IN SUB_4</span>
             </div>
-            <div style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 12, color: '#555555', maxWidth: 280, lineHeight: 1.7 }}>
-              AI-powered threat detection and autonomous response platform for modern security teams.
+          )}
+
+          {attackState === 'secured' && (
+            <div style={{
+              position: 'absolute', bottom: '2rem', background: 'rgba(0,230,118,0.15)',
+              border: '1px solid #00E676', color: '#00E676', padding: '0.5rem 1rem',
+              borderRadius: '8px', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.8rem',
+              display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10
+            }}>
+              <CheckCircle2 size={16} />
+              <span>THREAT NEUTRALIZED IN 142MS</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Control Deck / Telemetry Summary */}
+      <div style={{
+        display: 'flex', borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'rgba(0,0,0,0.4)', padding: '1.25rem 1.5rem',
+        justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem'
+      }}>
+        <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', color: '#666', textTransform: 'uppercase', marginBottom: '0.25rem' }}>ACTIVE RISK INDEX</div>
+            <div style={{ 
+              fontFamily: '"JetBrains Mono", monospace', fontSize: '1.2rem', fontWeight: 500,
+              color: riskLevel > 50 ? '#FF5252' : '#00E676', transition: 'color 0.5s'
+            }}>
+              {riskLevel}%
             </div>
           </div>
-          {[
-            { title: 'Product', links: ['Features', 'Pricing', 'SDK Docs', 'API Reference', 'Changelog'] },
-            { title: 'Security', links: ['MITRE ATT&CK', 'SOAR Playbooks', 'Threat Intel', 'ML Engine'] },
-            { title: 'Company', links: ['About', 'Blog', 'Careers', 'Contact'] },
-          ].map(col => (
-            <div key={col.title}>
-              <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 3, color: '#a0a0a0', textTransform: 'uppercase', marginBottom: 16 }}>{col.title}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {col.links.map(l => (
-                  <a key={l} href="#" style={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 13, color: '#555555', textDecoration: 'none', transition: 'color 0.2s' }}
-                    onMouseEnter={e => e.target.style.color = '#ffffff'} onMouseLeave={e => e.target.style.color = '#555555'}>
-                    {l}
-                  </a>
-                ))}
+          <div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', color: '#666', textTransform: 'uppercase', marginBottom: '0.25rem' }}>INGESTION RATE</div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.2rem', fontWeight: 500, color: '#EDEDED' }}>
+              142,504 <span style={{ fontSize: '0.8rem', color: '#666' }}>EPS</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.65rem', color: '#666', textTransform: 'uppercase', marginBottom: '0.25rem' }}>LATENCY SLA</div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '1.2rem', fontWeight: 500, color: '#00E676' }}>
+              &lt; 150ms
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button Deck */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {attackState === 'idle' ? (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={triggerAttack}
+              style={{
+                background: '#FF5252', color: '#000', border: 'none',
+                borderRadius: '6px', padding: '0.6rem 1.2rem', cursor: 'pointer',
+                fontFamily: '"JetBrains Mono", monospace', fontSize: '0.8rem', fontWeight: 600,
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                boxShadow: '0 0 15px rgba(255,82,82,0.4)'
+              }}
+            >
+              <Play size={14} fill="#000" />
+              Simulate Cyber Attack
+            </motion.button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={resetAttack}
+              disabled={attackState !== 'secured'}
+              style={{
+                background: 'transparent', color: attackState === 'secured' ? '#EDEDED' : '#666',
+                border: `1px solid ${attackState === 'secured' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                borderRadius: '6px', padding: '0.6rem 1.2rem', cursor: attackState === 'secured' ? 'pointer' : 'not-allowed',
+                fontFamily: '"JetBrains Mono", monospace', fontSize: '0.8rem', fontWeight: 500,
+                display: 'inline-flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              <RefreshCw size={14} className={attackState !== 'secured' && attackState !== 'idle' ? 'spin-animation' : ''} />
+              Reset Environment
+            </motion.button>
+          )}
+        </div>
+      </div>
+    </SpotlightCard>
+  );
+}
+
+function Hero() {
+  const navigate = useNavigate();
+  
+  return (
+    <section style={{ 
+      position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', 
+      alignItems: 'center', justifyContent: 'center', padding: '0 5vw', overflow: 'hidden',
+      perspective: '1000px'
+    }}>
+      {/* 3D Perspective Grid Background */}
+      <Particles
+        particleColors={['#ffffff', '#00E676', '#333333']}
+        particleCount={250}
+        particleSpread={12}
+        speed={0.15}
+        particleBaseSize={120}
+        moveParticlesOnHover={true}
+        alphaParticles={true}
+        disableRotation={false}
+      />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, transparent 0%, #000 80%)', pointerEvents: 'none' }} />
+
+      <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: '800px', textAlign: 'center', marginTop: '5vh' }}>
+        <FadeIn>
+          <StarBorder as="div" color="rgba(255,255,255,0.3)" speed="4s" thickness={1} style={{ borderRadius: '100px', marginBottom: '2.5rem', display: 'inline-block' }}>
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0.75rem',
+                background: 'rgba(0,0,0,0.5)', borderRadius: '100px',
+                fontFamily: '"Inter", sans-serif', fontSize: '0.75rem', color: THEME.textMuted,
+                cursor: 'pointer', backdropFilter: 'blur(10px)'
+              }}
+            >
+              <div className="pulse-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00E676', boxShadow: '0 0 10px #00E676' }} />
+              TrustFlow v2.0 is now live
+            </motion.div>
+          </StarBorder>
+        </FadeIn>
+
+        <FadeIn delay={0.1}>
+          <h1 style={{ 
+            fontFamily: '"Inter", sans-serif', fontSize: 'clamp(3.5rem, 8vw, 6.5rem)', 
+            fontWeight: 500, color: THEME.textMain, lineHeight: 1.05, 
+            letterSpacing: '-0.04em', marginBottom: '1.5rem',
+            textShadow: '0 10px 40px rgba(255,255,255,0.15)'
+          }}>
+            Secure infra at the <span style={{ color: THEME.textMuted }}>speed of thought.</span>
+          </h1>
+        </FadeIn>
+
+        <FadeIn delay={0.2}>
+          <p style={{ 
+            fontFamily: '"Inter", sans-serif', fontSize: 'clamp(1rem, 1.2vw, 1.25rem)', 
+            color: THEME.textMuted, maxWidth: '600px', margin: '0 auto 3rem', lineHeight: 1.6 
+          }}>
+            An autonomous SOC platform that ingests logs, detects zero-days with an ML ensemble, and triggers SOAR playbooks in under 200ms.
+          </p>
+        </FadeIn>
+
+        <FadeIn delay={0.3} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <Button onClick={() => navigate('/register')} icon={ArrowRight}>Start Deploying</Button>
+          <Button variant="outline" onClick={() => document.getElementById('platform').scrollIntoView()} icon={TerminalSquare}>View Documentation</Button>
+        </FadeIn>
+      </div>
+
+      {/* Interactive Operations Console */}
+      <FadeIn delay={0.4} style={{ width: '100%', maxWidth: '1100px', marginTop: '4rem', zIndex: 20 }}>
+        <CyberConsole />
+      </FadeIn>
+    </section>
+  );
+}
+
+function BentoGrid() {
+  const Brain = Cpu;
+  return (
+    <section id="platform" style={{ padding: '8rem 5vw', position: 'relative', zIndex: 20 }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <FadeIn>
+          <h2 style={{ fontFamily: '"Inter", sans-serif', fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 500, letterSpacing: '-0.03em', marginBottom: '4rem', lineHeight: 1.1 }}>
+            Architecture that <br/><span style={{ color: THEME.textMuted }}>thinks in 3D.</span>
+          </h2>
+        </FadeIn>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gridAutoRows: '320px', gap: '1.5rem' }} className="bento-grid">
+          
+          {/* Big Card - ML Ensemble */}
+          <FadeIn delay={0.1} className="col-span-2">
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.03)" borderColor="rgba(255, 255, 255, 0.12)">
+              <div style={{ padding: '2.5rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                <Brain size={28} color="#FFF" style={{ marginBottom: '2rem' }} />
+                <h3 style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.75rem', color: THEME.textMain }}>ML Ensemble Engine</h3>
+                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.95rem', color: THEME.textMuted, lineHeight: 1.6, maxWidth: '400px' }}>
+                  Dual-pipeline analysis leveraging LightGBM and XGBoost for unrivaled threat classification across 15 distinct vectors.
+                </p>
+                <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', opacity: 0.05, pointerEvents: 'none', transform: 'rotate(-10deg) translateZ(-50px)' }}>
+                  <BarChart size={240} />
+                </div>
+              </div>
+            </SpotlightCard>
+          </FadeIn>
+
+          {/* Small Card - SOAR */}
+          <FadeIn delay={0.2}>
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.03)" borderColor="rgba(255, 255, 255, 0.12)">
+              <div style={{ padding: '2.5rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                <Zap size={28} color="#FFF" style={{ marginBottom: '2rem' }} />
+                <h3 style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.75rem', color: THEME.textMain }}>SOAR Execution</h3>
+                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.95rem', color: THEME.textMuted, lineHeight: 1.6 }}>
+                  Millisecond playbook automation. IP blocking and rate limiting executed autonomously.
+                </p>
+              </div>
+            </SpotlightCard>
+          </FadeIn>
+
+          {/* Small Card - Compliance */}
+          <FadeIn delay={0.3}>
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.03)" borderColor="rgba(255, 255, 255, 0.12)">
+              <div style={{ padding: '2.5rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                <FileJson size={28} color="#FFF" style={{ marginBottom: '2rem' }} />
+                <h3 style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.75rem', color: THEME.textMain }}>SOC 2 / ISO 27001</h3>
+                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.95rem', color: THEME.textMuted, lineHeight: 1.6 }}>
+                  Continuous tracking and audit-ready reports generated dynamically in seconds.
+                </p>
+              </div>
+            </SpotlightCard>
+          </FadeIn>
+
+          {/* Big Card - Threat Graph */}
+          <FadeIn delay={0.4} className="col-span-2">
+            <SpotlightCard spotlightColor="rgba(255, 255, 255, 0.03)" borderColor="rgba(255, 255, 255, 0.12)">
+              <div style={{ padding: '2.5rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                <Activity size={28} color="#FFF" style={{ marginBottom: '2rem' }} />
+                <h3 style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.75rem', color: THEME.textMain }}>Live Threat Topography</h3>
+                <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.95rem', color: THEME.textMuted, lineHeight: 1.6, maxWidth: '450px' }}>
+                  Real-time spatial visualization mapping adversary lateral movement to MITRE ATT&CK techniques with node-based telemetry tracking.
+                </p>
+                <div style={{ position: 'absolute', bottom: '-20%', right: '5%', opacity: 0.05, pointerEvents: 'none', transform: 'rotate(15deg) translateZ(-80px)' }}>
+                  <Server size={220} />
+                </div>
+              </div>
+            </SpotlightCard>
+          </FadeIn>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Metrics() {
+  return (
+    <section style={{ padding: '6rem 5vw', borderTop: `1px solid ${THEME.border}`, borderBottom: `1px solid ${THEME.border}`, background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.01), transparent)' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', gap: '4rem', justifyContent: 'space-between' }}>
+        {[
+          { label: 'Latency', value: '< 150ms' },
+          { label: 'Accuracy', value: '97.2%' },
+          { label: 'Threats Neutralized', value: '1.2B+' },
+          { label: 'Uptime SLA', value: '99.99%' },
+        ].map((metric, i) => (
+          <FadeIn key={i} delay={i * 0.1} style={{ flex: '1 1 200px' }}>
+            <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.85rem', color: THEME.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: '4px', height: '4px', background: THEME.accent, borderRadius: '50%' }} />
+              {metric.label}
+            </div>
+            <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '3rem', fontWeight: 400, color: THEME.textMain, letterSpacing: '-0.03em' }}>
+              {metric.value}
+            </div>
+          </FadeIn>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function Process() {
+  return (
+    <section id="process" style={{ padding: '10rem 5vw', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6rem' }} className="responsive-split">
+          <FadeIn>
+            <h2 style={{ fontFamily: '"Inter", sans-serif', fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', fontWeight: 500, letterSpacing: '-0.03em', marginBottom: '1.5rem', lineHeight: 1.1 }}>
+              Drop-in <br/><span style={{ color: THEME.textMuted }}>integration.</span>
+            </h2>
+            <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.05rem', color: THEME.textMuted, lineHeight: 1.7, marginBottom: '3rem' }}>
+              TrustFlow was conceived when our offensive security team recognized the latency inherent in traditional SIEM platforms. We engineered an intelligent, autonomous layer capable of executing remediations before human analysts even receive the alert.
+            </p>
+            
+            {/* Terminal Window */}
+            <div style={{ background: '#050505', border: `1px solid ${THEME.border}`, borderRadius: '12px', overflow: 'hidden', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+              <div style={{ padding: '1rem', borderBottom: `1px solid ${THEME.border}`, display: 'flex', gap: '0.5rem' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#333' }} />
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#333' }} />
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#333' }} />
+              </div>
+              <div style={{ padding: '2rem', fontFamily: '"JetBrains Mono", monospace', fontSize: '0.9rem', color: THEME.textMuted, lineHeight: 1.6 }}>
+                <span style={{ color: '#E53E3E' }}>import</span> &#123; trustFlow &#125; <span style={{ color: '#E53E3E' }}>from</span> <span style={{ color: '#A0AEC0' }}>'@trustflow/node'</span>;<br/><br/>
+                app.<span style={{ color: '#63B3ED' }}>use</span>(trustFlow(&#123;<br/>
+                &nbsp;&nbsp;apiKey: process.env.<span style={{ color: '#FFF' }}>TRUSTFLOW_KEY</span>,<br/>
+                &nbsp;&nbsp;mode: <span style={{ color: '#A0AEC0' }}>'autonomous'</span><br/>
+                &#125;));
               </div>
             </div>
-          ))}
-        </div>
-        <div style={{ maxWidth: 1200, margin: '40px auto 0', paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#1a3a50', letterSpacing: 1 }}>
-            &copy; 2025 TrustFlow. All rights reserved.
-          </span>
-          <div style={{ display: 'flex', gap: 24 }}>
-            {['Privacy', 'Terms', 'Security'].map(l => (
-              <a key={l} href="#" style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, color: '#1a3a50', textDecoration: 'none', letterSpacing: 1 }}>{l}</a>
+          </FadeIn>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', justifyContent: 'center' }}>
+            {[
+              { icon: Cpu, title: 'Stream Ingestion', desc: 'Logs are heavily encrypted and shipped via Kafka.' },
+              { icon: Fingerprint, title: 'UEBA Profiling', desc: 'Dynamic baselines built on User & Entity Behavior Analytics.' },
+              { icon: Command, title: 'Autonomous Action', desc: 'SOAR playbooks execute instantly if risk exceeds threshold.' }
+            ].map((step, i) => (
+              <FadeIn key={i} delay={i * 0.15} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '12px', background: THEME.bgCard, border: `1px solid ${THEME.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05)' }}>
+                  <step.icon size={24} color="#FFF" />
+                </div>
+                <div>
+                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: '0.75rem', color: THEME.textMuted, marginBottom: '0.5rem', letterSpacing: '0.05em' }}>0{i + 1}</div>
+                  <h4 style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.15rem', fontWeight: 500, color: THEME.textMain, marginBottom: '0.5rem' }}>{step.title}</h4>
+                  <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.95rem', color: THEME.textMuted, lineHeight: 1.6 }}>{step.desc}</p>
+                </div>
+              </FadeIn>
             ))}
           </div>
         </div>
-      </footer>
+      </div>
+    </section>
+  );
+}
+
+function Contact() {
+  const [form, setForm] = useState({ email: '' });
+  const [status, setStatus] = useState('idle');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setStatus('sending');
+    setTimeout(() => setStatus('success'), 1500);
+  };
+
+  return (
+    <section id="contact" style={{ padding: '10rem 5vw', position: 'relative', overflow: 'hidden' }}>
+      {/* Animated Glowing Orb Background */}
+      <div style={{ position: 'absolute', bottom: '-50%', left: '50%', transform: 'translateX(-50%)', width: '1000px', height: '1000px', background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%)', filter: 'blur(50px)', pointerEvents: 'none' }} />
+      
+      <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+        <FadeIn>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', border: `1px solid ${THEME.border}`, background: THEME.bgCard, marginBottom: '2rem' }}>
+            <Lock size={28} color="#FFF" />
+          </div>
+          <h2 style={{ fontFamily: '"Inter", sans-serif', fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', fontWeight: 500, letterSpacing: '-0.03em', marginBottom: '1.5rem' }}>
+            Ready to secure your stack?
+          </h2>
+          <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.1rem', color: THEME.textMuted, marginBottom: '3rem', lineHeight: 1.6 }}>
+            Deploy TrustFlow on your infrastructure today or contact sales for enterprise licensing.
+          </p>
+          
+          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem', maxWidth: '450px', margin: '0 auto', position: 'relative' }}>
+            <input 
+              type="email" required value={form.email} onChange={e => setForm({email: e.target.value})}
+              placeholder="name@company.com"
+              style={{ 
+                flex: 1, background: THEME.bgCard, border: `1px solid ${THEME.border}`, 
+                borderRadius: '8px', padding: '1rem 1.25rem', color: THEME.textMain, 
+                fontFamily: '"Inter", sans-serif', fontSize: '0.95rem', outline: 'none',
+                transition: 'border-color 0.3s ease'
+              }}
+            />
+            <Button style={{ padding: '0 2rem' }}>{status === 'idle' ? 'Request Access' : status === 'sending' ? 'Sending...' : 'Received'}</Button>
+          </form>
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer style={{ padding: '5rem 5vw 3rem', borderTop: `1px solid ${THEME.border}`, background: '#020202' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '4rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '3rem' }}>
+          <div style={{ maxWidth: '300px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <Shield size={22} color="#FFFFFF" strokeWidth={2.5} />
+              <span style={{ fontFamily: '"Inter", sans-serif', fontSize: '1.1rem', fontWeight: 600, letterSpacing: '-0.02em', color: THEME.textMain }}>
+                TrustFlow
+              </span>
+            </div>
+            <p style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.9rem', color: THEME.textMuted, lineHeight: 1.6 }}>
+              Enterprise AI defense platform. Engineered for zero trust architectures and high-velocity hostile environments.
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '5rem', flexWrap: 'wrap' }}>
+            {[
+              { title: 'Platform', links: ['ML Ensemble', 'Threat Graph', 'SOAR Engine', 'Compliance'] },
+              { title: 'Resources', links: ['Documentation', 'API Reference', 'SDK Downloads', 'System Status'] },
+              { title: 'Company', links: ['About', 'Blog', 'Privacy Policy', 'Terms of Service'] }
+            ].map((col) => (
+              <div key={col.title}>
+                <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.9rem', fontWeight: 500, color: THEME.textMain, marginBottom: '1.25rem' }}>{col.title}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {col.links.map(l => (
+                    <a key={l} href="#" style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.9rem', color: THEME.textMuted, textDecoration: 'none', transition: 'color 0.2s' }} className="nav-link">{l}</a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', paddingTop: '2.5rem', borderTop: `1px solid ${THEME.border}` }}>
+          <div style={{ fontFamily: '"Inter", sans-serif', fontSize: '0.85rem', color: THEME.textMuted }}>
+            © 2026 TrustFlow. All rights reserved.
+          </div>
+          <div style={{ display: 'flex', gap: '1.25rem' }}>
+            <a href="#" className="nav-link"><Github size={20} /></a>
+            <a href="#" className="nav-link"><Twitter size={20} /></a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export default function LandingPage() {
+  return (
+    <div style={{ background: THEME.bg, minHeight: '100vh', color: THEME.textMain, overflowX: 'hidden' }}>
+      <Header />
+      <main>
+        <Hero />
+        <BentoGrid />
+        <Metrics />
+        <Process />
+        <Contact />
+      </main>
+      <Footer />
+
+      <style>{`
+        /* Global Reset & Base */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body { background: ${THEME.bg}; overflow-x: hidden; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: ${THEME.bg}; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* Component Hover States */
+        .btn-outline:hover { background: rgba(255,255,255,0.05); }
+        .btn-primary:hover .btn-glow { left: 100%; transition: 0.5s; }
+        .nav-link:hover { color: #FFFFFF !important; }
+
+        /* Perspective Grid Background */
+        .spatial-grid-bg {
+          position: absolute;
+          inset: -100%;
+          background-image: 
+            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+          background-size: 50px 50px;
+          transform: perspective(1000px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+          animation: gridMove 20s linear infinite;
+          pointer-events: none;
+          z-index: 0;
+        }
+        @keyframes gridMove {
+          0% { transform: perspective(1000px) rotateX(60deg) translateY(0) translateZ(-200px); }
+          100% { transform: perspective(1000px) rotateX(60deg) translateY(50px) translateZ(-200px); }
+        }
+
+        /* 3D Bento Grid Elements */
+        .bento-card-wrapper {
+          position: relative;
+        }
+        .bento-card {
+          background: ${THEME.bgCard};
+          border-radius: 16px;
+          position: relative;
+          height: 100%;
+          border: 1px solid transparent;
+          transition: border-color 0.3s ease;
+          overflow: hidden;
+        }
+        .bento-card-wrapper:hover .bento-card {
+          border-color: rgba(255,255,255,0.02);
+        }
+        
+        /* The border glow effect using an inset mask */
+        .bento-border-glow {
+          position: absolute;
+          inset: 0;
+          border-radius: 16px;
+          padding: 1px;
+          -webkit-mask: 
+            linear-gradient(#fff 0 0) content-box, 
+            linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        input:focus {
+          border-color: rgba(255,255,255,0.3) !important;
+        }
+
+        .desktop-nav {
+          display: none;
+        }
+
+        /* Threat Operations Console Animations */
+        @keyframes pulse {
+          0% { opacity: 0.4; }
+          50% { opacity: 1; }
+          100% { opacity: 0.4; }
+        }
+        
+        .node-alert-flash {
+          animation: flashRed 1s infinite alternate;
+        }
+        @keyframes flashRed {
+          0% { stroke: #333; fill: #0A0A0A; }
+          100% { stroke: #FF5252; fill: rgba(255,82,82,0.15); }
+        }
+        
+        .pulse-alert {
+          animation: alertPulse 1.2s infinite;
+        }
+        @keyframes alertPulse {
+          0% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); opacity: 0.8; }
+        }
+        
+        .spin-animation {
+          animation: rotateSpin 1.5s linear infinite;
+        }
+        @keyframes rotateSpin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .radar-sweep {
+          position: absolute;
+          background: conic-gradient(from 0deg, rgba(255,255,255,0.015) 0deg, rgba(0,230,118,0.04) 180deg, transparent 360deg);
+          animation: radarRot 8s linear infinite;
+        }
+        @keyframes radarRot {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+          .console-layout {
+            flex-direction: column !important;
+            height: auto !important;
+          }
+          .terminal-logs {
+            border-right: none !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            height: 250px !important;
+          }
+          .network-map {
+            height: 300px !important;
+            padding: 1.5rem !important;
+          }
+        }
+
+        /* Responsive Utilities */
+        @media (min-width: 768px) {
+          .desktop-nav { display: flex !important; }
+          .col-span-2 { grid-column: span 2; }
+          .col-span-3 { grid-column: span 3; }
+        }
+        @media (max-width: 768px) {
+          .hidden-mobile { display: none !important; }
+          .bento-grid { grid-template-columns: 1fr !important; }
+          .responsive-split { grid-template-columns: 1fr !important; gap: 3rem !important; }
+          .spatial-grid-bg { display: none; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,0 +1,27 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="800" rx="44" fill="#F8FBFF"/>
+  <rect x="104" y="74" width="704" height="652" rx="34" fill="#FFFFFF" stroke="#DCE7F3" stroke-width="2"/>
+  <rect x="154" y="128" width="236" height="24" rx="12" fill="#142033"/>
+  <rect x="154" y="184" width="544" height="14" rx="7" fill="#DCE7F3"/>
+  <rect x="154" y="222" width="456" height="14" rx="7" fill="#DCE7F3"/>
+  <rect x="154" y="294" width="274" height="78" rx="22" fill="#EAFBFF" stroke="#CDEEF6"/>
+  <rect x="468" y="294" width="240" height="78" rx="22" fill="#FFF4E8" stroke="#FFE0C4"/>
+  <rect x="154" y="430" width="554" height="20" rx="10" fill="#142033"/>
+  <rect x="154" y="484" width="554" height="14" rx="7" fill="#DCE7F3"/>
+  <rect x="154" y="526" width="486" height="14" rx="7" fill="#DCE7F3"/>
+  <rect x="154" y="568" width="526" height="14" rx="7" fill="#DCE7F3"/>
+  <rect x="154" y="610" width="398" height="14" rx="7" fill="#DCE7F3"/>
+  <g filter="url(#shadow)">
+    <rect x="760" y="166" width="398" height="468" rx="36" fill="#142033"/>
+  </g>
+  <circle cx="842" cy="252" r="44" fill="#18A874"/>
+  <path d="M822 252L838 268L868 232" stroke="white" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="814" y="344" font-family="IBM Plex Sans, Arial" font-size="36" font-weight="800" fill="#FFFFFF">SOC 2</text>
+  <text x="814" y="390" font-family="IBM Plex Sans, Arial" font-size="24" font-weight="700" fill="#87A3C5">Evidence package</text>
+  <rect x="814" y="450" width="252" height="16" rx="8" fill="#FFFFFF"/>
+  <rect x="814" y="500" width="280" height="14" rx="7" fill="#87A3C5"/>
+  <rect x="814" y="544" width="226" height="14" rx="7" fill="#87A3C5"/>
+  <circle cx="1090" cy="248" r="68" fill="#FFB020"/>
+  <path d="M1058 250L1080 272L1124 222" stroke="#142033" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs><filter id="shadow" x="704" y="118" width="510" height="580" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="28" stdDeviation="26" flood-color="#1E3656" flood-opacity=".2"/></filter></defs>
+</svg>

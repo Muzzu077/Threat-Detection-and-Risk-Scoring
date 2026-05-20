@@ -1,0 +1,32 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="800" rx="44" fill="#FFFDF9"/>
+  <rect x="72" y="72" width="1136" height="656" rx="36" fill="#FFFFFF" stroke="#E5ECF4" stroke-width="2"/>
+  <rect x="120" y="128" width="298" height="544" rx="30" fill="#F6FAFF" stroke="#DCE7F3"/>
+  <rect x="154" y="170" width="168" height="20" rx="10" fill="#142033"/>
+  <rect x="154" y="230" width="216" height="72" rx="20" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <rect x="154" y="328" width="216" height="72" rx="20" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <rect x="154" y="426" width="216" height="72" rx="20" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <rect x="154" y="524" width="216" height="72" rx="20" fill="#FFFFFF" stroke="#DCE7F3"/>
+  <circle cx="184" cy="266" r="14" fill="#FF6D3A"/>
+  <circle cx="184" cy="364" r="14" fill="#00A7C2"/>
+  <circle cx="184" cy="462" r="14" fill="#6B5CFF"/>
+  <circle cx="184" cy="560" r="14" fill="#18A874"/>
+  <g filter="url(#shadow)">
+    <rect x="516" y="142" width="250" height="96" rx="28" fill="#EAFBFF" stroke="#BFEAF2"/>
+    <rect x="516" y="352" width="250" height="96" rx="28" fill="#F1EFFF" stroke="#D8D2FF"/>
+    <rect x="516" y="562" width="250" height="96" rx="28" fill="#FFF4E8" stroke="#FFD8BD"/>
+    <rect x="890" y="246" width="250" height="96" rx="28" fill="#EDFFF8" stroke="#C7F2E4"/>
+    <rect x="890" y="456" width="250" height="96" rx="28" fill="#FFF8EA" stroke="#F9D08A"/>
+  </g>
+  <path d="M766 190C838 190 818 294 890 294" stroke="#00A7C2" stroke-width="8" stroke-linecap="round"/>
+  <path d="M766 400C838 400 818 294 890 294" stroke="#6B5CFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M766 610C842 610 812 504 890 504" stroke="#FF6D3A" stroke-width="8" stroke-linecap="round"/>
+  <g font-family="IBM Plex Sans, Arial" font-weight="800" fill="#142033">
+    <text x="552" y="182" font-size="24">Risk ≥ 85</text><text x="552" y="212" font-size="16" fill="#62708A">critical trigger</text>
+    <text x="552" y="392" font-size="24">Disable account</text><text x="552" y="422" font-size="16" fill="#62708A">identity action</text>
+    <text x="552" y="602" font-size="24">Block IP</text><text x="552" y="632" font-size="16" fill="#62708A">network control</text>
+    <text x="926" y="286" font-size="24">Notify SOC</text><text x="926" y="316" font-size="16" fill="#62708A">Slack, email, Telegram</text>
+    <text x="926" y="496" font-size="24">Export CEF</text><text x="926" y="526" font-size="16" fill="#62708A">SIEM delivery</text>
+  </g>
+  <defs><filter id="shadow" x="470" y="102" width="720" height="610" filterUnits="userSpaceOnUse"><feDropShadow dx="0" dy="22" stdDeviation="18" flood-color="#1E3656" flood-opacity=".14"/></filter></defs>
+</svg>
