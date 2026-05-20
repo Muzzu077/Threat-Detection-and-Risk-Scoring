@@ -35,3 +35,40 @@
 {"level":"info","message":"Handlers setup complete","service":"react-bits-mcp-server","timestamp":"2026-05-20T14:17:12.805Z"}
 {"level":"info","message":"Transport initialized: stdio","service":"react-bits-mcp-server","timestamp":"2026-05-20T14:17:12.805Z"}
 {"level":"info","message":"Server started successfully","service":"react-bits-mcp-server","timestamp":"2026-05-20T14:17:12.805Z"}
+{"level":"info","message":"Starting React Bits MCP Server...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.524Z"}
+{"level":"info","message":"Setting up request handlers...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.530Z"}
+{"level":"info","message":"Handlers setup complete","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.530Z"}
+{"level":"info","message":"Transport initialized: stdio","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.531Z"}
+{"level":"info","message":"Server started successfully","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.531Z"}
+{"level":"info","message":"Listing components","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.543Z"}
+{"level":"info","message":"Found 99 components","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.560Z"}
+{"level":"info","message":"Successfully listed 99 components","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:34:39.561Z"}
+{"level":"info","message":"Starting React Bits MCP Server...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.668Z"}
+{"level":"info","message":"Setting up request handlers...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.673Z"}
+{"level":"info","message":"Handlers setup complete","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.673Z"}
+{"level":"info","message":"Transport initialized: stdio","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.673Z"}
+{"level":"info","message":"Server started successfully","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.673Z"}
+{"level":"info","message":"Getting component source for: Aurora","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.681Z"}
+{"level":"info","message":"Found 99 components","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.684Z"}
+{"level":"info","message":"Successfully retrieved component source for: Aurora","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:16.686Z"}
+{"level":"info","message":"Starting React Bits MCP Server...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:22.255Z"}
+{"level":"info","message":"Setting up request handlers...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:22.259Z"}
+{"level":"info","message":"Handlers setup complete","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:22.259Z"}
+{"level":"info","message":"Transport initialized: stdio","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:22.260Z"}
+{"level":"info","message":"Server started successfully","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:22.260Z"}
+{"level":"info","message":"Starting React Bits MCP Server...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.454Z"}
+{"level":"info","message":"Setting up request handlers...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.459Z"}
+{"level":"info","message":"Handlers setup complete","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.460Z"}
+{"level":"info","message":"Transport initialized: stdio","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.460Z"}
+{"level":"info","message":"Server started successfully","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.460Z"}
+{"level":"info","message":"Getting component metadata for: Aurora","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.469Z"}
+{"level":"info","message":"Found 99 components","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.476Z"}
+{"level":"info","message":"Successfully retrieved component metadata for: Aurora","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:26.478Z"}
+{"level":"info","message":"Starting React Bits MCP Server...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.114Z"}
+{"level":"info","message":"Setting up request handlers...","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.118Z"}
+{"level":"info","message":"Handlers setup complete","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.119Z"}
+{"level":"info","message":"Transport initialized: stdio","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.119Z"}
+{"level":"info","message":"Server started successfully","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.119Z"}
+{"level":"info","message":"Getting component source for: Aurora","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.127Z"}
+{"level":"info","message":"Found 99 components","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.131Z"}
+{"level":"info","message":"Successfully retrieved component source for: Aurora","service":"react-bits-mcp-server","timestamp":"2026-05-20T17:35:48.131Z"}
