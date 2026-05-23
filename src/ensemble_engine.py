@@ -95,15 +95,26 @@ def train_xgboost(data_path: str = None) -> dict:
     }
 
     joblib.dump(model, ML_XGB_MODEL_PATH)
+    global _XGB_MODEL_CACHE
+    _XGB_MODEL_CACHE = None
+
     print(f"✅ XGBoost saved → {ML_XGB_MODEL_PATH} — accuracy {metrics['accuracy']}%")
     return metrics
 
 
+_XGB_MODEL_CACHE = None
+
+
 def load_xgboost():
-    """Load XGBoost model from disk. Returns model or None."""
+    """Load XGBoost model from disk. Returns model or None. Cached in memory."""
+    global _XGB_MODEL_CACHE
+    if _XGB_MODEL_CACHE is not None:
+        return _XGB_MODEL_CACHE
+
     if os.path.exists(ML_XGB_MODEL_PATH):
         try:
-            return joblib.load(ML_XGB_MODEL_PATH)
+            _XGB_MODEL_CACHE = joblib.load(ML_XGB_MODEL_PATH)
+            return _XGB_MODEL_CACHE
         except Exception as e:
             print(f"⚠️ Failed to load XGBoost: {e}")
     return None

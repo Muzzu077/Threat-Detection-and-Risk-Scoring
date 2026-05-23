@@ -75,20 +75,28 @@ def set_json(key: str, value: dict, ttl_seconds: int) -> bool:
 
 
 def incr_with_window(key: str, window_seconds: int) -> int:
-    """Atomic increment with first-write TTL. Returns current count.
+    """True sliding-window rate limiter using Redis sorted sets.
 
-    Used for sliding-window-ish rate limiting. Returns 0 if Redis unavailable —
+    Each request is stored as a member with its timestamp as score.
+    On every call we prune expired entries and count the remaining.
+    Returns current count in the window. Returns 0 if Redis unavailable —
     callers should treat that as "skip the limiter, fail open".
     """
     c = _get_client()
     if c is None:
         return 0
     try:
+        import time
+        now = time.time()
+        window_start = now - window_seconds
+        member = f"{now}:{os.urandom(4).hex()}"
         pipe = c.pipeline()
-        pipe.incr(key)
-        pipe.expire(key, window_seconds, nx=True)  # only set TTL on first write
+        pipe.zremrangebyscore(key, 0, window_start)     # prune expired
+        pipe.zadd(key, {member: now})                    # add this request
+        pipe.zcard(key)                                  # count in window
+        pipe.expire(key, window_seconds + 1)             # auto-cleanup
         result = pipe.execute()
-        return int(result[0])
+        return int(result[2])
     except Exception:
         return 0
 

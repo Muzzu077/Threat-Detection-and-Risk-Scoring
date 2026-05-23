@@ -18,20 +18,19 @@ def record_feedback(incident_id: int, event_data: dict, analyst_label: str, orig
     analyst_label: 'false_positive', 'confirmed_threat', 'escalated', 'benign'
     """
     os.makedirs(os.path.dirname(FEEDBACK_FILE), exist_ok=True)
+    
+    # Strip ML-derived features to prevent circular bias during retraining
+    clean_event_data = dict(event_data)
+    for key in ("risk_score", "ml_confidence", "anomaly_score", "time_risk", "role_risk", "resource_risk", "threat_intel_score"):
+        clean_event_data.pop(key, None)
+
     entry = {
         "timestamp": datetime.utcnow().isoformat(),
         "incident_id": incident_id,
         "analyst": analyst,
         "original_prediction": original_prediction,
         "analyst_label": analyst_label,
-        "event_data": {
-            "user": event_data.get("user", ""),
-            "action": event_data.get("action", ""),
-            "ip": event_data.get("ip", ""),
-            "resource": event_data.get("resource", ""),
-            "risk_score": event_data.get("risk_score", 0),
-            "attack_type": event_data.get("attack_type", ""),
-        },
+        "event_data": clean_event_data,
     }
     with open(FEEDBACK_FILE, 'a') as f:
         f.write(json.dumps(entry) + '\n')
@@ -136,15 +135,21 @@ def get_retraining_dataset() -> list:
                 continue
             try:
                 entry = json.loads(line)
+                evt = entry.get("event_data", {})
+                
+                # Strip ML features in case they were saved in older feedback formats
+                for key in ("risk_score", "ml_confidence", "anomaly_score", "time_risk", "role_risk", "resource_risk", "threat_intel_score"):
+                    evt.pop(key, None)
+
                 if entry.get("analyst_label") == "false_positive":
                     corrections.append({
-                        **entry.get("event_data", {}),
+                        **evt,
                         "attack_type": "normal",  # Analyst says it's not an attack
                         "feedback_source": "analyst_correction",
                     })
                 elif entry.get("analyst_label") == "confirmed_threat":
                     corrections.append({
-                        **entry.get("event_data", {}),
+                        **evt,
                         "feedback_source": "analyst_confirmed",
                     })
             except Exception:

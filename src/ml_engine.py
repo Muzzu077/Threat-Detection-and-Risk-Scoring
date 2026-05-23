@@ -169,18 +169,31 @@ def train_ml_engine(data_path: str = os.path.join(_PROJECT_ROOT, "data", "labele
     with open(ML_METRICS_PATH, "w") as f:
         json.dump(metrics, f, indent=2)
 
+    # Invalidate model cache
+    global _ML_MODEL_CACHE, _ML_ENCODERS_CACHE
+    _ML_MODEL_CACHE = None
+    _ML_ENCODERS_CACHE = None
+
     print(f"✅ Saved model → {ML_MODEL_PATH}")
     print(f"✅ Saved metrics → {ML_METRICS_PATH}")
     return metrics
 
 
+_ML_MODEL_CACHE = None
+_ML_ENCODERS_CACHE = None
+
+
 def load_ml_engine():
-    """Load the trained ML model and encoders. Returns (model, encoders) or (None, None)."""
+    """Load the trained ML model and encoders. Returns (model, encoders) or (None, None). Cached in memory."""
+    global _ML_MODEL_CACHE, _ML_ENCODERS_CACHE
+    if _ML_MODEL_CACHE is not None and _ML_ENCODERS_CACHE is not None:
+        return _ML_MODEL_CACHE, _ML_ENCODERS_CACHE
+
     if os.path.exists(ML_MODEL_PATH) and os.path.exists(ML_ENCODERS_PATH):
         try:
-            model = joblib.load(ML_MODEL_PATH)
-            encoders = joblib.load(ML_ENCODERS_PATH)
-            return model, encoders
+            _ML_MODEL_CACHE = joblib.load(ML_MODEL_PATH)
+            _ML_ENCODERS_CACHE = joblib.load(ML_ENCODERS_PATH)
+            return _ML_MODEL_CACHE, _ML_ENCODERS_CACHE
         except Exception as e:
             print(f"⚠️ Error loading ML engine: {e}")
     return None, None

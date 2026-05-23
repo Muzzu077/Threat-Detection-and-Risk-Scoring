@@ -1368,7 +1368,8 @@ async def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_us
             try:
                 ai_summary = generate_security_summary(event_dict)
                 if ai_summary:
-                    db.update_incident_note(incident_id, ai_summary)
+                    db.update_incident_note(incident_id, ai_summary,
+                                            tenant_id=api_user.id)
             except Exception:
                 pass
             # SOAR Auto-Response — sets responded_at for MTTD/MTTR metrics
@@ -1379,7 +1380,8 @@ async def sdk_ingest(batch: IngestBatch, api_user: User = Depends(get_api_key_us
                 response_json = json.dumps(
                     [a.get("action", "") for a in soar_result.get("actions_taken", [])]
                 )
-                db.update_incident_response(incident_id, response_json)
+                db.update_incident_response(incident_id, response_json,
+                                            tenant_id=api_user.id)
             except Exception:
                 pass
             # Dispatch alerts to the tenant's configured channels (multi-tenant)
@@ -1566,7 +1568,8 @@ def trigger_response(incident_id: int, body: ResponseTrigger = Body(default=None
         "tenant_id": tenant_id,
     }
     response = execute_response(event_dict, incident_id, tenant_id=tenant_id)
-    db.update_incident_response(incident_id, json.dumps(response.get("actions_taken", [])))
+    db.update_incident_response(incident_id, json.dumps(response.get("actions_taken", [])),
+                                tenant_id=tenant_id)
     return response
 
 @app.get("/api/response/log")
@@ -2147,8 +2150,11 @@ async def websocket_live_feed(websocket: WebSocket, token: str = Query(default="
             })
 
         while True:
-            await asyncio.sleep(30)
-            await websocket.send_json({"type": "ping"})
+            try:
+                # Wait for client message OR timeout → send ping
+                await asyncio.wait_for(websocket.receive_text(), timeout=30)
+            except asyncio.TimeoutError:
+                await websocket.send_json({"type": "ping"})
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
@@ -2159,10 +2165,24 @@ async def websocket_live_feed(websocket: WebSocket, token: str = Query(default="
 
 @app.get("/api/ueba/profiles")
 def get_ueba_profiles(current_user: User = Depends(get_current_user)):
-    return {"data": get_all_profiles()}
+    all_profiles = get_all_profiles()
+    if current_user.role != "admin":
+        # Scope to only this tenant's users by cross-referencing event data
+        tenant_events = db.fetch_all_events(limit=5000, tenant_id=current_user.id,
+                                            user_role=current_user.role)
+        tenant_users = {e.user for e in tenant_events}
+        all_profiles = [p for p in all_profiles if p["user"] in tenant_users]
+    return {"data": all_profiles}
 
 @app.get("/api/ueba/user/{user}")
 def get_ueba_user_profile(user: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        # Verify this user belongs to the tenant
+        tenant_events = db.fetch_all_events(limit=100, tenant_id=current_user.id,
+                                            user_role=current_user.role)
+        tenant_users = {e.user for e in tenant_events}
+        if user not in tenant_users:
+            raise HTTPException(status_code=404, detail="User not found in your tenant")
     return get_user_profile(user)
 
 
@@ -2338,7 +2358,9 @@ def execute_playbook_endpoint(incident_id: int, current_user: User = Depends(get
         "attack_type": incident.attack_type or "unknown",
     }
     result = execute_playbook(event_dict, incident_id)
-    db.update_incident_response(incident_id, json.dumps([a.get("action", "") for a in result.get("actions_taken", [])]))
+    db.update_incident_response(incident_id,
+                                json.dumps([a.get("action", "") for a in result.get("actions_taken", [])]),
+                                tenant_id=current_user.id)
     return result
 
 

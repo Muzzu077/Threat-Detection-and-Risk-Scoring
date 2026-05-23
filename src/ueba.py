@@ -73,14 +73,17 @@ class UEBAEngine:
     # ── Anomaly detections ──────────────────────────────────────────────────
 
     def _hour_anomaly(self, baseline: dict, hour: int) -> Optional[dict]:
-        """Detect login at a statistically unusual hour using z-score."""
+        """Detect login at a statistically unusual hour using z-score with circular distance."""
         if baseline["event_count"] < 10:
             return None  # insufficient history
 
         avg_hour = baseline.get("avg_hour", 12.0)
         std_hour = baseline.get("std_hour", 4.0)
 
-        z_score = abs(hour - avg_hour) / max(std_hour, 1)
+        # Circular distance — hours wrap around (23→1 = 2h, not 22h)
+        linear_diff = abs(hour - avg_hour)
+        circular_diff = min(linear_diff, 24 - linear_diff)
+        z_score = circular_diff / max(std_hour, 1)
         if z_score > 2.5:
             return {
                 "type":        "unusual_login_time",

@@ -17,6 +17,20 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
+# Guard against default secret in production
+if "change-me" in SECRET_KEY or len(SECRET_KEY) < 32:
+    import warnings
+    warnings.warn(
+        "⚠️  JWT_SECRET_KEY is not set or uses the insecure default! "
+        "Set a strong secret in .env for production.",
+        stacklevel=2,
+    )
+    if os.getenv("ENVIRONMENT", "development").lower() == "production":
+        raise RuntimeError(
+            "FATAL: Refusing to start in production with default JWT secret. "
+            "Set JWT_SECRET_KEY to a random 64+ character string."
+        )
+
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")

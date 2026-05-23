@@ -18,14 +18,16 @@ Design notes:
 import os
 import json
 import asyncio
-import threading
 from datetime import datetime
 
 _TOPIC = os.getenv("KAFKA_EVENTS_TOPIC", "trustflow.events")
 
 _producer = None
-_producer_lock = threading.Lock()
-_producer_failed = False  # latch — flips on first failure to avoid retry storms
+_producer_lock = asyncio.Lock()  # async-safe lock (was threading.Lock — caused deadlocks)
+_producer_fail_count = 0
+_MAX_FAILURES = 5
+_RECOVERY_INTERVAL = 60  # seconds — retry after this cooldown
+_last_failure_time = 0.0
 
 
 def _brokers() -> str:
@@ -33,19 +35,25 @@ def _brokers() -> str:
 
 
 def is_enabled() -> bool:
-    return bool(_brokers()) and not _producer_failed
+    return bool(_brokers()) and _producer_fail_count < _MAX_FAILURES
 
 
 async def _ensure_producer():
-    """Lazy-start the aiokafka producer. Returns the producer or None."""
-    global _producer, _producer_failed
+    """Lazy-start the aiokafka producer with circuit breaker recovery."""
+    global _producer, _producer_fail_count, _last_failure_time
     if _producer is not None:
         return _producer
-    if _producer_failed or not _brokers():
+    if not _brokers():
         return None
+    # Circuit breaker: if too many failures, wait for cooldown before retrying
+    if _producer_fail_count >= _MAX_FAILURES:
+        import time as _time
+        if _time.time() - _last_failure_time < _RECOVERY_INTERVAL:
+            return None
+        _producer_fail_count = 0  # cooldown elapsed — reset and retry
     try:
         from aiokafka import AIOKafkaProducer
-        with _producer_lock:
+        async with _producer_lock:  # async lock — yields to event loop while waiting
             if _producer is None:
                 p = AIOKafkaProducer(
                     bootstrap_servers=_brokers(),
@@ -58,8 +66,11 @@ async def _ensure_producer():
                 _producer = p
         return _producer
     except Exception as e:
-        print(f"⚠️  Kafka producer failed to start: {e} — disabling for this process")
-        _producer_failed = True
+        import time as _time
+        _producer_fail_count += 1
+        _last_failure_time = _time.time()
+        if _producer_fail_count >= _MAX_FAILURES:
+            print(f"⚠️  Kafka producer failed {_MAX_FAILURES} times: {e} — circuit breaker open for {_RECOVERY_INTERVAL}s")
         return None
 
 

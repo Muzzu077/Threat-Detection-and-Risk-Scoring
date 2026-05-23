@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, Text, Boolean, ForeignKey, Index, text
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from datetime import datetime
 import os
@@ -124,6 +124,9 @@ class NotificationPreference(Base):
 
 class LogEvent(Base):
     __tablename__ = 'log_events'
+    __table_args__ = (
+        Index('idx_log_events_tenant_app_timestamp', 'tenant_id', 'application_id', text('timestamp DESC')),
+    )
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
@@ -386,20 +389,25 @@ class Database:
         finally:
             session.close()
 
-    def update_incident_note(self, incident_id, note):
+    def update_incident_note(self, incident_id, note, tenant_id=None, user_role=None):
         session = self.Session()
         try:
-            inc = session.query(Incident).filter(Incident.id == incident_id).first()
+            q = session.query(Incident).filter(Incident.id == incident_id)
+            q = self._apply_tenant_filter(q, Incident, tenant_id, user_role)
+            inc = q.first()
             if inc:
                 inc.note = note
                 session.commit()
         finally:
             session.close()
 
-    def update_incident_response(self, incident_id, response_json: str):
+    def update_incident_response(self, incident_id, response_json: str,
+                                 tenant_id=None, user_role=None):
         session = self.Session()
         try:
-            inc = session.query(Incident).filter(Incident.id == incident_id).first()
+            q = session.query(Incident).filter(Incident.id == incident_id)
+            q = self._apply_tenant_filter(q, Incident, tenant_id, user_role)
+            inc = q.first()
             if inc:
                 inc.response_actions = response_json
                 inc.responded_at = datetime.utcnow()
@@ -816,9 +824,12 @@ class Database:
                 iq = iq.filter(Incident.tenant_id == tenant_id)
 
             total_events = eq.count()
-            avg_risk = session.query(func.avg(LogEvent.risk_score)).filter(
+            avg_q = session.query(func.avg(LogEvent.risk_score)).filter(
                 LogEvent.application_id == app_id
-            ).scalar()
+            )
+            if user_role != "admin" and tenant_id is not None:
+                avg_q = avg_q.filter(LogEvent.tenant_id == tenant_id)
+            avg_risk = avg_q.scalar()
             last_event = eq.order_by(LogEvent.timestamp.desc()).first()
             critical = eq.filter(LogEvent.risk_score >= 85).count()
             open_incidents = iq.filter(Incident.status.in_(["OPEN", "INVESTIGATING"])).count()
