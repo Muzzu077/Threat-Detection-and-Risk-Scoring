@@ -693,6 +693,97 @@
 .lp-delay-4 { animation-delay: 0.4s; }
 .lp-delay-5 { animation-delay: 0.5s; }
 
+/* ── Enhanced Button ──────────────────────────────────────────────── */
+.lp-btn-lg {
+  padding: 0.85rem 2rem;
+  font-size: 0.95rem;
+}
+
+/* ── Trust Logos ───────────────────────────────────────────────────── */
+.lp-hero-trust {
+  margin-top: 4rem;
+  text-align: center;
+}
+
+.lp-hero-trust-label {
+  font-family: var(--lp-font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--lp-text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 1.25rem;
+}
+
+.lp-hero-trust-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.lp-hero-trust-item {
+  font-family: var(--lp-font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--lp-text-muted);
+  padding: 0.4rem 1rem;
+  background: var(--lp-bg-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--lp-border-light);
+  border-radius: 100px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp-hero-trust-item:hover {
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--lp-text-secondary);
+}
+
+/* ── Feature Card Link ────────────────────────────────────────────── */
+.lp-feature-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1.25rem;
+  font-family: var(--lp-font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--lp-accent);
+  cursor: pointer;
+  transition: gap 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp-feature-link:hover { gap: 8px; }
+
+/* ── Terminal Filename ────────────────────────────────────────────── */
+.lp-terminal-filename {
+  margin-left: auto;
+  font-family: var(--lp-font-mono);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Dual CTA Orb ─────────────────────────────────────────────────── */
+.lp-cta-orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(107, 138, 115, 0.10) 0%, transparent 70%);
+  top: 30%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+  filter: blur(50px);
+}
+
+/* ── Footer Link Icons ────────────────────────────────────────────── */
+.lp-footer-col a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .lp-nav-links { display: none; }
@@ -702,10 +793,12 @@
   .lp-stats-inner { flex-direction: column; padding: 2rem; }
   .lp-cta-form { flex-direction: column; }
   .lp-footer-cols { gap: 2rem; }
+  .lp-hero-trust-logos { gap: 1rem; }
 }
 
 @media (max-width: 600px) {
   .lp-hero h1 { font-size: 2.5rem; }
   .lp-hero { padding: 6rem 5vw 3rem; }
   .lp-nav-actions .lp-btn-ghost { display: none; }
+  .lp-hero-trust-logos { flex-direction: column; gap: 0.5rem; }
 }

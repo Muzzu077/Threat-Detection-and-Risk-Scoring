@@ -119,15 +119,16 @@ def train_ml_engine(data_path: str = os.path.join(_PROJECT_ROOT, "data", "labele
     if LGBM_AVAILABLE:
         print("🧠 Training LightGBM Classifier...")
         model = LGBMClassifier(
-            n_estimators=200,
-            learning_rate=0.05,
-            num_leaves=31,
+            n_estimators=400,
+            learning_rate=0.08,
+            num_leaves=63,
+            max_depth=8,
             random_state=42,
             verbose=-1
         )
     else:
         print("⚠️ LightGBM not available. Using Random Forest Classifier...")
-        model = RandomForestClassifier(n_estimators=200, random_state=42, n_jobs=-1)
+        model = RandomForestClassifier(n_estimators=300, max_depth=20, random_state=42, n_jobs=-1)
 
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)

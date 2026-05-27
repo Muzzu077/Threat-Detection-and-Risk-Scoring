@@ -66,10 +66,35 @@ export default function DecryptedText({
     }, speed);
   };
 
+  const spanRef = useRef(null);
+
   useEffect(() => {
     if (animateOn === 'mount') {
       startDecryption();
+    } else if (animateOn === 'view') {
+      if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry.isIntersecting) {
+              startDecryption();
+              observer.disconnect();
+            }
+          },
+          { threshold: 0.1 }
+        );
+
+        if (spanRef.current) {
+          observer.observe(spanRef.current);
+        }
+
+        return () => {
+          observer.disconnect();
+        };
+      } else {
+        startDecryption();
+      }
     }
+
     return () => {
       if (animationRef.current) clearInterval(animationRef.current);
     };
@@ -88,6 +113,7 @@ export default function DecryptedText({
 
   return (
     <span
+      ref={spanRef}
       className={`decrypted-text ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

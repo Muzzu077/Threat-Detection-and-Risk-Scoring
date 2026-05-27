@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { fetchMLMetrics, fetchExplainability, fetchModelDrift, fetchAdversarialResults, runAdversarialTests } from '../api/client';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
-const METRIC_COLOR = { Accuracy: '#ffffff', Precision: '#63b3ed', Recall: '#e6a817', 'F1 Score': '#ed8936' };
+const METRIC_COLOR = { Accuracy: '#4A5D4F', Precision: '#2563EB', Recall: '#D97706', 'F1 Score': '#B91C1C' };
 
 export default function MLMetricsPage() {
   const [metrics, setMetrics] = useState(null);
@@ -32,11 +32,11 @@ export default function MLMetricsPage() {
 
   if (!metrics || metrics.message) return (
     <div className="page-enter">
-      <div className="page-title mb-24">◎ ML METRICS</div>
+      <div className="page-title mb-24">◎ ML Metrics</div>
       <div className="card p-empty">
         <div>No ML metrics found.</div>
         <div style={{ marginTop: 12, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-          Run: <span style={{ color: 'var(--accent-cyan)' }}>python utils/train_ml_engine.py</span>
+          Run: <span style={{ color: 'var(--accent)' }}>python utils/train_ml_engine.py</span>
         </div>
       </div>
     </div>
@@ -69,10 +69,10 @@ export default function MLMetricsPage() {
     <div className="page-enter">
       <div className="flex-between mb-24">
         <div>
-          <div className="page-title">◎ ML METRICS</div>
+          <div className="page-title">◎ ML Metrics</div>
           <div className="page-subtitle">{metrics.model_type} Classifier — Performance Analysis</div>
         </div>
-        <div style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.08)', border: '1px solid var(--border-mid)', borderRadius: 5, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-cyan)' }}>
+        <div style={{ padding: '6px 14px', background: 'var(--bg-glass)', border: '1px solid var(--border-mid)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', backdropFilter: 'blur(8px)' }}>
           {metrics.model_type?.toUpperCase()}
         </div>
       </div>
@@ -82,13 +82,13 @@ export default function MLMetricsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 24 }}>
           <div className="metric-card">
             <div className="metric-label">Model Drift Score</div>
-            <div className="metric-value" style={{ color: drift.drift_score > 30 ? '#e53e3e' : drift.drift_score > 10 ? '#e6a817' : '#ffffff' }}>
+            <div className="metric-value" style={{ color: drift.drift_score > 30 ? 'var(--accent-red)' : drift.drift_score > 10 ? 'var(--accent-amber)' : 'var(--text-primary)' }}>
               {drift.drift_score || 0}%
             </div>
           </div>
           <div className="metric-card">
             <div className="metric-label">False Positive Rate</div>
-            <div className="metric-value" style={{ color: drift.fp_rate > 15 ? '#e53e3e' : '#ffffff' }}>
+            <div className="metric-value" style={{ color: drift.fp_rate > 15 ? 'var(--accent-red)' : 'var(--text-primary)' }}>
               {drift.fp_rate || 0}%
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function MLMetricsPage() {
           </div>
           <div className="metric-card">
             <div className="metric-label">Status</div>
-            <div className="metric-value" style={{ fontSize: 14, color: drift.needs_retraining ? '#e53e3e' : '#ffffff' }}>
+            <div className="metric-value" style={{ fontSize: 14, color: drift.needs_retraining ? 'var(--accent-red)' : 'var(--text-primary)' }}>
               {drift.needs_retraining ? 'RETRAIN NEEDED' : 'HEALTHY'}
             </div>
           </div>
@@ -106,19 +106,19 @@ export default function MLMetricsPage() {
       )}
 
       {drift && drift.recommendation && (
-        <div style={{ marginBottom: 24, padding: '12px 18px', borderRadius: 8, background: drift.needs_retraining ? 'rgba(229,62,62,0.07)' : 'rgba(255,255,255,0.04)', border: `1px solid ${drift.needs_retraining ? 'rgba(229,62,62,0.3)' : 'rgba(255,255,255,0.15)'}`, fontFamily: 'var(--font-mono)', fontSize: 11, color: drift.needs_retraining ? '#fc8181' : '#ffffff' }}>
+        <div style={{ marginBottom: 24, padding: '12px 18px', borderRadius: 'var(--radius-md)', background: drift.needs_retraining ? 'rgba(185,28,28,0.07)' : 'var(--bg-glass)', border: `1px solid ${drift.needs_retraining ? 'rgba(185,28,28,0.25)' : 'var(--border-mid)'}`, fontFamily: 'var(--font-mono)', fontSize: 11, color: drift.needs_retraining ? 'var(--accent-red)' : 'var(--text-primary)', backdropFilter: 'blur(8px)' }}>
           {drift.needs_retraining ? '\u26A0' : '\u2713'} {drift.recommendation}
         </div>
       )}
 
       {/* Summary KPIs */}
       {/* KPI Explanations */}
-      <div style={{ marginBottom: 16, padding: '14px 18px', borderRadius: 8, background: 'rgba(74,158,255,0.04)', border: '1px solid rgba(74,158,255,0.12)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.8 }}>
-        <span style={{ color: '#63b3ed', fontWeight: 600 }}>What do these numbers mean?</span><br/>
-        <span style={{ color: '#ffffff' }}>Accuracy</span> = Of all predictions, how many were correct? (97% = 97 out of 100 right)<br/>
-        <span style={{ color: '#63b3ed' }}>Precision</span> = When the model says "attack", how often is it really an attack? (High = few false alarms)<br/>
-        <span style={{ color: '#e6a817' }}>Recall</span> = Of all real attacks, how many did the model catch? (High = few missed attacks)<br/>
-        <span style={{ color: '#ed8936' }}>F1 Score</span> = The balance between Precision and Recall. Best single number to judge model quality.
+      <div style={{ marginBottom: 16, padding: '14px 18px', borderRadius: 'var(--radius-md)', background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.8 }}>
+        <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>What do these numbers mean?</span><br/>
+        <span style={{ color: 'var(--text-primary)' }}>Accuracy</span> = Of all predictions, how many were correct? (97% = 97 out of 100 right)<br/>
+        <span style={{ color: 'var(--accent-blue)' }}>Precision</span> = When the model says "attack", how often is it really an attack? (High = few false alarms)<br/>
+        <span style={{ color: 'var(--accent-amber)' }}>Recall</span> = Of all real attacks, how many did the model catch? (High = few missed attacks)<br/>
+        <span style={{ color: 'var(--accent-red)' }}>F1 Score</span> = The balance between Precision and Recall. Best single number to judge model quality.
       </div>
       <div className="grid-4 mb-24">
         {summaryMetrics.map(m => (
@@ -141,9 +141,9 @@ export default function MLMetricsPage() {
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <RadarChart data={radarData}>
-              <PolarGrid stroke="rgba(255,255,255,0.1)" />
+              <PolarGrid stroke="var(--border-mid)" />
               <PolarAngleAxis dataKey="metric" tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }} />
-              <Radar name="Score" dataKey="value" stroke="var(--accent-cyan)" fill="var(--accent-cyan)" fillOpacity={0.12} />
+              <Radar name="Score" dataKey="value" stroke="var(--accent)" fill="var(--accent)" fillOpacity={0.15} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
@@ -158,9 +158,9 @@ export default function MLMetricsPage() {
             <BarChart data={classData} layout="vertical" margin={{ top: 0, right: 0, left: 10, bottom: 0 }}>
               <XAxis type="number" domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 9 }} axisLine={false} tickLine={false} />
               <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 10, fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} width={100} />
-              <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-mid)', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 11 }} />
+              <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: 'var(--bg-card-solid)', border: '1px solid var(--border-mid)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)' }} />
               <Bar dataKey="f1" radius={[0, 2, 2, 0]} name="F1">
-                {classData.map((_, i) => <Cell key={i} fill={['#e53e3e','#ed8936','#e6a817','#ffffff','#63b3ed'][i % 5]} />)}
+                {classData.map((_, i) => <Cell key={i} fill={['#B91C1C','#D97706','#4A5D4F','#2563EB','#7C3AED'][i % 5]} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -173,7 +173,7 @@ export default function MLMetricsPage() {
           <div className="section-title">Classification Report — Per Class</div>
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.7, padding: '0 0 12px', borderBottom: '1px solid var(--border-dim)' }}>
-          Each row = one attack type. <span style={{ color: '#63b3ed' }}>Precision</span> = "When I say it's this attack, am I right?" <span style={{ color: '#e6a817' }}>Recall</span> = "Of all real instances, how many did I catch?" <span style={{ color: '#ffffff' }}>F1</span> = Balance of both. <span style={{ color: 'var(--text-secondary)' }}>Support</span> = Number of test samples for this class.
+          Each row = one attack type. <span style={{ color: 'var(--accent-blue)' }}>Precision</span> = "When I say it's this attack, am I right?" <span style={{ color: 'var(--accent-amber)' }}>Recall</span> = "Of all real instances, how many did I catch?" <span style={{ color: 'var(--text-primary)' }}>F1</span> = Balance of both. <span style={{ color: 'var(--text-secondary)' }}>Support</span> = Number of test samples for this class.
         </div>
         <table className="data-table">
           <thead>
@@ -188,10 +188,10 @@ export default function MLMetricsPage() {
           <tbody>
             {classData.map((cls, i) => (
               <tr key={cls.name}>
-                <td style={{ color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>{cls.name}</td>
-                <td style={{ color: '#63b3ed' }}>{cls.precision}%</td>
-                <td style={{ color: '#e6a817' }}>{cls.recall}%</td>
-                <td style={{ color: '#ffffff' }}>{cls.f1}%</td>
+                <td style={{ color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{cls.name}</td>
+                <td style={{ color: 'var(--accent-blue)' }}>{cls.precision}%</td>
+                <td style={{ color: 'var(--accent-amber)' }}>{cls.recall}%</td>
+                <td style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{cls.f1}%</td>
                 <td style={{ color: 'var(--text-muted)' }}>{classReport[classes[i]]?.support || '—'}</td>
               </tr>
             ))}
@@ -206,9 +206,9 @@ export default function MLMetricsPage() {
             <div className="section-title">Confusion Matrix</div>
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.8, padding: '0 0 14px', borderBottom: '1px solid var(--border-dim)' }}>
-            <span style={{ color: '#63b3ed', fontWeight: 600 }}>How to read this:</span> Each <span style={{ color: 'var(--accent-amber)' }}>row</span> is the <strong>actual</strong> attack type. Each <span style={{ color: 'var(--accent-cyan)' }}>column</span> is what the model <strong>predicted</strong>.<br/>
-            <span style={{ color: '#ffffff' }}>Green diagonal</span> = Correct predictions (model got it right).<br/>
-            <span style={{ color: '#fc8181' }}>Red off-diagonal</span> = Mistakes (model confused one attack for another).<br/>
+            <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>How to read this:</span> Each <span style={{ color: 'var(--accent-amber)' }}>row</span> is the <strong>actual</strong> attack type. Each <span style={{ color: 'var(--accent)' }}>column</span> is what the model <strong>predicted</strong>.<br/>
+            <span style={{ color: 'var(--accent-green)' }}>Green diagonal</span> = Correct predictions (model got it right).<br/>
+            <span style={{ color: 'var(--accent-red)' }}>Red off-diagonal</span> = Mistakes (model confused one attack for another).<br/>
             A perfect model would have numbers ONLY on the green diagonal and zeros everywhere else.
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -217,7 +217,7 @@ export default function MLMetricsPage() {
                 <tr>
                   <th style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: 10 }}>Pred →<br/>True ↓</th>
                   {classes.map(c => (
-                    <th key={c} style={{ padding: '8px 12px', color: 'var(--accent-cyan)', fontSize: 10, letterSpacing: '0.05em' }}>
+                    <th key={c} style={{ padding: '8px 12px', color: 'var(--accent)', fontSize: 10, letterSpacing: '0.05em' }}>
                       {c.replace('_', ' ')}
                     </th>
                   ))}
@@ -235,9 +235,9 @@ export default function MLMetricsPage() {
                         <td key={j} style={{
                           padding: '8px 12px', textAlign: 'center',
                           background: isCorrect
-                            ? `rgba(255,255,255,${0.06 + intensity * 0.2})`
-                            : val > 0 ? `rgba(229,62,62,${0.03 + intensity * 0.15})` : 'transparent',
-                          color: isCorrect ? 'var(--accent-cyan)' : val > 0 ? '#fc8181' : 'var(--text-muted)',
+                            ? `rgba(5,150,105,${0.06 + intensity * 0.2})`
+                            : val > 0 ? `rgba(185,28,28,${0.03 + intensity * 0.15})` : 'transparent',
+                          color: isCorrect ? 'var(--accent-green)' : val > 0 ? 'var(--accent-red)' : 'var(--text-muted)',
                           fontWeight: isCorrect ? 600 : 400,
                         }}>
                           {val}
@@ -262,29 +262,29 @@ export default function MLMetricsPage() {
           </div>
 
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.8, padding: '0 0 14px', borderBottom: '1px solid var(--border-dim)' }}>
-            <span style={{ color: '#63b3ed', fontWeight: 600 }}>Live data:</span> This matrix updates in real-time from actual events flowing through TrustFlow. The training matrix above is static from model evaluation — this one reflects what's happening <strong>right now</strong>.
+            <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>Live data:</span> This matrix updates in real-time from actual events flowing through TrustFlow. The training matrix above is static from model evaluation — this one reflects what's happening <strong>right now</strong>.
           </div>
 
           {/* Summary KPIs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 20 }}>
             <div className="metric-card">
               <div className="metric-label">Normal Events</div>
-              <div className="metric-value" style={{ color: 'var(--accent-cyan)' }}>{live.normal_count.toLocaleString()}</div>
+              <div className="metric-value" style={{ color: 'var(--accent)' }}>{live.normal_count.toLocaleString()}</div>
               <div className="metric-delta">{live.total_events > 0 ? Math.round(live.normal_count / live.total_events * 100) : 0}% of total</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Threats Detected</div>
-              <div className="metric-value" style={{ color: '#e53e3e' }}>{live.attack_count.toLocaleString()}</div>
+              <div className="metric-value" style={{ color: 'var(--accent-red)' }}>{live.attack_count.toLocaleString()}</div>
               <div className="metric-delta">{live.total_events > 0 ? Math.round(live.attack_count / live.total_events * 100) : 0}% of total</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Analyst Confirmed</div>
-              <div className="metric-value" style={{ color: '#48bb78' }}>{live.analyst_confirmed}</div>
+              <div className="metric-value" style={{ color: 'var(--accent-green)' }}>{live.analyst_confirmed}</div>
               <div className="metric-delta">{live.analyst_reviewed} reviewed total</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">False Positives</div>
-              <div className="metric-value" style={{ color: live.live_fp_rate > 15 ? '#e53e3e' : '#e6a817' }}>{live.analyst_false_positive}</div>
+              <div className="metric-value" style={{ color: live.live_fp_rate > 15 ? 'var(--accent-red)' : 'var(--accent-amber)' }}>{live.analyst_false_positive}</div>
               <div className="metric-delta">FP rate: {live.live_fp_rate}%</div>
             </div>
           </div>
@@ -296,13 +296,13 @@ export default function MLMetricsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {live.classes.map(cls => (
               <div key={cls.class} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 120, fontFamily: 'var(--font-mono)', fontSize: 11, color: cls.class === 'normal' ? 'var(--accent-cyan)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ width: 120, fontFamily: 'var(--font-mono)', fontSize: 11, color: cls.class === 'normal' ? 'var(--accent)' : 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {cls.class}
                 </div>
                 <div style={{ flex: 1, height: 6, background: 'var(--bg-elevated)', borderRadius: 3, overflow: 'hidden' }}>
                   <div style={{
                     width: `${cls.pct}%`, height: '100%', borderRadius: 3,
-                    background: cls.class === 'normal' ? 'var(--accent-cyan)' : cls.pct > 20 ? '#e53e3e' : cls.pct > 10 ? '#ed8936' : '#e6a817',
+                    background: cls.class === 'normal' ? 'var(--accent)' : cls.pct > 20 ? '#B91C1C' : cls.pct > 10 ? '#D97706' : '#D97706',
                     transition: 'width 0.5s ease',
                   }} />
                 </div>
@@ -325,9 +325,9 @@ export default function MLMetricsPage() {
             </span>
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.8 }}>
-            <span style={{ color: '#63b3ed', fontWeight: 600 }}>What is this?</span> SHAP (SHapley Additive exPlanations) shows <strong>which features matter most</strong> when the AI makes a decision.
+            <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>What is this?</span> SHAP (SHapley Additive exPlanations) shows <strong>which features matter most</strong> when the AI makes a decision.
             Instead of a "black box" that just says "attack detected," this chart explains <em>why</em> the model thinks so.<br/>
-            <span style={{ color: '#ffffff' }}>Longer bars = more important</span>. For example, if "Login Failure" is the top bar, it means failed login attempts are the strongest signal the model uses to detect attacks.
+            <span style={{ color: 'var(--text-primary)' }}>Longer bars = more important</span>. For example, if "Login Failure" is the top bar, it means failed login attempts are the strongest signal the model uses to detect attacks.
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart
@@ -339,13 +339,13 @@ export default function MLMetricsPage() {
               <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--font-mono)' }} axisLine={false} tickLine={false} width={150} />
               <Tooltip
                 formatter={(v) => [`${v}`, 'Importance']}
-                contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-mid)', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 11 }}
+                contentStyle={{ background: 'var(--bg-card-solid)', border: '1px solid var(--border-mid)', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)' }}
               />
               <Bar dataKey="value" radius={[0, 3, 3, 0]}>
                 {shap.features.slice(0, 10).map((f, i) => (
                   <Cell key={i} fill={[
-                    '#e53e3e', '#ff6b35', '#ed8936', '#e6a817', '#d4ff00',
-                    '#ffffff', '#63b3ed', '#b794f4', '#ffffff', '#e6a817'
+                    '#B91C1C', '#D97706', '#4A5D4F', '#2563EB', '#6B8A73',
+                    '#7C3AED', '#059669', '#D97706', '#4A5D4F', '#2563EB'
                   ][i % 10]} />
                 ))}
               </Bar>
@@ -355,7 +355,7 @@ export default function MLMetricsPage() {
       )}
 
       {/* ── Dataset & Model Provenance ── */}
-      <div className="card" style={{ marginTop: 24, borderColor: 'rgba(74,158,255,0.2)' }}>
+      <div className="card" style={{ marginTop: 24, borderColor: 'rgba(37,99,235,0.2)' }}>
         <div className="section-header flex-between">
           <div className="section-title">📊 Dataset & Model Provenance</div>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>ENTERPRISE READINESS</span>
@@ -364,7 +364,7 @@ export default function MLMetricsPage() {
           {[
             {
               title: 'Current Dataset',
-              color: '#ffffff',
+              color: 'var(--accent)',
               icon: '◉',
               lines: [
                 'Synthetic labeled dataset',
@@ -375,7 +375,7 @@ export default function MLMetricsPage() {
             },
             {
               title: 'Production Datasets',
-              color: '#63b3ed',
+              color: 'var(--accent-blue)',
               icon: '◈',
               lines: [
                 'CIC-IDS2017 (University of NB)',
@@ -386,7 +386,7 @@ export default function MLMetricsPage() {
             },
             {
               title: 'Future Architecture',
-              color: '#b794f4',
+              color: 'var(--accent-purple)',
               icon: '◆',
               lines: [
                 'Neo4j for attack graph scalability',
@@ -396,7 +396,7 @@ export default function MLMetricsPage() {
               ],
             },
           ].map(({ title, color, icon, lines }) => (
-            <div key={title} style={{ background: 'var(--bg-elevated)', borderRadius: 8, padding: '14px 16px', borderLeft: `3px solid ${color}` }}>
+            <div key={title} style={{ background: 'var(--bg-glass)', backdropFilter: 'blur(8px)', borderRadius: 'var(--radius-md)', padding: '14px 16px', borderLeft: `3px solid ${color}`, border: '1px solid var(--border-dim)', borderLeftWidth: 3, borderLeftColor: color }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color, letterSpacing: '0.08em', marginBottom: 10 }}>
                 {icon} {title}
               </div>
@@ -410,22 +410,22 @@ export default function MLMetricsPage() {
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(74,158,255,0.05)', borderRadius: 6, border: '1px solid rgba(74,158,255,0.15)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
-          💡 <span style={{ color: '#63b3ed' }}>Production note:</span> To train on a real-world dataset, replace the CSV in <span style={{ color: 'var(--accent-cyan)' }}>data/labeled_logs.csv</span> with CIC-IDS2017 or UNSW-NB15 data and re-run <span style={{ color: 'var(--accent-cyan)' }}>python utils/train_ml_engine.py</span>.
+        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(37,99,235,0.06)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37,99,235,0.15)', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
+          💡 <span style={{ color: 'var(--accent-blue)' }}>Production note:</span> To train on a real-world dataset, replace the CSV in <span style={{ color: 'var(--accent)' }}>data/labeled_logs.csv</span> with CIC-IDS2017 or UNSW-NB15 data and re-run <span style={{ color: 'var(--accent)' }}>python utils/train_ml_engine.py</span>.
         </div>
       </div>
 
       {/* Adversarial Robustness Testing */}
-      <div className="card" style={{ marginTop: 24, borderColor: adversarial?.verdict === 'VULNERABLE' ? 'rgba(229,62,62,0.3)' : adversarial?.verdict === 'ROBUST' ? 'rgba(255,255,255,0.2)' : 'rgba(255,184,0,0.2)' }}>
+      <div className="card" style={{ marginTop: 24, borderColor: adversarial?.verdict === 'VULNERABLE' ? 'rgba(185,28,28,0.25)' : adversarial?.verdict === 'ROBUST' ? 'var(--border-mid)' : 'rgba(217,119,6,0.25)' }}>
         <div className="section-header flex-between">
           <div className="section-title">Adversarial Robustness Testing</div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {adversarial?.verdict && (
               <span style={{
-                padding: '4px 12px', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 11,
-                background: adversarial.verdict === 'ROBUST' ? 'rgba(255,255,255,0.1)' : adversarial.verdict === 'MODERATE' ? 'rgba(255,184,0,0.1)' : 'rgba(229,62,62,0.1)',
-                color: adversarial.verdict === 'ROBUST' ? '#ffffff' : adversarial.verdict === 'MODERATE' ? '#e6a817' : '#e53e3e',
-                border: `1px solid ${adversarial.verdict === 'ROBUST' ? 'rgba(255,255,255,0.3)' : adversarial.verdict === 'MODERATE' ? 'rgba(255,184,0,0.3)' : 'rgba(229,62,62,0.3)'}`,
+                padding: '4px 12px', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11,
+                background: adversarial.verdict === 'ROBUST' ? 'rgba(5,150,105,0.1)' : adversarial.verdict === 'MODERATE' ? 'rgba(217,119,6,0.1)' : 'rgba(185,28,28,0.1)',
+                color: adversarial.verdict === 'ROBUST' ? 'var(--accent-green)' : adversarial.verdict === 'MODERATE' ? 'var(--accent-amber)' : 'var(--accent-red)',
+                border: `1px solid ${adversarial.verdict === 'ROBUST' ? 'rgba(5,150,105,0.25)' : adversarial.verdict === 'MODERATE' ? 'rgba(217,119,6,0.25)' : 'rgba(185,28,28,0.25)'}`,
               }}>
                 {adversarial.verdict}
               </span>
@@ -449,31 +449,31 @@ export default function MLMetricsPage() {
             </button>
             {advStatus && (
               <span style={{
-                fontSize: 10, marginLeft: 10, padding: '4px 10px', borderRadius: 4,
-                background: advStatus.type === 'success' ? 'rgba(72,187,120,0.15)' : 'rgba(229,62,62,0.15)',
-                color: advStatus.type === 'success' ? '#48bb78' : '#e53e3e',
-                border: `1px solid ${advStatus.type === 'success' ? 'rgba(72,187,120,0.3)' : 'rgba(229,62,62,0.3)'}`,
+                fontSize: 10, marginLeft: 10, padding: '4px 10px', borderRadius: 'var(--radius-sm)',
+                background: advStatus.type === 'success' ? 'rgba(5,150,105,0.1)' : 'rgba(185,28,28,0.1)',
+                color: advStatus.type === 'success' ? 'var(--accent-green)' : 'var(--accent-red)',
+                border: `1px solid ${advStatus.type === 'success' ? 'rgba(5,150,105,0.25)' : 'rgba(185,28,28,0.25)'}`,
               }}>{advStatus.msg}</span>
             )}
           </div>
         </div>
 
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginBottom: 14, lineHeight: 1.8 }}>
-          <span style={{ color: '#63b3ed', fontWeight: 600 }}>What is this?</span> We attack our <strong>LightGBM threat-classification model</strong> (trained on 21 CIC-IDS2017 features across 15 attack classes) with 5 adversarial evasion techniques — slow brute force, mimicry, IP rotation, insider exfiltration, and encoded SQLi — to test if attackers can bypass detection.
-          A <span style={{ color: '#ffffff' }}>ROBUST</span> verdict means the model catches attacks even when they're disguised. If the evasion rate is high, the model needs improvement.
+          <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>What is this?</span> We attack our <strong>LightGBM threat-classification model</strong> (trained on 21 CIC-IDS2017 features across 15 attack classes) with 5 adversarial evasion techniques — slow brute force, mimicry, IP rotation, insider exfiltration, and encoded SQLi — to test if attackers can bypass detection.
+          A <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>ROBUST</span> verdict means the model catches attacks even when they're disguised. If the evasion rate is high, the model needs improvement.
         </div>
 
         {adversarial?.overall_detection_rate !== undefined && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
             <div className="metric-card">
               <div className="metric-label">Detection Rate</div>
-              <div className="metric-value" style={{ color: adversarial.overall_detection_rate >= 80 ? '#ffffff' : '#e6a817' }}>
+              <div className="metric-value" style={{ color: adversarial.overall_detection_rate >= 80 ? 'var(--accent-green)' : 'var(--accent-amber)' }}>
                 {adversarial.overall_detection_rate}%
               </div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Evasion Rate</div>
-              <div className="metric-value" style={{ color: adversarial.overall_evasion_rate > 20 ? '#e53e3e' : '#ffffff' }}>
+              <div className="metric-value" style={{ color: adversarial.overall_evasion_rate > 20 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
                 {adversarial.overall_evasion_rate}%
               </div>
             </div>
@@ -500,12 +500,12 @@ export default function MLMetricsPage() {
               {adversarial.tests.map((t, i) => (
                 <tr key={i}>
                   <td style={{ color: 'var(--text-primary)' }}>{t.name}</td>
-                  <td style={{ color: '#63b3ed', fontFamily: 'var(--font-mono)', fontSize: 10 }}>{t.technique?.split(' - ')[0]}</td>
+                  <td style={{ color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>{t.technique?.split(' - ')[0]}</td>
                   <td style={{ color: 'var(--text-muted)', fontSize: 11 }}>{t.evasion_method}</td>
                   <td>{t.total_samples}</td>
-                  <td style={{ color: t.detected === t.total_samples ? '#ffffff' : '#e6a817' }}>{t.detected}</td>
+                  <td style={{ color: t.detected === t.total_samples ? 'var(--accent-green)' : 'var(--accent-amber)' }}>{t.detected}</td>
                   <td style={{
-                    color: t.detection_rate >= 80 ? '#ffffff' : t.detection_rate >= 50 ? '#e6a817' : '#e53e3e',
+                    color: t.detection_rate >= 80 ? 'var(--accent-green)' : t.detection_rate >= 50 ? 'var(--accent-amber)' : 'var(--accent-red)',
                     fontFamily: 'var(--font-mono)',
                   }}>
                     {t.detection_rate}%

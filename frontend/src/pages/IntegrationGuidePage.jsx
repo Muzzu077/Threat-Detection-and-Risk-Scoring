@@ -137,7 +137,6 @@ function CodeBlock({ code }) {
 
   const highlightLine = (line) => {
     const parts = [];
-    let lastIndex = 0;
 
     // Find comments first
     const commentMatch = line.match(COMMENT_RE);

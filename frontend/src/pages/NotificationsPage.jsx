@@ -2,50 +2,35 @@ import { useEffect, useState } from 'react';
 import { fetchNotificationPrefs, updateNotificationPrefs, sendTestAlert, testSiemConnection } from '../api/client';
 
 const SEVERITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
-const SEV_COLOR = { CRITICAL: '#e53e3e', HIGH: '#ed8936', MEDIUM: '#e6a817', LOW: '#48bb78' };
-
-const btnPrimary = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-  padding: '10px 22px', borderRadius: 6, border: 'none', cursor: 'pointer',
-  background: 'rgba(255,255,255,0.15)', color: '#ffffff',
-  letterSpacing: '0.08em', textTransform: 'uppercase',
-  outline: '1px solid rgba(255,255,255,0.3)',
-};
-
-const btnGhost = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
-  padding: '6px 14px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.15)',
-  cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: '#a0a0a0',
-  letterSpacing: '0.06em', textTransform: 'uppercase',
-};
+const SEV_COLOR = { CRITICAL: 'var(--accent-red)', HIGH: 'var(--accent-orange)', MEDIUM: 'var(--accent-yellow)', LOW: 'var(--accent-green)' };
 
 function ChannelCard({ icon, title, hint, enabled, onToggle, fieldLabel, fieldValue, onFieldChange,
                       placeholder, onTest, testing, testResult, accentColor }) {
   return (
     <div style={{
-      background: '#0a0a0a',
-      border: enabled ? `1px solid ${accentColor}45` : '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 10, padding: 22, marginBottom: 16,
-      transition: 'border-color 0.2s',
+      background: 'var(--bg-card)', backdropFilter: 'blur(16px)',
+      border: enabled ? `1px solid ${accentColor}65` : '1px solid var(--border-light)',
+      borderRadius: 'var(--radius-lg)', padding: 22, marginBottom: 16,
+      transition: 'border-color 0.2s', boxShadow: 'var(--shadow-sm)',
       position: 'relative', overflow: 'hidden',
     }}>
       <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%',
-                    background: enabled ? accentColor : 'rgba(255,255,255,0.05)' }} />
+                    background: enabled ? accentColor : 'var(--border-dim)' }} />
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 24 }}>{icon}</span>
           <div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: '#ffffff', letterSpacing: 1 }}>{title}</div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: '0.08em', marginTop: 2 }}>{hint}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--text-primary)', letterSpacing: 1 }}>{title}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em', marginTop: 2 }}>{hint}</div>
           </div>
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
           <input type="checkbox" checked={enabled} onChange={e => onToggle(e.target.checked)}
                  style={{ width: 16, height: 16, accentColor }} />
-          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                         color: enabled ? accentColor : '#555555',
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10,
+                         color: enabled ? accentColor : 'var(--text-muted)',
                          letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             {enabled ? 'Enabled' : 'Disabled'}
           </span>
@@ -54,19 +39,18 @@ function ChannelCard({ icon, title, hint, enabled, onToggle, fieldLabel, fieldVa
 
       {/* Destination input */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-                      letterSpacing: '0.18em', color: '#555555', marginBottom: 6, textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9,
+                      letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
           {fieldLabel}
         </div>
         <input className="input" value={fieldValue} onChange={e => onFieldChange(e.target.value)}
                placeholder={placeholder}
-               style={{ width: '100%', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }} />
+               style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: 12 }} />
       </div>
 
       {/* Test button + result */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <button onClick={onTest} disabled={testing || !fieldValue} style={{
-          ...btnGhost,
+        <button onClick={onTest} disabled={testing || !fieldValue} className="btn btn-ghost" style={{
           opacity: !fieldValue ? 0.4 : 1,
           cursor: !fieldValue ? 'not-allowed' : 'pointer',
         }}>
@@ -74,8 +58,8 @@ function ChannelCard({ icon, title, hint, enabled, onToggle, fieldLabel, fieldVa
         </button>
         {testResult !== null && (
           <span style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-            color: testResult ? '#48bb78' : '#e53e3e', letterSpacing: '0.08em',
+            fontFamily: 'var(--font-mono)', fontSize: 10,
+            color: testResult ? 'var(--accent-green)' : 'var(--accent-red)', letterSpacing: '0.08em',
           }}>
             {testResult ? '✓ DELIVERED' : '✗ FAILED — CHECK CREDENTIALS'}
           </span>
@@ -175,43 +159,43 @@ export default function NotificationsPage() {
     <div className="page-enter" style={{ maxWidth: 720 }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text-primary)', letterSpacing: 2 }}>
           ALERT CHANNELS
         </div>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
           Where TrustFlow sends your incident notifications
         </div>
       </div>
 
       {error && (
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#e53e3e',
+          fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-red)',
           padding: '10px 16px', marginBottom: 20,
-          background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: 6,
+          background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)', borderRadius: 'var(--radius-sm)',
         }}>&#9888; {error}</div>
       )}
 
       {/* Severity threshold */}
       <div style={{
-        background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 10, padding: 22, marginBottom: 20,
+        background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-lg)', padding: 22, marginBottom: 20, boxShadow: 'var(--shadow-sm)'
       }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#555555', marginBottom: 12, textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase' }}>
           Minimum Severity
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {SEVERITIES.map(s => (
             <button key={s} type="button" onClick={() => update('min_severity', s)} style={{
-              flex: 1, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
-              padding: '10px 0', borderRadius: 5, cursor: 'pointer',
-              border: `1px solid ${prefs.min_severity === s ? SEV_COLOR[s] : 'rgba(255,255,255,0.1)'}`,
+              flex: 1, fontFamily: 'var(--font-mono)', fontSize: 11,
+              padding: '10px 0', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+              border: `1px solid ${prefs.min_severity === s ? SEV_COLOR[s] : 'var(--border-dim)'}`,
               background: prefs.min_severity === s ? `${SEV_COLOR[s]}18` : 'transparent',
-              color: prefs.min_severity === s ? SEV_COLOR[s] : '#a0a0a0',
+              color: prefs.min_severity === s ? SEV_COLOR[s] : 'var(--text-muted)',
               letterSpacing: '0.08em', textTransform: 'uppercase',
             }}>{s}</button>
           ))}
         </div>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', marginTop: 10, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.5 }}>
           You'll be notified for incidents at this severity <em>or higher</em>.
         </div>
       </div>
@@ -255,7 +239,7 @@ export default function NotificationsPage() {
         icon="✉"
         title="EMAIL"
         hint="HTML alert with full incident detail"
-        accentColor="#7a9bb0"
+        accentColor="var(--accent-blue)"
         enabled={prefs.enable_email}
         onToggle={v => update('enable_email', v)}
         fieldLabel="Email Address"
@@ -269,22 +253,22 @@ export default function NotificationsPage() {
 
       {/* SIEM export */}
       <div style={{
-        background: '#0a0a0a',
-        border: prefs.enable_siem ? '1px solid #7a9bb045' : '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 10, padding: 22, marginBottom: 16,
-        position: 'relative', overflow: 'hidden',
+        background: 'var(--bg-card)', backdropFilter: 'blur(16px)',
+        border: prefs.enable_siem ? '1px solid rgba(37,99,235,0.45)' : '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-lg)', padding: 22, marginBottom: 16,
+        position: 'relative', overflow: 'hidden', boxShadow: 'var(--shadow-sm)'
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%',
-                      background: prefs.enable_siem ? '#7a9bb0' : 'rgba(255,255,255,0.05)' }} />
+                      background: prefs.enable_siem ? 'var(--accent-blue)' : 'var(--border-dim)' }} />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 24 }}>⛁</span>
             <div>
-              <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: '#ffffff', letterSpacing: 1 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--text-primary)', letterSpacing: 1 }}>
                 SIEM EXPORT
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555', letterSpacing: '0.08em', marginTop: 2 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.08em', marginTop: 2 }}>
                 Pipe alerts to Splunk · Elastic · Datadog · Webhook
               </div>
             </div>
@@ -292,9 +276,9 @@ export default function NotificationsPage() {
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
             <input type="checkbox" checked={prefs.enable_siem}
                    onChange={e => update('enable_siem', e.target.checked)}
-                   style={{ width: 16, height: 16, accentColor: '#7a9bb0' }} />
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                           color: prefs.enable_siem ? '#7a9bb0' : '#555',
+                   style={{ width: 16, height: 16, accentColor: 'var(--accent-blue)' }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10,
+                           color: prefs.enable_siem ? 'var(--accent-blue)' : 'var(--text-muted)',
                            letterSpacing: '0.1em', textTransform: 'uppercase' }}>
               {prefs.enable_siem ? 'Enabled' : 'Disabled'}
             </span>
@@ -302,17 +286,17 @@ export default function NotificationsPage() {
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#555', marginBottom: 6, textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
             Target
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             {['', 'splunk', 'elastic', 'datadog', 'webhook'].map(t => (
               <button key={t || 'none'} type="button" onClick={() => update('siem_type', t)} style={{
-                flex: 1, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
-                padding: '8px 0', borderRadius: 5, cursor: 'pointer',
-                border: `1px solid ${prefs.siem_type === t ? '#7a9bb0' : 'rgba(255,255,255,0.1)'}`,
-                background: prefs.siem_type === t ? 'rgba(122,155,176,0.15)' : 'transparent',
-                color: prefs.siem_type === t ? '#7a9bb0' : '#a0a0a0',
+                flex: 1, fontFamily: 'var(--font-mono)', fontSize: 11,
+                padding: '8px 0', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                border: `1px solid ${prefs.siem_type === t ? 'var(--accent-blue)' : 'var(--border-dim)'}`,
+                background: prefs.siem_type === t ? 'rgba(37,99,235,0.15)' : 'transparent',
+                color: prefs.siem_type === t ? 'var(--accent-blue)' : 'var(--text-muted)',
                 letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>{t || 'none'}</button>
             ))}
@@ -322,7 +306,7 @@ export default function NotificationsPage() {
         {prefs.siem_type && (
           <>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#555', marginBottom: 6, textTransform: 'uppercase' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                 {prefs.siem_type === 'datadog' ? 'API Endpoint (optional)' : 'URL'}
               </div>
               <input className="input" value={prefs.siem_url} onChange={e => update('siem_url', e.target.value)}
@@ -332,14 +316,14 @@ export default function NotificationsPage() {
                        prefs.siem_type === 'datadog' ? 'https://http-intake.logs.datadoghq.com (default)' :
                                                       'https://your.webhook.example.com/trustflow'
                      }
-                     style={{ width: '100%', fontSize: 12, fontFamily: 'IBM Plex Mono, monospace' }} />
+                     style={{ width: '100%', fontSize: 12, fontFamily: 'var(--font-mono)' }} />
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#555', marginBottom: 6, textTransform: 'uppercase' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                 {prefs.siem_type === 'datadog' ? 'API Key' : 'Auth Token'}
                 {siemTokenSet && (
-                  <span style={{ marginLeft: 8, color: '#48bb78', textTransform: 'none', letterSpacing: 0 }}>
+                  <span style={{ marginLeft: 8, color: 'var(--accent-green)', textTransform: 'none', letterSpacing: 0 }}>
                     ✓ saved (leave masked value to keep)
                   </span>
                 )}
@@ -347,27 +331,27 @@ export default function NotificationsPage() {
               <input className="input" type="password" value={prefs.siem_token}
                      onChange={e => update('siem_token', e.target.value)}
                      placeholder={siemTokenSet ? '(leave to keep saved token)' : 'Splunk HEC token / API key / Bearer token'}
-                     style={{ width: '100%', fontSize: 12, fontFamily: 'IBM Plex Mono, monospace' }} />
+                     style={{ width: '100%', fontSize: 12, fontFamily: 'var(--font-mono)' }} />
             </div>
 
             {(prefs.siem_type === 'splunk' || prefs.siem_type === 'elastic') && (
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#555', marginBottom: 6, textTransform: 'uppercase' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                   Index
                 </div>
                 <input className="input" value={prefs.siem_index} onChange={e => update('siem_index', e.target.value)}
-                       placeholder="trustflow" style={{ width: '100%', fontSize: 12, fontFamily: 'IBM Plex Mono, monospace' }} />
+                       placeholder="trustflow" style={{ width: '100%', fontSize: 12, fontFamily: 'var(--font-mono)' }} />
               </div>
             )}
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <button onClick={handleSiemTest} disabled={siemTesting || !prefs.siem_type} style={btnGhost}>
+              <button onClick={handleSiemTest} disabled={siemTesting || !prefs.siem_type} className="btn btn-ghost">
                 {siemTesting ? 'TESTING...' : 'TEST CONNECTION'}
               </button>
               {siemTestResult && (
                 <span style={{
-                  fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                  color: siemTestResult.ok ? '#48bb78' : '#e53e3e', letterSpacing: '0.08em',
+                  fontFamily: 'var(--font-mono)', fontSize: 10,
+                  color: siemTestResult.ok ? 'var(--accent-green)' : 'var(--accent-red)', letterSpacing: '0.08em',
                 }}>
                   {siemTestResult.ok
                     ? `✓ HEARTBEAT DELIVERED (HTTP ${siemTestResult.status})`
@@ -384,11 +368,11 @@ export default function NotificationsPage() {
         marginTop: 24, display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'flex-end',
       }}>
         {savedAt && (
-          <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#48bb78', letterSpacing: '0.08em' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-green)', letterSpacing: '0.08em' }}>
             ✓ SAVED {savedAt.toLocaleTimeString('en-US', { hour12: false })}
           </span>
         )}
-        <button onClick={handleSave} disabled={saving} style={btnPrimary}>
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
           {saving ? 'SAVING...' : 'SAVE PREFERENCES'}
         </button>
       </div>

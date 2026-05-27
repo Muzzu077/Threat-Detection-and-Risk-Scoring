@@ -3,29 +3,29 @@ import { Link } from 'react-router-dom';
 import { fetchPlaybooks, previewPlaybook } from '../api/client';
 
 const PLAYBOOK_COLORS = {
-  brute_force: { color: '#e53e3e', icon: '🔑', bg: 'rgba(229,62,62,0.06)' },
-  sql_injection: { color: '#ed8936', icon: '💉', bg: 'rgba(255,140,0,0.06)' },
-  data_exfiltration: { color: '#b794f4', icon: '📤', bg: 'rgba(168,85,247,0.06)' },
-  port_scan: { color: '#e6a817', icon: '🔍', bg: 'rgba(255,184,0,0.06)' },
-  xss: { color: '#ed8936', icon: '📜', bg: 'rgba(255,140,0,0.06)' },
-  privilege_escalation: { color: '#e53e3e', icon: '⬆', bg: 'rgba(229,62,62,0.06)' },
-  dos_attack: { color: '#e53e3e', icon: '💥', bg: 'rgba(229,62,62,0.06)' },
-  command_injection: { color: '#e53e3e', icon: '⌨', bg: 'rgba(229,62,62,0.06)' },
-  directory_traversal: { color: '#e6a817', icon: '📂', bg: 'rgba(255,184,0,0.06)' },
-  session_hijacking: { color: '#ed8936', icon: '🎭', bg: 'rgba(255,140,0,0.06)' },
-  credential_stuffing: { color: '#e53e3e', icon: '🔐', bg: 'rgba(229,62,62,0.06)' },
-  ssrf: { color: '#ed8936', icon: '🔄', bg: 'rgba(255,140,0,0.06)' },
-  malware: { color: '#e53e3e', icon: '🦠', bg: 'rgba(229,62,62,0.06)' },
-  insider_threat: { color: '#b794f4', icon: '👤', bg: 'rgba(168,85,247,0.06)' },
-  default: { color: '#63b3ed', icon: '🛡', bg: 'rgba(74,158,255,0.06)' },
+  brute_force: { color: 'var(--accent-red)', icon: '🔑', bg: 'rgba(185,28,28,0.08)' },
+  sql_injection: { color: 'var(--accent-orange)', icon: '💉', bg: 'rgba(230,168,23,0.08)' },
+  data_exfiltration: { color: 'var(--accent-purple)', icon: '📤', bg: 'rgba(168,85,247,0.08)' },
+  port_scan: { color: 'var(--accent-yellow)', icon: '🔍', bg: 'rgba(234,179,8,0.08)' },
+  xss: { color: 'var(--accent-orange)', icon: '📜', bg: 'rgba(230,168,23,0.08)' },
+  privilege_escalation: { color: 'var(--accent-red)', icon: '⬆', bg: 'rgba(185,28,28,0.08)' },
+  dos_attack: { color: 'var(--accent-red)', icon: '💥', bg: 'rgba(185,28,28,0.08)' },
+  command_injection: { color: 'var(--accent-red)', icon: '⌨', bg: 'rgba(185,28,28,0.08)' },
+  directory_traversal: { color: 'var(--accent-yellow)', icon: '📂', bg: 'rgba(234,179,8,0.08)' },
+  session_hijacking: { color: 'var(--accent-orange)', icon: '🎭', bg: 'rgba(230,168,23,0.08)' },
+  credential_stuffing: { color: 'var(--accent-red)', icon: '🔐', bg: 'rgba(185,28,28,0.08)' },
+  ssrf: { color: 'var(--accent-orange)', icon: '🔄', bg: 'rgba(230,168,23,0.08)' },
+  malware: { color: 'var(--accent-red)', icon: '🦠', bg: 'rgba(185,28,28,0.08)' },
+  insider_threat: { color: 'var(--accent-purple)', icon: '👤', bg: 'rgba(168,85,247,0.08)' },
+  default: { color: 'var(--accent-blue)', icon: '🛡', bg: 'rgba(37,99,235,0.08)' },
 };
 
 const ACTION_ICONS = {
-  block_ip: { icon: '🚫', color: '#e53e3e' },
-  disable_account: { icon: '🔒', color: '#e6a817' },
-  rate_limit: { icon: '⏱', color: '#63b3ed' },
-  firewall_rule: { icon: '🛡', color: '#ffffff' },
-  notify: { icon: '🔔', color: '#b794f4' },
+  block_ip: { icon: '🚫', color: 'var(--accent-red)' },
+  disable_account: { icon: '🔒', color: 'var(--accent-orange)' },
+  rate_limit: { icon: '⏱', color: 'var(--accent-blue)' },
+  firewall_rule: { icon: '🛡', color: 'var(--text-primary)' },
+  notify: { icon: '🔔', color: 'var(--accent-purple)' },
 };
 
 function PlaybookCard({ playbook, isSelected, onClick }) {
@@ -35,14 +35,15 @@ function PlaybookCard({ playbook, isSelected, onClick }) {
       onClick={onClick}
       className={isSelected ? 'neon-border' : ''}
       style={{
-        background: isSelected ? cfg.bg : '#0a0a0a',
-        border: `1px solid ${isSelected ? cfg.color + '60' : cfg.color + '20'}`,
-        borderRadius: 10,
+        background: isSelected ? cfg.bg : 'var(--bg-card)',
+        backdropFilter: 'blur(16px)',
+        border: `1px solid ${isSelected ? cfg.color : 'var(--border-light)'}`,
+        borderRadius: 'var(--radius-lg)',
         padding: '18px 20px',
         cursor: 'pointer',
         transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
         transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-        boxShadow: isSelected ? `0 8px 32px ${cfg.color}20` : 'none',
+        boxShadow: isSelected ? `0 8px 32px ${cfg.bg}` : 'var(--shadow-sm)',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -50,29 +51,29 @@ function PlaybookCard({ playbook, isSelected, onClick }) {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${cfg.color}, transparent)`, opacity: isSelected ? 1 : 0.3 }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-        <span style={{ fontSize: 22, filter: `drop-shadow(0 0 6px ${cfg.color}40)` }}>{cfg.icon}</span>
+        <span style={{ fontSize: 22, filter: `drop-shadow(0 0 6px ${cfg.bg})` }}>{cfg.icon}</span>
         <div>
-          <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 13, color: isSelected ? cfg.color : '#e8f4f8', letterSpacing: 1 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: isSelected ? cfg.color : 'var(--text-primary)', letterSpacing: 1 }}>
             {playbook.name}
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 2, marginTop: 2 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 2, marginTop: 2 }}>
             {playbook.mitre_technique}
           </div>
         </div>
       </div>
 
-      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', lineHeight: 1.6, marginBottom: 12 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 12 }}>
         {playbook.description}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
           {playbook.steps.length} steps
         </span>
         <span style={{
-          padding: '3px 10px', borderRadius: 4,
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-          color: cfg.color, background: `${cfg.color}15`,
+          padding: '3px 10px', borderRadius: 'var(--radius-sm)',
+          fontFamily: 'var(--font-mono)', fontSize: 9,
+          color: cfg.color, background: cfg.bg,
           border: `1px solid ${cfg.color}30`, letterSpacing: 1,
         }}>
           RISK &ge; {playbook.severity_threshold}
@@ -86,7 +87,7 @@ function StepFlow({ steps, color }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {steps.map((step, i) => {
-        const actionCfg = ACTION_ICONS[step.action] || { icon: '⚙', color: '#a0a0a0' };
+        const actionCfg = ACTION_ICONS[step.action] || { icon: '⚙', color: 'var(--text-muted)' };
         return (
           <div key={i}>
             <div
@@ -94,9 +95,9 @@ function StepFlow({ steps, color }) {
               style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 padding: '14px 18px',
-                background: step.will_execute ? `${actionCfg.color}08` : 'transparent',
-                borderRadius: 8,
-                borderLeft: `3px solid ${step.will_execute ? actionCfg.color : '#1a3a50'}`,
+                background: step.will_execute ? `${actionCfg.color}15` : 'transparent',
+                borderRadius: 'var(--radius-md)',
+                borderLeft: `3px solid ${step.will_execute ? actionCfg.color : 'var(--border-dim)'}`,
                 opacity: step.will_execute ? 1 : 0.45,
                 transition: 'all 0.3s',
               }}
@@ -105,10 +106,10 @@ function StepFlow({ steps, color }) {
               <div style={{
                 width: 28, height: 28, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: step.will_execute ? `${actionCfg.color}15` : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${step.will_execute ? `${actionCfg.color}40` : '#1a3a50'}`,
-                fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                color: step.will_execute ? actionCfg.color : '#555555',
+                background: step.will_execute ? `${actionCfg.color}15` : 'var(--bg-glass)',
+                border: `1px solid ${step.will_execute ? `${actionCfg.color}40` : 'var(--border-dim)'}`,
+                fontFamily: 'var(--font-mono)', fontSize: 10,
+                color: step.will_execute ? actionCfg.color : 'var(--text-muted)',
                 flexShrink: 0,
               }}>
                 {i + 1}
@@ -121,22 +122,22 @@ function StepFlow({ steps, color }) {
 
               {/* Details */}
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: step.will_execute ? '#e8f4f8' : '#555555', marginBottom: 3 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: step.will_execute ? 'var(--text-primary)' : 'var(--text-muted)', marginBottom: 3 }}>
                   {step.description}
                 </div>
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
                   {step.action.replace('_', ' ').toUpperCase()} &mdash; {step.condition}
                 </div>
               </div>
 
               {/* Status */}
               <div style={{
-                padding: '4px 10px', borderRadius: 4,
-                fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
+                padding: '4px 10px', borderRadius: 'var(--radius-sm)',
+                fontFamily: 'var(--font-mono)', fontSize: 9,
                 letterSpacing: 1,
-                background: step.will_execute ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)',
-                color: step.will_execute ? '#ffffff' : '#555555',
-                border: `1px solid ${step.will_execute ? 'rgba(255,255,255,0.3)' : '#1a3a50'}`,
+                background: step.will_execute ? 'var(--bg-glass-heavy)' : 'var(--bg-glass)',
+                color: step.will_execute ? 'var(--text-primary)' : 'var(--text-muted)',
+                border: `1px solid ${step.will_execute ? 'var(--border-bright)' : 'var(--border-dim)'}`,
               }}>
                 {step.will_execute ? 'EXECUTE' : 'SKIP'}
               </div>
@@ -149,7 +150,7 @@ function StepFlow({ steps, color }) {
                   width: 2, height: 16,
                   background: step.will_execute
                     ? `linear-gradient(to bottom, ${actionCfg.color}60, ${ACTION_ICONS[steps[i+1]?.action]?.color || color}30)`
-                    : 'rgba(255,255,255,0.04)',
+                    : 'var(--border-dim)',
                 }} />
               </div>
             )}
@@ -163,25 +164,25 @@ function StepFlow({ steps, color }) {
 function HowItWorks({ open, onToggle }) {
   return (
     <div style={{
-      background: '#0a0a0a', border: '1px solid rgba(122,155,176,0.25)',
-      borderRadius: 10, marginBottom: 20, overflow: 'hidden',
+      background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)',
+      borderRadius: 'var(--radius-lg)', marginBottom: 20, overflow: 'hidden', boxShadow: 'var(--shadow-sm)'
     }}>
       <button
         onClick={onToggle}
         style={{
           width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '14px 22px', background: 'transparent', border: 'none',
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#7a9bb0',
+          fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)',
           letterSpacing: 3, textTransform: 'uppercase', cursor: 'pointer',
         }}
       >
         <span>{open ? '−' : '+'}&nbsp;&nbsp;How SOAR Playbooks Work — Setup &amp; Usage Guide</span>
-        <span style={{ fontSize: 9, color: '#555555' }}>{open ? 'COLLAPSE' : 'EXPAND'}</span>
+        <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>{open ? 'COLLAPSE' : 'EXPAND'}</span>
       </button>
       {open && (
         <div style={{
           padding: '6px 22px 22px 22px',
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11.5, color: '#cbd5e0',
+          fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--text-secondary)',
           lineHeight: 1.75,
         }}>
           <Section title="WHAT IS A PLAYBOOK?">
@@ -221,7 +222,7 @@ function HowItWorks({ open, onToggle }) {
             Built-in playbooks cover the 15 most common attack patterns. To add your own
             triggers, conditions, and actions (including real webhooks, SIEM exports, and
             custom alerts), use the{' '}
-            <Link to="/playbook-builder" style={{ color: '#63b3ed', textDecoration: 'underline' }}>
+            <Link to="/playbook-builder" style={{ color: 'var(--accent-blue)', textDecoration: 'underline' }}>
               Playbook Builder
             </Link>
             . Custom playbooks are tenant-scoped and run alongside the built-ins.
@@ -239,15 +240,15 @@ function HowItWorks({ open, onToggle }) {
 }
 
 const c = {
-  background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: 3,
-  border: '1px solid rgba(255,255,255,0.08)', fontSize: 10.5, color: '#e8f4f8',
+  background: 'var(--bg-glass)', padding: '1px 6px', borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border-dim)', fontSize: 10.5, color: 'var(--text-primary)',
 };
 
 function Section({ title, children }) {
   return (
     <div style={{ marginTop: 14 }}>
       <div style={{
-        fontSize: 9.5, color: '#7a9bb0', letterSpacing: 2.5, textTransform: 'uppercase',
+        fontSize: 9.5, color: 'var(--accent)', letterSpacing: 2.5, textTransform: 'uppercase',
         marginBottom: 6, fontWeight: 600,
       }}>{title}</div>
       <div>{children}</div>
@@ -277,7 +278,9 @@ export default function PlaybooksPage() {
     try {
       const result = await previewPlaybook(pb.id, riskScore);
       setPreview(result);
-    } catch {}
+    } catch {
+      // ignore
+    }
     setPreviewLoading(false);
   };
 
@@ -288,7 +291,9 @@ export default function PlaybooksPage() {
       try {
         const result = await previewPlaybook(selected, val);
         setPreview(result);
-      } catch {}
+      } catch {
+        // ignore
+      }
       setPreviewLoading(false);
     }
   };
@@ -303,15 +308,15 @@ export default function PlaybooksPage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text-primary)', letterSpacing: 2 }}>
               &#9889; SOAR PLAYBOOKS
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Automated Response Orchestration &mdash; Conditional Action Flows
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
               {playbooks.length} playbooks loaded
             </span>
           </div>
@@ -322,25 +327,25 @@ export default function PlaybooksPage() {
 
       {/* Risk Score Slider */}
       <div style={{
-        background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)',
-        borderRadius: 10, padding: '16px 24px', marginBottom: 24,
+        background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-lg)', padding: '16px 24px', marginBottom: 24, boxShadow: 'var(--shadow-sm)',
         display: 'flex', alignItems: 'center', gap: 20,
       }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', flexShrink: 0 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', flexShrink: 0 }}>
           Simulate Risk Score
         </div>
         <input type="range" min="0" max="100" value={riskScore}
           onChange={e => handleRiskChange(Number(e.target.value))}
           style={{
-            flex: 1, height: 4, appearance: 'none', background: 'rgba(255,255,255,0.06)',
+            flex: 1, height: 4, appearance: 'none', background: 'var(--border-dim)',
             borderRadius: 2, outline: 'none', cursor: 'pointer',
-            accentColor: riskScore >= 80 ? '#e53e3e' : riskScore >= 50 ? '#e6a817' : '#ffffff',
+            accentColor: riskScore >= 80 ? 'var(--accent-red)' : riskScore >= 50 ? 'var(--accent-orange)' : 'var(--text-primary)',
           }}
         />
         <div style={{
-          fontFamily: 'Syne Mono, monospace', fontSize: 24, minWidth: 50, textAlign: 'right',
-          color: riskScore >= 80 ? '#e53e3e' : riskScore >= 50 ? '#e6a817' : '#ffffff',
-          textShadow: `0 0 12px ${riskScore >= 80 ? 'rgba(229,62,62,0.4)' : riskScore >= 50 ? 'rgba(255,184,0,0.3)' : 'rgba(255,255,255,0.3)'}`,
+          fontFamily: 'var(--font-display)', fontSize: 24, minWidth: 50, textAlign: 'right',
+          color: riskScore >= 80 ? 'var(--accent-red)' : riskScore >= 50 ? 'var(--accent-orange)' : 'var(--text-primary)',
+          textShadow: `0 0 12px ${riskScore >= 80 ? 'rgba(185,28,28,0.4)' : riskScore >= 50 ? 'rgba(230,168,23,0.3)' : 'rgba(200,200,205,0.3)'}`,
         }}>
           {riskScore}
         </div>
@@ -362,9 +367,9 @@ export default function PlaybooksPage() {
 
         {/* Preview Panel */}
         <div style={{
-          background: '#0a0a0a',
-          border: `1px solid ${selected ? cfg.color + '30' : 'rgba(255,255,255,0.1)'}`,
-          borderRadius: 12,
+          background: 'var(--bg-card)', backdropFilter: 'blur(16px)',
+          border: `1px solid ${selected ? cfg.color + '30' : 'var(--border-light)'}`,
+          borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)',
           padding: 24,
           position: 'relative',
           overflow: 'hidden',
@@ -383,10 +388,10 @@ export default function PlaybooksPage() {
               justifyContent: 'center', height: '100%', minHeight: 360,
             }}>
               <div style={{ fontSize: 48, opacity: 0.15, marginBottom: 16 }}>&#9889;</div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#555555', letterSpacing: 2 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)', letterSpacing: 2 }}>
                 SELECT A PLAYBOOK TO PREVIEW
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#1a3a50', marginTop: 8 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-faint)', marginTop: 8 }}>
                 Adjust the risk score slider to see conditional actions
               </div>
             </div>
@@ -397,59 +402,59 @@ export default function PlaybooksPage() {
               {/* Preview Header */}
               <div style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: cfg.color }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: cfg.color }}>
                     {preview.playbook_name}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <span style={{
-                      padding: '4px 12px', borderRadius: 4,
-                      fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                      color: '#ffffff', background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.3)',
+                      padding: '4px 12px', borderRadius: 'var(--radius-sm)',
+                      fontFamily: 'var(--font-mono)', fontSize: 10,
+                      color: 'var(--text-primary)', background: 'var(--bg-glass)',
+                      border: '1px solid var(--border-bright)',
                     }}>
                       {preview.actions_to_execute}/{preview.total_steps} ACTIVE
                     </span>
                     {preview.mitre_technique && preview.mitre_technique !== 'N/A' && (
                       <span style={{
-                        padding: '4px 12px', borderRadius: 4,
-                        fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                        color: '#63b3ed', background: 'rgba(74,158,255,0.1)',
-                        border: '1px solid rgba(74,158,255,0.3)',
+                        padding: '4px 12px', borderRadius: 'var(--radius-sm)',
+                        fontFamily: 'var(--font-mono)', fontSize: 10,
+                        color: 'var(--accent-blue)', background: 'rgba(37,99,235,0.1)',
+                        border: '1px solid rgba(37,99,235,0.3)',
                       }}>
                         {preview.mitre_technique}
                       </span>
                     )}
                   </div>
                 </div>
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', lineHeight: 1.6 }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   {preview.description}
                 </div>
               </div>
 
               {/* KPI Strip */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-                <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 2, marginBottom: 6 }}>RISK SCORE</div>
-                  <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: riskScore >= 80 ? '#e53e3e' : riskScore >= 50 ? '#e6a817' : '#ffffff' }}>
+                <div style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '14px 16px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>RISK SCORE</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: riskScore >= 80 ? 'var(--accent-red)' : riskScore >= 50 ? 'var(--accent-orange)' : 'var(--text-primary)' }}>
                     {preview.risk_score}
                   </div>
                 </div>
-                <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 2, marginBottom: 6 }}>ACTIONS</div>
-                  <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: '#ffffff' }}>
+                <div style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '14px 16px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>ACTIONS</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--text-primary)' }}>
                     {preview.actions_to_execute}
                   </div>
                 </div>
-                <div style={{ background: '#1a1a1a', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 2, marginBottom: 6 }}>TOTAL STEPS</div>
-                  <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: '#63b3ed' }}>
+                <div style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '14px 16px', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 6 }}>TOTAL STEPS</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--accent-blue)' }}>
                     {preview.total_steps}
                   </div>
                 </div>
               </div>
 
               {/* Step Flow */}
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>
                 Action Flow
               </div>
               <StepFlow steps={preview.steps} color={cfg.color} />

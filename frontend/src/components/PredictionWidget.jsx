@@ -2,19 +2,19 @@ import { useEffect, useState } from 'react';
 import { fetchPrediction } from '../api/client';
 
 const LEVEL_COLORS = {
-  critical: '#e53e3e',
-  high: '#ed8936',
-  medium: '#e6a817',
-  low: '#ffffff',
-  monitoring: '#63b3ed',
+  critical: 'var(--accent-red)',
+  high: '#C2410C',
+  medium: 'var(--accent-amber)',
+  low: 'var(--accent-green)',
+  monitoring: 'var(--accent-blue)',
 };
 
 const LEVEL_GLOW = {
-  critical: 'var(--glow-red)',
-  high: '0 0 20px rgba(255,140,0,0.3)',
-  medium: 'var(--glow-amber)',
-  low: 'var(--glow-cyan)',
-  monitoring: '0 0 20px rgba(74,158,255,0.2)',
+  critical: 'var(--shadow-glow-red)',
+  high: '0 0 20px rgba(194, 65, 12, 0.2)',
+  medium: 'var(--shadow-glow-amber)',
+  low: 'var(--shadow-glow)',
+  monitoring: '0 0 20px rgba(37, 99, 235, 0.15)',
 };
 
 export default function PredictionWidget() {
@@ -47,7 +47,7 @@ export default function PredictionWidget() {
   if (!prediction) return null;
 
   const level = prediction.threat_level || 'monitoring';
-  const color = LEVEL_COLORS[level] || '#63b3ed';
+  const color = LEVEL_COLORS[level] || 'var(--accent-blue)';
   const glow = LEVEL_GLOW[level] || '';
   const conf = prediction.confidence || 0;
 
@@ -61,7 +61,7 @@ export default function PredictionWidget() {
       <div className="flex-between mb-16">
         <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ animation: prediction.pattern_detected ? 'pulse-live 1.5s infinite' : 'none' }}>⚡</span>
-          THREAT PREDICTION
+          Threat Prediction
           <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
             PATTERN ENGINE
           </span>
@@ -79,7 +79,7 @@ export default function PredictionWidget() {
         fontFamily: 'var(--font-display)',
         fontSize: 14,
         color,
-        textShadow: prediction.pattern_detected ? `0 0 12px ${color}60` : 'none',
+        textShadow: 'none',
         marginBottom: 8,
         lineHeight: 1.4,
       }}>
@@ -112,7 +112,6 @@ export default function PredictionWidget() {
                 background: color,
                 borderRadius: 3,
                 transition: 'width 1s ease',
-                boxShadow: `0 0 6px ${color}80`,
               }} />
             </div>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, color, minWidth: 36 }}>
@@ -126,7 +125,7 @@ export default function PredictionWidget() {
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginBottom: 4, letterSpacing: '0.1em' }}>
             VELOCITY
           </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: prediction.velocity > 3 ? '#ed8936' : 'var(--text-secondary)' }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: prediction.velocity > 3 ? '#C2410C' : 'var(--text-secondary)' }}>
             {prediction.velocity}
           </span>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginLeft: 2 }}>ev/min</span>
@@ -136,12 +135,12 @@ export default function PredictionWidget() {
       {/* MITRE next technique */}
       {prediction.mitre_next && (
         <div style={{
-          background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-dim)',
-          borderRadius: 5, padding: '8px 12px', marginBottom: 10,
+          background: 'rgba(255,255,255,0.25)', border: '1px solid var(--border-dim)',
+          borderRadius: 'var(--radius-sm)', padding: '8px 12px', marginBottom: 10,
           fontFamily: 'var(--font-mono)', fontSize: 11,
         }}>
           <span style={{ color: 'var(--text-muted)', fontSize: 9, letterSpacing: '0.1em' }}>MITRE PREDICTION: </span>
-          <span style={{ color: 'var(--accent-cyan)' }}>{prediction.mitre_next}</span>
+          <span style={{ color: 'var(--accent-blue)' }}>{prediction.mitre_next}</span>
         </div>
       )}
 

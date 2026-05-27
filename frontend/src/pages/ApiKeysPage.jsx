@@ -36,58 +36,41 @@ function KeyRevealModal({ fullKey, onClose }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(2,7,12,0.85)', backdropFilter: 'blur(6px)',
+      background: 'rgba(200,200,205,0.7)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.3)',
-        borderRadius: 12, padding: '32px 36px', maxWidth: 560, width: '90%',
-        position: 'relative',
+        background: 'var(--bg-glass-heavy)', backdropFilter: 'blur(24px)', border: '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-xl)', padding: '32px 36px', maxWidth: 560, width: '90%',
+        position: 'relative', boxShadow: 'var(--shadow-xl)'
       }}>
-        {/* Corner marks */}
-        <div style={{ position: 'absolute', top: -1, left: -1, width: 16, height: 16, borderTop: '2px solid rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,255,255,0.5)', borderRadius: '2px 0 0 0' }} />
-        <div style={{ position: 'absolute', top: -1, right: -1, width: 16, height: 16, borderTop: '2px solid rgba(255,255,255,0.5)', borderRight: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 2px 0 0' }} />
-        <div style={{ position: 'absolute', bottom: -1, left: -1, width: 16, height: 16, borderBottom: '2px solid rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 0 0 2px' }} />
-        <div style={{ position: 'absolute', bottom: -1, right: -1, width: 16, height: 16, borderBottom: '2px solid rgba(255,255,255,0.5)', borderRight: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 0 2px 0' }} />
-
-        <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: '#ffffff', marginBottom: 8 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: -0.5 }}>
           API KEY GENERATED
         </div>
 
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#e53e3e',
+          fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-red)',
           marginBottom: 20, padding: '8px 12px',
-          background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)',
-          borderRadius: 6, letterSpacing: '0.04em',
+          background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)',
+          borderRadius: 'var(--radius-sm)', letterSpacing: '0.04em',
         }}>
           WARNING: This key will only be shown once. Copy it now.
         </div>
 
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, color: '#e8f4f8',
-          background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.15)',
-          borderRadius: 6, padding: '14px 16px', wordBreak: 'break-all',
+          fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-primary)',
+          background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+          borderRadius: 'var(--radius-sm)', padding: '14px 16px', wordBreak: 'break-all',
           marginBottom: 20, letterSpacing: '0.02em',
         }}>
           {fullKey}
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button onClick={handleCopy} style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-            padding: '10px 24px', borderRadius: 6, border: 'none', cursor: 'pointer',
-            background: copied ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.12)',
-            color: '#ffffff', letterSpacing: '0.08em', textTransform: 'uppercase',
-            transition: 'all 0.2s',
-          }}>
+          <button onClick={handleCopy} className="btn btn-primary">
             {copied ? 'COPIED' : 'COPY KEY'}
           </button>
-          <button onClick={onClose} style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-            padding: '10px 24px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
-            cursor: 'pointer', background: 'transparent', color: '#a0a0a0',
-            letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.2s',
-          }}>
+          <button onClick={onClose} className="btn btn-ghost">
             CLOSE
           </button>
         </div>
@@ -97,12 +80,14 @@ function KeyRevealModal({ fullKey, onClose }) {
 }
 
 function StatusBadge({ active }) {
-  const color = active ? '#ffffff' : '#e53e3e';
+  const color = active ? 'var(--accent-green)' : 'var(--text-muted)';
+  const bg = active ? 'rgba(5,150,105,0.08)' : 'rgba(161,161,170,0.08)';
+  const border = active ? 'rgba(5,150,105,0.22)' : 'rgba(161,161,170,0.22)';
   const label = active ? 'ACTIVE' : 'REVOKED';
   return (
     <span style={{
-      fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, padding: '3px 10px',
-      borderRadius: 4, background: `${color}15`, border: `1px solid ${color}35`,
+      fontFamily: 'var(--font-mono)', fontSize: 10, padding: '3px 10px',
+      borderRadius: 'var(--radius-sm)', background: bg, border: `1px solid ${border}`,
       color, letterSpacing: '0.08em', textTransform: 'uppercase',
     }}>
       {label}
@@ -161,20 +146,20 @@ export default function ApiKeysPage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text-primary)', letterSpacing: 2 }}>
               API KEY MANAGEMENT
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Generate and manage API access credentials
             </div>
             <div style={{
               marginTop: 12, padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: 'rgba(72,187,120,0.06)', border: '1px solid rgba(72,187,120,0.25)', borderRadius: 6,
+              background: 'rgba(74,93,79,0.08)', border: '1px solid rgba(74,93,79,0.22)', borderRadius: 'var(--radius-sm)',
             }}>
-              <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#48bb78', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                 Endpoint
               </span>
-              <code style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#ffffff', letterSpacing: '0.02em' }}>
+              <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
                 {INGEST_ORIGIN}
               </code>
             </div>
@@ -195,25 +180,14 @@ export default function ApiKeysPage() {
             <button
               onClick={() => showNameInput ? handleGenerate() : setShowNameInput(true)}
               disabled={generating}
-              style={{
-                fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-                padding: '10px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: 'rgba(255,255,255,0.12)', color: '#ffffff',
-                letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.2s',
-                outline: '1px solid rgba(255,255,255,0.3)',
-              }}
+              className="btn btn-primary"
             >
               {generating ? 'GENERATING...' : showNameInput ? 'CONFIRM' : '+ GENERATE NEW KEY'}
             </button>
             {showNameInput && (
               <button
                 onClick={() => { setShowNameInput(false); setNewKeyName(''); }}
-                style={{
-                  fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-                  padding: '10px 16px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
-                  cursor: 'pointer', background: 'transparent', color: '#a0a0a0',
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                }}
+                className="btn btn-ghost"
               >
                 CANCEL
               </button>
@@ -224,10 +198,10 @@ export default function ApiKeysPage() {
 
       {error && (
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#e53e3e',
+          fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent-red)',
           padding: '10px 16px', marginBottom: 20,
-          background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)',
-          borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8,
+          background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)',
+          borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <span style={{ fontSize: 14 }}>&#9888;</span> {error}
         </div>
@@ -236,12 +210,12 @@ export default function ApiKeysPage() {
       {loading ? (
         <div className="loading"><div className="spinner" /><div className="loading-text">Loading API keys...</div></div>
       ) : keys.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#555555' }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 32, marginBottom: 12, opacity: 0.4 }}>&#128273;</div>
           NO API KEYS FOUND \u2014 GENERATE ONE TO GET STARTED
         </div>
       ) : (
-        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
           <table className="data-table">
             <thead>
               <tr>
@@ -251,16 +225,16 @@ export default function ApiKeysPage() {
             <tbody>
               {keys.map(k => (
                 <tr key={k.id || k.prefix}>
-                  <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#ffffff', letterSpacing: '0.03em' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-primary)', letterSpacing: '0.03em' }}>
                     {k.prefix || k.key_prefix || '\u2014'}
                   </td>
-                  <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#e8f4f8' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>
                     {k.name || '\u2014'}
                   </td>
-                  <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
                     {formatDate(k.created_at)}
                   </td>
-                  <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
                     {k.last_used_at ? formatDate(k.last_used_at) : 'Never'}
                   </td>
                   <td>
@@ -271,9 +245,9 @@ export default function ApiKeysPage() {
                       <button
                         onClick={() => handleRevoke(k.id)}
                         style={{
-                          fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-                          padding: '5px 14px', borderRadius: 4, border: '1px solid rgba(229,62,62,0.3)',
-                          cursor: 'pointer', background: 'rgba(229,62,62,0.08)', color: '#e53e3e',
+                          fontFamily: 'var(--font-mono)', fontSize: 10,
+                          padding: '5px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(185,28,28,0.22)',
+                          cursor: 'pointer', background: 'rgba(185,28,28,0.08)', color: 'var(--accent-red)',
                           letterSpacing: '0.06em', textTransform: 'uppercase', transition: 'all 0.2s',
                         }}
                       >
@@ -290,8 +264,8 @@ export default function ApiKeysPage() {
 
       {/* Key count footer */}
       <div style={{
-        marginTop: 16, fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-        color: '#555555', letterSpacing: '0.06em',
+        marginTop: 16, fontFamily: 'var(--font-mono)', fontSize: 10,
+        color: 'var(--text-muted)', letterSpacing: '0.06em',
       }}>
         {keys.filter(k => k.is_active !== false).length} active key{keys.filter(k => k.is_active !== false).length !== 1 ? 's' : ''} / {keys.length} total
       </div>

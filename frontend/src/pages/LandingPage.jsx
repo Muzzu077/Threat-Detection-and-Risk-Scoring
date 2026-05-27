@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Shield, Activity, Zap, Cpu, Lock, ArrowRight, Github, Twitter,
-  BarChart3, FileSearch, Radar, Workflow, Fingerprint, Terminal
+  BarChart3, FileSearch, Radar, Workflow, Fingerprint, Terminal,
+  ChevronRight, ExternalLink
 } from 'lucide-react';
 import LineWaves from '../components/ReactBits/LineWaves';
 import DecryptedText from '../components/ReactBits/DecryptedText';
 import SpotlightCard from '../components/ReactBits/SpotlightCard';
+import ShinyText from '../components/ReactBits/ShinyText';
 import './LandingPage.css';
 
 /* ═══ Fade-In Wrapper ═══════════════════════════════════════════════ */
@@ -23,6 +25,35 @@ const FadeIn = ({ children, delay = 0, className = '' }) => (
   </motion.div>
 );
 
+/* ═══ Counter Animation ═════════════════════════════════════════════ */
+function AnimatedCounter({ value, suffix = '' }) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+
+  useEffect(() => {
+    if (!started) return;
+    const num = parseFloat(value);
+    if (isNaN(num)) { setCount(value); return; }
+    let current = 0;
+    const step = num / 40;
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= num) { setCount(num); clearInterval(timer); }
+      else setCount(Math.round(current * 10) / 10);
+    }, 30);
+    return () => clearInterval(timer);
+  }, [started, value]);
+
+  return (
+    <motion.span
+      onViewportEnter={() => setStarted(true)}
+      viewport={{ once: true }}
+    >
+      {typeof count === 'number' ? count.toLocaleString() : count}{suffix}
+    </motion.span>
+  );
+}
+
 /* ═══ Navigation ════════════════════════════════════════════════════ */
 function Nav() {
   const navigate = useNavigate();
@@ -36,8 +67,18 @@ function Nav() {
 
   return (
     <nav className={`lp-nav ${scrolled ? 'scrolled' : ''}`}>
-      <div className="lp-nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-        <div className="lp-nav-logo-icon"><Shield size={18} /></div>
+      <div 
+        className="lp-nav-logo" 
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
+      >
+        <div className="lp-nav-logo-icon"><Shield size={18} aria-hidden="true" /></div>
         <span>TrustFlow</span>
       </div>
 
@@ -88,7 +129,7 @@ function Hero() {
         <FadeIn>
           <div className="lp-hero-badge">
             <div className="lp-hero-badge-dot" />
-            <span>TrustFlow v2.0 — Now with Autonomous SOAR</span>
+            <ShinyText text="TrustFlow v2.0 — Now with Autonomous SOAR" speed={4} />
           </div>
         </FadeIn>
 
@@ -109,8 +150,8 @@ function Hero() {
 
         <FadeIn delay={0.3}>
           <div className="lp-hero-actions">
-            <button className="lp-btn lp-btn-primary" onClick={() => navigate('/register')}>
-              Start Deploying <ArrowRight size={15} />
+            <button className="lp-btn lp-btn-primary lp-btn-lg" onClick={() => navigate('/register')}>
+              Start Deploying <ArrowRight size={16} />
             </button>
             <button
               className="lp-btn lp-btn-outline"
@@ -118,6 +159,17 @@ function Hero() {
             >
               <Terminal size={15} /> Explore Platform
             </button>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={0.5}>
+          <div className="lp-hero-trust">
+            <span className="lp-hero-trust-label">Trusted by</span>
+            <div className="lp-hero-trust-logos">
+              {['Enterprise SOCs', 'MSSPs', 'Fortune 500', 'Gov Agencies'].map((name, i) => (
+                <span key={i} className="lp-hero-trust-item">{name}</span>
+              ))}
+            </div>
           </div>
         </FadeIn>
       </div>
@@ -128,10 +180,10 @@ function Hero() {
 /* ═══ Stats Bar ═════════════════════════════════════════════════════ */
 function Stats() {
   const stats = [
-    { value: '<150ms', label: 'Detection Latency' },
-    { value: '97.2%', label: 'ML Accuracy' },
-    { value: '1.2B+', label: 'Threats Analyzed' },
-    { value: '99.99%', label: 'Uptime SLA' },
+    { value: '150', prefix: '<', suffix: 'ms', label: 'Detection Latency' },
+    { value: '97.2', suffix: '%', label: 'ML Accuracy' },
+    { value: '1.2', suffix: 'B+', label: 'Threats Analyzed' },
+    { value: '99.99', suffix: '%', label: 'Uptime SLA' },
   ];
 
   return (
@@ -140,7 +192,9 @@ function Stats() {
         <div className="lp-stats-inner">
           {stats.map((s, i) => (
             <div className="lp-stat" key={i}>
-              <div className="lp-stat-value">{s.value}</div>
+              <div className="lp-stat-value">
+                {s.prefix || ''}<AnimatedCounter value={s.value} suffix={s.suffix} />
+              </div>
               <div className="lp-stat-label">{s.label}</div>
             </div>
           ))}
@@ -216,6 +270,9 @@ function Features() {
                 <div className="lp-feature-icon"><f.icon size={22} /></div>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
+                <div className="lp-feature-link">
+                  Learn more <ChevronRight size={14} />
+                </div>
               </div>
             </SpotlightCard>
           </FadeIn>
@@ -270,6 +327,7 @@ function HowItWorks() {
                 <div className="lp-terminal-dot" style={{ background: '#EF4444' }} />
                 <div className="lp-terminal-dot" style={{ background: '#F59E0B' }} />
                 <div className="lp-terminal-dot" style={{ background: '#22C55E' }} />
+                <span className="lp-terminal-filename">app.js</span>
               </div>
               <div className="lp-terminal-code">
                 <span className="kw">import</span> {'{ trustFlow }'} <span className="kw">from</span> <span className="str">'@trustflow/node'</span>;<br /><br />
@@ -314,6 +372,7 @@ function CTA() {
   return (
     <section className="lp-cta" id="contact">
       <div className="lp-cta-orb" />
+      <div className="lp-cta-orb lp-cta-orb-2" />
       <div className="lp-cta-inner">
         <FadeIn>
           <div style={{ marginBottom: '2rem' }}>
@@ -327,7 +386,11 @@ function CTA() {
             and dedicated support.
           </p>
           <form className="lp-cta-form" onSubmit={handleSubmit}>
+            <label htmlFor="cta-email" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>
+              Email address
+            </label>
             <input
+              id="cta-email"
               type="email"
               required
               value={email}
@@ -366,7 +429,11 @@ function Footer() {
             ].map(col => (
               <div className="lp-footer-col" key={col.title}>
                 <h5>{col.title}</h5>
-                {col.links.map(l => <a key={l} href="#">{l}</a>)}
+                {col.links.map(l => (
+                  <a key={l} href="#">
+                    {l} <ExternalLink size={10} style={{ opacity: 0.4 }} />
+                  </a>
+                ))}
               </div>
             ))}
           </div>

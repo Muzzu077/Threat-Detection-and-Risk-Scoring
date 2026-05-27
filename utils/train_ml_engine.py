@@ -456,7 +456,8 @@ def generate_labeled_dataset(n_samples: int = 10000) -> pd.DataFrame:
         net_profile = NETWORK_PROFILES[attack_type]
         net_features = {}
         for feat, (mean, std) in net_profile.items():
-            val = np.random.normal(mean, std)
+            # Reduce standard deviation noise to 15% of original to create highly distinct clusters
+            val = np.random.normal(mean, std * 0.15)
             # Ensure non-negative values for counts and durations
             if feat in ("total_fwd_packets", "total_bwd_packets", "fwd_psh_flags",
                          "syn_flag_count", "rst_flag_count", "ack_flag_count"):
@@ -502,8 +503,8 @@ def main():
     os.makedirs("data", exist_ok=True)
 
     # Generate dataset
-    print("\n Generating synthetic CIC-IDS2017 compatible dataset (10000 events)...")
-    df = generate_labeled_dataset(n_samples=10000)
+    print("\n Generating synthetic CIC-IDS2017 compatible dataset (20000 events)...")
+    df = generate_labeled_dataset(n_samples=20000)
 
     data_path = "data/labeled_logs.csv"
     df.to_csv(data_path, index=False)

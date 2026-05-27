@@ -24,7 +24,7 @@ function formatDuration(seconds) {
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 }
 
-const SEV_COLORS = { critical: '#e53e3e', high: '#ed8936', medium: '#e6a817', low: '#48bb78' };
+const SEV_COLORS = { critical: '#B91C1C', high: '#EA580C', medium: '#D97706', low: '#059669' };
 
 // Animated counter hook
 function useCounter(target, duration = 1200) {
@@ -51,9 +51,9 @@ function AnimCounter({ value, color = 'inherit' }) {
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, padding: '10px 14px', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}>
-      <div style={{ color: '#555555', marginBottom: 4 }}>{label}</div>
-      {payload.map(p => <div key={p.dataKey} style={{ color: p.color || '#ffffff' }}>{p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</strong></div>)}
+    <div style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', border: '1px solid var(--border-mid)', borderRadius: 8, padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, boxShadow: 'var(--shadow-md)' }}>
+      <div style={{ color: 'var(--text-muted)', marginBottom: 4 }}>{label}</div>
+      {payload.map(p => <div key={p.dataKey} style={{ color: p.color || 'var(--text-primary)' }}>{p.name}: <strong>{typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</strong></div>)}
     </div>
   );
 };
@@ -118,17 +118,17 @@ export default function DashboardPage() {
       <div style={{ marginBottom: 28, position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 24, color: isCritical ? '#e53e3e' : '#ffffff', textShadow: isCritical ? '0 0 30px rgba(229,62,62,0.5)' : '0 0 30px rgba(255,255,255,0.4)', letterSpacing: 2 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: isCritical ? 'var(--accent-red)' : 'var(--text-primary)', letterSpacing: 1 }}>
               TRUSTFLOW SOC
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
               Security Operations Center — Live Monitoring
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11 }}>
-            <label style={{ cursor: 'pointer', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.4)', color: '#ffffff', padding: '6px 14px', borderRadius: 4, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: 1 }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(255,255,255,0.4)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+            <label style={{ cursor: 'pointer', background: 'var(--bg-glass)', border: '1px solid var(--border-mid)', color: 'var(--text-secondary)', padding: '6px 14px', borderRadius: 'var(--radius-sm)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: 1, backdropFilter: 'blur(8px)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.45)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-glass)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}>
               <span style={{ fontSize: 13 }}>📤</span> UPLOAD LOGS (CSV)
               <input type="file" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
                 if (!e.target.files?.length) return;
@@ -143,19 +143,19 @@ export default function DashboardPage() {
                 } catch (err) { alert('❌ Network error during upload. Is the API running?'); }
               }} />
             </label>
-            <div style={{ height: 16, width: 1, background: 'rgba(255,255,255,0.3)' }} />
+            <div style={{ height: 16, width: 1, background: 'var(--border-mid)' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 8px #ffffff', animation: 'pulse-live 1.5s ease-in-out infinite', display: 'inline-block' }}/>
-              <span style={{ color: '#ffffff' }}>LIVE</span>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 8px rgba(74,93,79,0.5)', animation: 'pulse-live 2s ease-in-out infinite', display: 'inline-block' }}/>
+              <span style={{ color: 'var(--accent)', fontWeight: 600 }}>LIVE</span>
             </div>
-            <span style={{ color: '#555555' }}>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
           </div>
         </div>
 
         {/* Alert Banner */}
-        <div style={{ marginTop: 16, padding: '12px 20px', borderRadius: 8, background: isCritical ? 'rgba(229,62,62,0.07)' : 'rgba(255,255,255,0.04)', border: `1px solid ${isCritical ? 'rgba(229,62,62,0.35)' : 'rgba(255,255,255,0.18)'}`, display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'IBM Plex Mono, monospace', fontSize: 12 }}>
+        <div style={{ marginTop: 16, padding: '12px 20px', borderRadius: 'var(--radius-md)', background: isCritical ? 'rgba(185,28,28,0.08)' : 'rgba(5,150,105,0.08)', border: `1px solid ${isCritical ? 'rgba(185,28,28,0.22)' : 'rgba(5,150,105,0.18)'}`, display: 'flex', alignItems: 'center', gap: 12, fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500 }}>
           <span style={{ fontSize: 16 }}>{isCritical ? '🚨' : '✅'}</span>
-          <span style={{ color: isCritical ? '#fc8181' : '#ffffff' }}>
+          <span style={{ color: isCritical ? 'var(--accent-red)' : 'var(--accent-green)' }}>
             {isCritical ? `CRITICAL ALERT — ${criticalCount} active high-severity events detected. Immediate investigation required.` : 'ALL SYSTEMS SECURE — No critical threats detected. Monitoring active.'}
           </span>
         </div>
@@ -164,20 +164,20 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
         <div style={{ position: 'relative', width: 160, height: 160 }}>
           <svg viewBox="0 0 120 120" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border-dim)" strokeWidth="6" />
             <circle cx="60" cy="60" r="52" fill="none"
-              stroke={isCritical ? '#e53e3e' : (stats.avg_risk || 0) >= 50 ? '#e6a817' : '#ffffff'}
+              stroke={isCritical ? '#B91C1C' : (stats.avg_risk || 0) >= 50 ? '#D97706' : 'var(--accent)'}
               strokeWidth="6" strokeLinecap="round"
               strokeDasharray={`${((stats.avg_risk || 0) / 100) * 327} 327`}
               className="gauge-ring"
-              style={{ filter: `drop-shadow(0 0 8px ${isCritical ? 'rgba(229,62,62,0.5)' : 'rgba(255,255,255,0.4)'})` }}
+              style={{ filter: `drop-shadow(0 0 8px ${isCritical ? 'rgba(185,28,28,0.4)' : 'rgba(74,93,79,0.4)'})` }}
             />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 32, color: isCritical ? '#e53e3e' : '#ffffff', textShadow: `0 0 20px ${isCritical ? 'rgba(229,62,62,0.4)' : 'rgba(255,255,255,0.4)'}` }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, color: isCritical ? 'var(--accent-red)' : 'var(--text-primary)' }}>
               {Math.round(stats.avg_risk || 0)}
             </div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 8, color: '#555555', letterSpacing: 3, textTransform: 'uppercase' }}>THREAT LEVEL</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase' }}>THREAT LEVEL</div>
           </div>
         </div>
       </div>
@@ -186,22 +186,22 @@ export default function DashboardPage() {
       {/* ── KPI Grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'TOTAL EVENTS', value: stats.total_events, accent: '#ffffff', icon: '◉', glow: 'rgba(255,255,255,0.2)' },
-          { label: 'OPEN INCIDENTS', value: openIncidents, accent: '#e53e3e', icon: '⚠', glow: 'rgba(229,62,62,0.2)' },
-          { label: 'CRITICAL ALERTS', value: criticalCount, accent: '#e53e3e', icon: '◈', glow: 'rgba(229,62,62,0.2)' },
-          { label: 'AVG RISK SCORE', value: stats.avg_risk ? Math.round(stats.avg_risk) : 0, accent: '#e6a817', icon: '▲', glow: 'rgba(255,184,0,0.2)' },
-          { label: 'HIGH SEVERITY', value: stats.high_events || 0, accent: '#ed8936', icon: '◆', glow: 'rgba(255,140,0,0.2)' },
+          { label: 'TOTAL EVENTS', value: stats.total_events, accent: 'var(--accent)', accentRaw: '#4A5D4F', icon: '◉', glow: 'rgba(74,93,79,0.15)' },
+          { label: 'OPEN INCIDENTS', value: openIncidents, accent: 'var(--accent-red)', accentRaw: '#B91C1C', icon: '⚠', glow: 'rgba(185,28,28,0.12)' },
+          { label: 'CRITICAL ALERTS', value: criticalCount, accent: 'var(--accent-red)', accentRaw: '#B91C1C', icon: '◈', glow: 'rgba(185,28,28,0.12)' },
+          { label: 'AVG RISK SCORE', value: stats.avg_risk ? Math.round(stats.avg_risk) : 0, accent: 'var(--accent-amber)', accentRaw: '#D97706', icon: '▲', glow: 'rgba(217,119,6,0.12)' },
+          { label: 'HIGH SEVERITY', value: stats.high_events || 0, accent: '#EA580C', accentRaw: '#EA580C', icon: '◆', glow: 'rgba(234,88,12,0.12)' },
         ].map((kpi, i) => (
-          <div key={i} className="stagger-item" style={{ background: '#0a0a0a', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden', cursor: 'default', transition: 'transform 0.2s, box-shadow 0.2s', animationDelay: `${i * 0.07}s` }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `0 8px 24px ${kpi.glow}`; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+          <div key={i} className="stagger-item" style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '18px 20px', position: 'relative', overflow: 'hidden', cursor: 'default', transition: 'all var(--duration-normal) var(--ease-out)', boxShadow: 'var(--shadow-sm)', animationDelay: `${i * 0.07}s` }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = `var(--shadow-lg)`; e.currentTarget.style.borderColor = 'var(--border-mid)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; e.currentTarget.style.borderColor = 'var(--border-light)'; }}
           >
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${kpi.accent}, transparent)` }} />
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 34, color: kpi.accent, textShadow: `0 0 20px ${kpi.glow}`, lineHeight: 1 }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${kpi.accentRaw}, transparent)`, opacity: 0.6 }} />
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, fontWeight: 500 }}>{kpi.label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, color: kpi.accent, lineHeight: 1 }}>
               <AnimCounter value={kpi.value} color={kpi.accent} />
             </div>
-            <div style={{ position: 'absolute', bottom: 14, right: 16, fontSize: 28, opacity: 0.06, color: kpi.accent }}>{kpi.icon}</div>
+            <div style={{ position: 'absolute', bottom: 14, right: 16, fontSize: 28, opacity: 0.08, color: kpi.accentRaw }}>{kpi.icon}</div>
           </div>
         ))}
       </div>
@@ -209,17 +209,17 @@ export default function DashboardPage() {
       {/* MTTD/MTTR Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
-          { label: 'MTTD (MEAN TIME TO DETECT)', value: formatDuration(mttd.mttd_avg_seconds), accent: '#63b3ed', icon: '\u23F1', glow: 'rgba(74,158,255,0.2)' },
-          { label: 'MTTR (MEAN TIME TO RESPOND)', value: formatDuration(mttd.mttr_avg_seconds), accent: '#b794f4', icon: '\u26A1', glow: 'rgba(168,85,247,0.2)' },
-          { label: 'AVG RESOLUTION TIME', value: formatDuration(mttd.resolution_avg_seconds), accent: '#ffffff', icon: '\u2713', glow: 'rgba(255,255,255,0.2)' },
+          { label: 'MTTD (MEAN TIME TO DETECT)', value: formatDuration(mttd.mttd_avg_seconds), accent: 'var(--accent-blue)', accentRaw: '#2563EB', icon: '\u23F1', glow: 'rgba(37,99,235,0.12)' },
+          { label: 'MTTR (MEAN TIME TO RESPOND)', value: formatDuration(mttd.mttr_avg_seconds), accent: 'var(--accent-purple)', accentRaw: '#7C3AED', icon: '\u26A1', glow: 'rgba(124,58,237,0.12)' },
+          { label: 'AVG RESOLUTION TIME', value: formatDuration(mttd.resolution_avg_seconds), accent: 'var(--accent)', accentRaw: '#4A5D4F', icon: '\u2713', glow: 'rgba(74,93,79,0.12)' },
         ].map((kpi, i) => (
-          <div key={i} style={{ background: '#0a0a0a', border: `1px solid ${kpi.glow.replace('0.2', '0.3')}`, borderRadius: 10, padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${kpi.accent}, transparent)` }} />
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10 }}>{kpi.label}</div>
-            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 28, color: kpi.accent, textShadow: `0 0 20px ${kpi.glow}`, lineHeight: 1 }}>
+          <div key={i} style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '18px 20px', position: 'relative', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${kpi.accentRaw}, transparent)`, opacity: 0.6 }} />
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, fontWeight: 500 }}>{kpi.label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: kpi.accent, lineHeight: 1 }}>
               {kpi.value || '\u2014'}
             </div>
-            <div style={{ position: 'absolute', bottom: 14, right: 16, fontSize: 28, opacity: 0.06, color: kpi.accent }}>{kpi.icon}</div>
+            <div style={{ position: 'absolute', bottom: 14, right: 16, fontSize: 28, opacity: 0.08, color: kpi.accentRaw }}>{kpi.icon}</div>
           </div>
         ))}
       </div>
@@ -228,40 +228,40 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* Hourly Activity Area Chart */}
-        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '20px 20px 12px' }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>24-H Risk Timeline</div>
+        <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '20px 20px 12px', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, fontWeight: 500 }}>24-H Risk Timeline</div>
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={hourly} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#e53e3e" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#e53e3e" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#B91C1C" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#B91C1C" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="evtGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#4A5D4F" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#4A5D4F" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#555555', fontFamily: 'IBM Plex Mono, monospace' }} interval={5} />
-              <YAxis tick={{ fontSize: 9, fill: '#555555', fontFamily: 'IBM Plex Mono, monospace' }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-dim)" />
+              <XAxis dataKey="hour" tick={{ fontSize: 9, fill: '#78716C', fontFamily: 'var(--font-mono)' }} interval={5} />
+              <YAxis tick={{ fontSize: 9, fill: '#78716C', fontFamily: 'var(--font-mono)' }} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="avgRisk" name="Avg Risk" stroke="#e53e3e" strokeWidth={1.5} fill="url(#riskGrad)" />
-              <Area type="monotone" dataKey="events" name="Events" stroke="#ffffff" strokeWidth={1.5} fill="url(#evtGrad)" />
+              <Area type="monotone" dataKey="avgRisk" name="Avg Risk" stroke="#B91C1C" strokeWidth={1.5} fill="url(#riskGrad)" />
+              <Area type="monotone" dataKey="events" name="Events" stroke="#4A5D4F" strokeWidth={1.5} fill="url(#evtGrad)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Severity Distribution */}
-        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '20px 20px 12px' }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>Severity Breakdown</div>
+        <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '20px 20px 12px', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16, fontWeight: 500 }}>Severity Breakdown</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={sevDist} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-              <XAxis type="number" tick={{ fontSize: 9, fill: '#555555' }} />
-              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#a0a0a0', fontFamily: 'IBM Plex Mono,monospace' }} width={60} />
+              <XAxis type="number" tick={{ fontSize: 9, fill: '#78716C' }} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#44403C', fontFamily: 'var(--font-mono)' }} width={60} />
               <Tooltip content={<CustomTooltip />} />
               <Bar dataKey="count" name="Events" radius={[0, 4, 4, 0]}>
-                {sevDist.map((d, i) => <Cell key={i} fill={d.fill} fillOpacity={0.8} />)}
+                {sevDist.map((d, i) => <Cell key={i} fill={d.fill} fillOpacity={0.85} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -272,24 +272,24 @@ export default function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
         {/* Left: Active Incidents */}
-        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 20 }}>
+        <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase' }}>Active Incidents</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', fontWeight: 500 }}>Active Incidents</div>
             <button className="btn btn-ghost" style={{ fontSize: 10, padding: '4px 10px' }} onClick={() => navigate('/incidents')}>VIEW ALL →</button>
           </div>
           {recentCritical.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555' }}>NO ACTIVE INCIDENTS</div>
+            <div style={{ textAlign: 'center', padding: '30px 0', fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)' }}>NO ACTIVE INCIDENTS</div>
           ) : recentCritical.map(inc => (
             <div key={inc.id} onClick={() => navigate(`/incidents/${inc.id}`)}
-              style={{ padding: '12px 14px', background: '#1a1a1a', borderRadius: 8, marginBottom: 8, border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; e.currentTarget.style.background = '#1a1a1a'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.background = '#1a1a1a'; }}
+              style={{ padding: '12px 14px', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', marginBottom: 8, border: '1px solid var(--border-dim)', cursor: 'pointer', transition: 'all 0.2s', backdropFilter: 'blur(8px)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-mid)'; e.currentTarget.style.background = 'rgba(255,255,255,0.4)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-dim)'; e.currentTarget.style.background = 'var(--bg-glass)'; e.currentTarget.style.boxShadow = 'none'; }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#ffffff' }}>INC-{String(inc.id).padStart(4, '0')}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>INC-{String(inc.id).padStart(4, '0')}</span>
                 <RiskBadge score={inc.risk_score} />
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 4 }}>{inc.user}</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{inc.user}</div>
               <AttackTypeBadge type={inc.attack_type} />
             </div>
           ))}
@@ -299,13 +299,13 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
           {/* Geo Origin Panel */}
-          <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: 20 }}>
+          <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: 20, boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase' }}>🌐 Attack Origins</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', fontWeight: 500 }}>🌐 Attack Origins</div>
               <button className="btn btn-ghost" style={{ fontSize: 10, padding: '4px 10px' }} onClick={() => navigate('/threat-intel')}>INTEL MAP →</button>
             </div>
             {geo.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555' }}>NO GEO DATA YET</div>
+              <div style={{ textAlign: 'center', padding: '16px 0', fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)' }}>NO GEO DATA YET</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {geo.slice(0, 6).map(({ country, count }) => {
@@ -314,11 +314,11 @@ export default function DashboardPage() {
                   return (
                     <div key={country} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <span style={{ fontSize: 14, minWidth: 22 }}>{flagEmoji(country)}</span>
-                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', minWidth: 30 }}>{country}</span>
-                      <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #ffffff, #63b3ed)', borderRadius: 2, boxShadow: '0 0 6px rgba(255,255,255,0.4)', transition: 'width 0.8s ease' }} />
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)', minWidth: 30 }}>{country}</span>
+                      <div style={{ flex: 1, height: 4, background: 'var(--border-dim)', borderRadius: 2, overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #4A5D4F, #6B8A73)', borderRadius: 2, boxShadow: '0 0 6px rgba(74,93,79,0.3)', transition: 'width 0.8s ease' }} />
                       </div>
-                      <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', minWidth: 22, textAlign: 'right' }}>{count}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', minWidth: 22, textAlign: 'right' }}>{count}</span>
                     </div>
                   );
                 })}
@@ -333,9 +333,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Live Feed (full width at bottom) */}
-      <div style={{ marginTop: 16, background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ffffff', boxShadow: '0 0 8px #ffffff', display: 'inline-block', animation: 'pulse-live 1.5s ease-in-out infinite' }} />
+      <div style={{ marginTop: 16, background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-dim)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500 }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', boxShadow: '0 0 8px rgba(74,93,79,0.5)', display: 'inline-block', animation: 'pulse-live 2s ease-in-out infinite' }} />
           Live Event Feed
         </div>
         <LiveFeed />

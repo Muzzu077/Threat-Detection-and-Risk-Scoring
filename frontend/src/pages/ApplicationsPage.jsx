@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { fetchApplications, createApplication, deleteApplication } from '../api/client';
 
 const ENV_COLORS = {
-  production: '#48bb78',
-  staging:    '#e6a817',
-  development:'#3182ce',
+  production: '#059669',
+  staging:    '#D97706',
+  development:'#2563EB',
 };
 
 const STATUS_COLORS = {
-  active:   '#48bb78',
-  paused:   '#e6a817',
-  archived: '#555555',
+  active:   '#059669',
+  paused:   '#D97706',
+  archived: '#78716C',
 };
 
 function formatRelative(iso) {
@@ -46,17 +46,19 @@ function CreateModal({ onClose, onCreated }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(2,7,12,0.85)', backdropFilter: 'blur(6px)',
+      background: 'rgba(200,200,205,0.7)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }} onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.18)',
-        borderRadius: 12, padding: '32px 36px', width: 540, maxWidth: '90%',
+        background: 'var(--bg-glass-heavy)', backdropFilter: 'blur(24px)',
+        border: '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-xl)', padding: '32px 36px', width: 540, maxWidth: '90%',
+        boxShadow: 'var(--shadow-xl)',
       }}>
-        <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 18, color: '#ffffff', marginBottom: 6, letterSpacing: 1.5 }}>
-          NEW APPLICATION
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--text-primary)', marginBottom: 6, letterSpacing: -0.5 }}>
+          New Application
         </div>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 24 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 24 }}>
           Register an application to monitor with TrustFlow
         </div>
 
@@ -73,11 +75,11 @@ function CreateModal({ onClose, onCreated }) {
           <div style={{ display: 'flex', gap: 8 }}>
             {['production', 'staging', 'development'].map(e => (
               <button key={e} type="button" onClick={() => setEnv(e)} style={{
-                flex: 1, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
-                padding: '10px 0', borderRadius: 5, cursor: 'pointer',
-                border: `1px solid ${environment === e ? ENV_COLORS[e] : 'rgba(255,255,255,0.1)'}`,
+                flex: 1, fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
+                padding: '10px 0', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                border: `1px solid ${environment === e ? ENV_COLORS[e] : 'var(--border-dim)'}`,
                 background: environment === e ? `${ENV_COLORS[e]}18` : 'transparent',
-                color: environment === e ? ENV_COLORS[e] : '#a0a0a0',
+                color: environment === e ? ENV_COLORS[e] : 'var(--text-muted)',
                 letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>{e}</button>
             ))}
@@ -86,27 +88,18 @@ function CreateModal({ onClose, onCreated }) {
 
         {err && (
           <div style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#e53e3e',
+            fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent-red)', fontWeight: 500,
             padding: '8px 12px', marginBottom: 16,
-            background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)',
-            borderRadius: 5,
+            background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)',
+            borderRadius: 'var(--radius-sm)',
           }}>{err}</div>
         )}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-          <button onClick={onClose} style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-            padding: '10px 20px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
-            cursor: 'pointer', background: 'transparent', color: '#a0a0a0',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-          }}>CANCEL</button>
-          <button onClick={handleSubmit} disabled={submitting} style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-            padding: '10px 22px', borderRadius: 6, border: 'none', cursor: 'pointer',
-            background: submitting ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.15)',
-            color: '#ffffff', letterSpacing: '0.08em', textTransform: 'uppercase',
-            outline: '1px solid rgba(255,255,255,0.3)',
-          }}>{submitting ? 'CREATING...' : 'CREATE'}</button>
+          <button onClick={onClose} className="btn btn-ghost">CANCEL</button>
+          <button onClick={handleSubmit} disabled={submitting} className="btn btn-primary">
+            {submitting ? 'CREATING...' : 'CREATE'}
+          </button>
         </div>
       </div>
     </div>
@@ -117,9 +110,9 @@ function Field({ label, required, children }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{
-        fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em',
-        color: '#555555', marginBottom: 6, textTransform: 'uppercase',
-      }}>{label}{required && <span style={{ color: '#e53e3e' }}> *</span>}</div>
+        fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em',
+        color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase',
+      }}>{label}{required && <span style={{ color: 'var(--accent-red)' }}> *</span>}</div>
       {children}
     </div>
   );
@@ -127,46 +120,48 @@ function Field({ label, required, children }) {
 
 function AppCard({ app, onClick, onArchive }) {
   const stats = app.stats || {};
-  const envColor    = ENV_COLORS[app.environment] || '#a0a0a0';
-  const statusColor = STATUS_COLORS[app.status] || '#a0a0a0';
+  const envColor    = ENV_COLORS[app.environment] || '#78716C';
+  const statusColor = STATUS_COLORS[app.status] || '#78716C';
 
   return (
     <div onClick={onClick} style={{
-      background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 10, padding: 22, cursor: 'pointer', transition: 'all 0.2s',
-      position: 'relative', overflow: 'hidden',
+      background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)',
+      borderRadius: 'var(--radius-lg)', padding: 22, cursor: 'pointer', transition: 'all 0.2s var(--ease-out)',
+      position: 'relative', overflow: 'hidden', boxShadow: 'var(--shadow-sm)',
     }}
     onMouseEnter={e => {
-      e.currentTarget.style.border = '1px solid rgba(255,255,255,0.25)';
+      e.currentTarget.style.borderColor = 'var(--border-bright)';
       e.currentTarget.style.transform = 'translateY(-2px)';
+      e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
     }}
     onMouseLeave={e => {
-      e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)';
+      e.currentTarget.style.borderColor = '';
       e.currentTarget.style.transform = 'translateY(0)';
+      e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
     }}>
       {/* corner accent */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: envColor, opacity: 0.4 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: envColor, opacity: 0.6 }} />
 
       {/* header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: '#ffffff', marginBottom: 4, letterSpacing: 0.5 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, color: 'var(--text-primary)', marginBottom: 4, letterSpacing: -0.3 }}>
             {app.name}
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555' }}>
-            slug: <span style={{ color: '#7a9bb0' }}>{app.slug}</span>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>
+            slug: <span style={{ color: 'var(--accent)' }}>{app.slug}</span>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
           <span style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-            padding: '2px 8px', borderRadius: 3,
+            fontFamily: 'var(--font-mono)', fontSize: 9,
+            padding: '2px 8px', borderRadius: 'var(--radius-sm)',
             background: `${envColor}18`, border: `1px solid ${envColor}40`,
             color: envColor, letterSpacing: '0.08em', textTransform: 'uppercase',
           }}>{app.environment}</span>
           <span style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-            padding: '2px 8px', borderRadius: 3,
+            fontFamily: 'var(--font-mono)', fontSize: 9,
+            padding: '2px 8px', borderRadius: 'var(--radius-sm)',
             background: `${statusColor}18`, border: `1px solid ${statusColor}40`,
             color: statusColor, letterSpacing: '0.08em', textTransform: 'uppercase',
           }}>{app.status}</span>
@@ -175,7 +170,7 @@ function AppCard({ app, onClick, onArchive }) {
 
       {/* description */}
       {app.description && (
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 16, lineHeight: 1.5 }}>
+        <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
           {app.description}
         </div>
       )}
@@ -183,24 +178,24 @@ function AppCard({ app, onClick, onArchive }) {
       {/* stats grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
         <Stat label="EVENTS"   value={stats.total_events ?? 0} />
-        <Stat label="AVG RISK" value={stats.avg_risk ?? 0} color={(stats.avg_risk ?? 0) >= 60 ? '#e53e3e' : (stats.avg_risk ?? 0) >= 30 ? '#e6a817' : '#48bb78'} />
-        <Stat label="CRITICAL" value={stats.critical_events ?? 0} color={stats.critical_events ? '#e53e3e' : '#a0a0a0'} />
-        <Stat label="OPEN"     value={stats.open_incidents ?? 0} color={stats.open_incidents ? '#ed8936' : '#a0a0a0'} />
+        <Stat label="AVG RISK" value={stats.avg_risk ?? 0} color={(stats.avg_risk ?? 0) >= 60 ? 'var(--accent-red)' : (stats.avg_risk ?? 0) >= 30 ? 'var(--accent-amber)' : 'var(--accent-green)'} />
+        <Stat label="CRITICAL" value={stats.critical_events ?? 0} color={stats.critical_events ? 'var(--accent-red)' : 'var(--text-muted)'} />
+        <Stat label="OPEN"     value={stats.open_incidents ?? 0} color={stats.open_incidents ? 'var(--accent-amber)' : 'var(--text-muted)'} />
       </div>
 
       {/* footer */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)',
-        fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555',
+        paddingTop: 12, borderTop: '1px solid var(--border-dim)',
+        fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)',
       }}>
-        <span>last seen: <span style={{ color: '#7a9bb0' }}>{formatRelative(stats.last_event_at)}</span></span>
+        <span>last seen: <span style={{ color: 'var(--accent)' }}>{formatRelative(stats.last_event_at)}</span></span>
         {app.status !== 'archived' && (
           <button onClick={(e) => { e.stopPropagation(); onArchive(app); }} style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-            padding: '3px 10px', borderRadius: 3, cursor: 'pointer',
-            background: 'rgba(229,62,62,0.06)', border: '1px solid rgba(229,62,62,0.2)',
-            color: '#e53e3e', letterSpacing: '0.06em', textTransform: 'uppercase',
+            fontFamily: 'var(--font-mono)', fontSize: 9,
+            padding: '3px 10px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+            background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)',
+            color: 'var(--accent-red)', letterSpacing: '0.06em', textTransform: 'uppercase',
           }}>ARCHIVE</button>
         )}
       </div>
@@ -208,13 +203,13 @@ function AppCard({ app, onClick, onArchive }) {
   );
 }
 
-function Stat({ label, value, color = '#ffffff' }) {
+function Stat({ label, value, color = 'var(--text-primary)' }) {
   return (
     <div>
-      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: '0.12em', marginBottom: 2 }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.12em', marginBottom: 2 }}>
         {label}
       </div>
-      <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 18, color, letterSpacing: 0.5 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color, letterSpacing: 0.5 }}>
         {value}
       </div>
     </div>
@@ -264,46 +259,34 @@ export default function ApplicationsPage() {
       {/* Header */}
       <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
-            APPLICATIONS
+          <div className="page-title">
+            Applications
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+          <div className="page-subtitle">
             Your TrustFlow integrations &mdash; {active.length} active
           </div>
         </div>
-        <button onClick={() => setMod(true)} style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-          padding: '10px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-          background: 'rgba(255,255,255,0.12)', color: '#ffffff',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
-          outline: '1px solid rgba(255,255,255,0.3)',
-        }}>+ NEW APPLICATION</button>
+        <button onClick={() => setMod(true)} className="btn btn-primary">+ New Application</button>
       </div>
 
       {error && (
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#e53e3e',
+          fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--accent-red)', fontWeight: 500,
           padding: '10px 16px', marginBottom: 20,
-          background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: 6,
+          background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)', borderRadius: 'var(--radius-sm)',
         }}>&#9888; {error}</div>
       )}
 
       {loading ? (
         <div className="loading"><div className="spinner" /><div className="loading-text">Loading applications...</div></div>
       ) : apps.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px 0', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#555555' }}>
+        <div style={{ textAlign: 'center', padding: '80px 0', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 36, marginBottom: 14, opacity: 0.4 }}>&#128218;</div>
-          <div style={{ marginBottom: 8 }}>NO APPLICATIONS YET</div>
-          <div style={{ fontSize: 10, color: '#3a3a3a', marginBottom: 24, letterSpacing: '0.06em' }}>
+          <div style={{ marginBottom: 8, fontWeight: 500 }}>NO APPLICATIONS YET</div>
+          <div style={{ fontSize: 11, color: 'var(--text-faint)', marginBottom: 24, letterSpacing: '0.06em' }}>
             Register your first app to start sending events to TrustFlow
           </div>
-          <button onClick={() => setMod(true)} style={{
-            fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-            padding: '10px 24px', borderRadius: 6, border: 'none', cursor: 'pointer',
-            background: 'rgba(255,255,255,0.12)', color: '#ffffff',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            outline: '1px solid rgba(255,255,255,0.3)',
-          }}>+ CREATE APPLICATION</button>
+          <button onClick={() => setMod(true)} className="btn btn-primary">+ Create Application</button>
         </div>
       ) : (
         <>
@@ -316,7 +299,7 @@ export default function ApplicationsPage() {
           </div>
           {archived.length > 0 && (
             <>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', marginTop: 36, marginBottom: 16 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', marginTop: 36, marginBottom: 16 }}>
                 Archived &mdash; {archived.length}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 16, opacity: 0.55 }}>

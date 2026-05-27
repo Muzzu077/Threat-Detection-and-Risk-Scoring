@@ -1192,12 +1192,37 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
     is_http_auth_post = action_upper == "POST" and any(p in resource_lower for p in auth_paths)
     is_semantic_auth  = action_lower in _semantic_auth
     if is_failure and (is_http_auth_post or is_semantic_auth):
-        return {
-            "risk_score": round(70.0 + _random.uniform(-4, 15), 1),
-            "attack_type": "brute_force",
-            "ml_confidence": 0.60,
-            "explanation": f"Failed authentication attempt from {ip} — {action_upper} {resource}",
-        }
+        # Query recent auth failures from this IP in the last 5 minutes to confirm brute force
+        recent_failures = 0
+        try:
+            session = db.Session()
+            five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+            # Count other failed events from the same IP that represent failed logins
+            recent_failures = session.query(LogEvent).filter(
+                LogEvent.ip == ip,
+                LogEvent.timestamp >= five_minutes_ago,
+                LogEvent.status == "failure"
+            ).count()
+            session.close()
+        except Exception:
+            recent_failures = 0
+
+        # If they have had at least 4 previous failures (making this the 5th attempt), flag brute force
+        if recent_failures >= 4:
+            return {
+                "risk_score": round(80.0 + _random.uniform(0, 15), 1),
+                "attack_type": "brute_force",
+                "ml_confidence": 0.92,
+                "explanation": f"Active credential brute-force attack detected from {ip} — {recent_failures + 1} failed attempts in last 5 minutes.",
+            }
+        else:
+            # Otherwise, it's just a normal failed login (elevated risk, but classified as "normal")
+            return {
+                "risk_score": round(15.0 + _random.uniform(-3, 8), 1),
+                "attack_type": "normal",
+                "ml_confidence": 0.0,
+                "explanation": f"Single failed authentication attempt from {ip} — {action_upper} {resource} (Attempts: {recent_failures + 1}/5)",
+            }
 
     # Normal traffic baseline — LOW tier (1-30), unique per event
     base = 12.0 if is_failure else 5.0

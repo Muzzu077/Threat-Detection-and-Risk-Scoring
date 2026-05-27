@@ -5,13 +5,13 @@ import {
 } from '../api/client';
 
 const STEP_TYPES = [
-  { type: 'block_ip',            label: 'Block IP',            icon: '⊘', color: '#e53e3e' },
-  { type: 'disable_account',     label: 'Disable Account',     icon: '⏻', color: '#ed8936' },
-  { type: 'dispatch_alert',      label: 'Dispatch Alert',      icon: '⌬', color: '#229ED9' },
-  { type: 'siem_export',         label: 'SIEM Export',         icon: '⛁', color: '#7a9bb0' },
-  { type: 'set_incident_status', label: 'Set Status',          icon: '◉', color: '#48bb78' },
-  { type: 'run_webhook',         label: 'Run Webhook',         icon: '↗', color: '#a78bfa' },
-  { type: 'delay',               label: 'Delay',               icon: '⏱', color: '#888' },
+  { type: 'block_ip',            label: 'Block IP',            icon: '⊘', color: '#B91C1C' },
+  { type: 'disable_account',     label: 'Disable Account',     icon: '⏻', color: '#D97706' },
+  { type: 'dispatch_alert',      label: 'Dispatch Alert',      icon: '⌬', color: '#2563EB' },
+  { type: 'siem_export',         label: 'SIEM Export',         icon: '⛁', color: '#6B8A73' },
+  { type: 'set_incident_status', label: 'Set Status',          icon: '◉', color: '#4A5D4F' },
+  { type: 'run_webhook',         label: 'Run Webhook',         icon: '↗', color: '#7C3AED' },
+  { type: 'delay',               label: 'Delay',               icon: '⏱', color: '#78716C' },
 ];
 
 const COMMON_ATTACK_TYPES = [
@@ -21,16 +21,16 @@ const COMMON_ATTACK_TYPES = [
 ];
 
 const btnPrimary = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
-  padding: '8px 16px', borderRadius: 5, border: 'none', cursor: 'pointer',
-  background: 'rgba(255,255,255,0.12)', color: '#ffffff',
+  fontFamily: 'var(--font-mono)', fontSize: 11,
+  padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',
+  background: 'var(--accent)', color: '#ffffff',
   letterSpacing: '0.08em', textTransform: 'uppercase',
-  outline: '1px solid rgba(255,255,255,0.25)',
+  outline: 'none', boxShadow: 'var(--shadow-sm)',
 };
 const btnGhost = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
-  padding: '6px 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)',
-  cursor: 'pointer', background: 'transparent', color: '#a0a0a0',
+  fontFamily: 'var(--font-mono)', fontSize: 10,
+  padding: '6px 12px', borderRadius: 4, border: '1px solid var(--border-light)',
+  cursor: 'pointer', background: 'transparent', color: 'var(--text-muted)',
   letterSpacing: '0.06em', textTransform: 'uppercase',
 };
 
@@ -50,7 +50,7 @@ function StepParamsEditor({ step, onChange }) {
       );
     case 'dispatch_alert':
       return (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
           <input type="checkbox" checked={params.severity_override === 'CRITICAL'}
                  onChange={e => setParam('severity_override', e.target.checked ? 'CRITICAL' : '')} />
           force CRITICAL severity
@@ -61,7 +61,7 @@ function StepParamsEditor({ step, onChange }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
           <input className="input" placeholder="https://..." value={params.url || ''}
                  onChange={e => setParam('url', e.target.value)}
-                 style={{ fontSize: 11, padding: '6px 8px', fontFamily: 'IBM Plex Mono, monospace' }} />
+                 style={{ fontSize: 11, padding: '6px 8px', fontFamily: 'var(--font-mono)' }} />
           <select value={params.method || 'POST'} onChange={e => setParam('method', e.target.value)}
                   className="input" style={{ fontSize: 11, padding: '6px 8px', width: 100 }}>
             {['POST', 'PUT', 'GET'].map(m => <option key={m} value={m}>{m}</option>)}
@@ -81,12 +81,12 @@ function StepParamsEditor({ step, onChange }) {
                className="input" style={{ fontSize: 11, padding: '6px 8px', width: 160 }} />
       );
     default:
-      return <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555' }}>no params</span>;
+      return <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>no params</span>;
   }
 }
 
 function StepCard({ step, idx, onMove, onRemove, onChange, isDragOver, onDragStart, onDragOver, onDrop }) {
-  const meta = STEP_TYPES.find(t => t.type === step.type) || { icon: '•', label: step.type, color: '#a0a0a0' };
+  const meta = STEP_TYPES.find(t => t.type === step.type) || { icon: '•', label: step.type, color: 'var(--text-muted)' };
   return (
     <div
       draggable
@@ -94,20 +94,22 @@ function StepCard({ step, idx, onMove, onRemove, onChange, isDragOver, onDragSta
       onDragOver={(e) => { e.preventDefault(); onDragOver(idx); }}
       onDrop={(e) => onDrop(e, idx)}
       style={{
-        background: '#0a0a0a',
-        border: `1px solid ${isDragOver ? meta.color : 'rgba(255,255,255,0.08)'}`,
-        borderRadius: 8, padding: '14px 16px', marginBottom: 10,
+        background: 'var(--bg-card)',
+        backdropFilter: 'blur(16px)',
+        border: `1px solid ${isDragOver ? meta.color : 'var(--border-light)'}`,
+        borderRadius: 'var(--radius-sm)', padding: '14px 16px', marginBottom: 10,
         position: 'relative', overflow: 'hidden',
         cursor: 'grab', transition: 'border-color 0.15s',
+        boxShadow: 'var(--shadow-sm)',
       }}>
       <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%', background: meta.color }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555', letterSpacing: '0.1em', userSelect: 'none' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em', userSelect: 'none' }}>
           ⋮⋮ {String(idx + 1).padStart(2, '0')}
         </div>
         <div style={{ fontSize: 18, color: meta.color }}>{meta.icon}</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#ffffff', letterSpacing: '0.04em' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-primary)', letterSpacing: '0.04em' }}>
             {meta.label.toUpperCase()}
           </div>
           <div style={{ marginTop: 8 }}>
@@ -117,7 +119,7 @@ function StepCard({ step, idx, onMove, onRemove, onChange, isDragOver, onDragSta
         <div style={{ display: 'flex', gap: 4 }}>
           <button onClick={() => onMove(idx, -1)} disabled={idx === 0} style={iconBtn}>↑</button>
           <button onClick={() => onMove(idx, +1)} style={iconBtn}>↓</button>
-          <button onClick={() => onRemove(idx)} style={{ ...iconBtn, color: '#e53e3e' }}>✕</button>
+          <button onClick={() => onRemove(idx)} style={{ ...iconBtn, color: '#B91C1C' }}>✕</button>
         </div>
       </div>
     </div>
@@ -125,10 +127,10 @@ function StepCard({ step, idx, onMove, onRemove, onChange, isDragOver, onDragSta
 }
 
 const iconBtn = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
+  fontFamily: 'var(--font-mono)', fontSize: 11,
   padding: '4px 10px', borderRadius: 4, cursor: 'pointer',
-  border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
-  color: '#a0a0a0',
+  border: '1px solid var(--border-light)', background: 'transparent',
+  color: 'var(--text-muted)',
 };
 
 function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
@@ -222,15 +224,15 @@ function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
           <div style={{ marginBottom: 24 }}>
             <input className="input" value={name} onChange={e => setName(e.target.value)}
                    placeholder="Playbook name"
-                   style={{ fontSize: 18, marginBottom: 8, width: '100%', fontFamily: 'Syne Mono, monospace' }} />
+                   style={{ fontSize: 18, marginBottom: 8, width: '100%', fontFamily: 'var(--font-display)' }} />
             <textarea className="input" value={desc} onChange={e => setDesc(e.target.value)}
                       placeholder="What does this playbook do?"
                       rows={2} style={{ width: '100%', resize: 'vertical' }} />
           </div>
 
           {/* Trigger panel */}
-          <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 20, marginBottom: 20 }}>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#7a9bb0', letterSpacing: '0.18em', marginBottom: 14, textTransform: 'uppercase' }}>
+          <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: 20, marginBottom: 20, boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.18em', marginBottom: 14, textTransform: 'uppercase' }}>
               ▾ TRIGGER (when this fires)
             </div>
 
@@ -239,22 +241,22 @@ function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {COMMON_ATTACK_TYPES.map(t => (
                   <button key={t} onClick={() => toggleAttackType(t)} style={{
-                    fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
+                    fontFamily: 'var(--font-mono)', fontSize: 10,
                     padding: '4px 10px', borderRadius: 3, cursor: 'pointer',
-                    border: `1px solid ${isSelected(t) ? '#7a9bb0' : 'rgba(255,255,255,0.08)'}`,
-                    background: isSelected(t) ? 'rgba(122,155,176,0.15)' : 'transparent',
-                    color: isSelected(t) ? '#7a9bb0' : '#a0a0a0',
+                    border: `1px solid ${isSelected(t) ? 'var(--accent)' : 'var(--border-light)'}`,
+                    background: isSelected(t) ? 'rgba(74,93,79,0.15)' : 'transparent',
+                    color: isSelected(t) ? 'var(--accent)' : 'var(--text-muted)',
                     letterSpacing: '0.04em',
                   }}>{t}</button>
                 ))}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555', marginTop: 6 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', marginTop: 6 }}>
                 Empty = match any attack type
               </div>
             </div>
 
             <div>
-              <Label>Min risk score: <span style={{ color: '#7a9bb0' }}>{minRisk}</span></Label>
+              <Label>Min risk score: <span style={{ color: 'var(--accent)' }}>{minRisk}</span></Label>
               <input type="range" min="0" max="100" value={minRisk} onChange={e => setMinRisk(Number(e.target.value))}
                      style={{ width: '100%' }} />
             </div>
@@ -262,11 +264,11 @@ function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
 
           {/* Steps */}
           <div>
-            <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#7a9bb0', letterSpacing: '0.18em', marginBottom: 14, textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.18em', marginBottom: 14, textTransform: 'uppercase' }}>
               ▾ STEPS (in order, drag to reorder)
             </div>
             {steps.length === 0 && (
-              <div style={{ padding: 30, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 8 }}>
+              <div style={{ padding: 30, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', border: '1px dashed var(--border-light)', borderRadius: 8 }}>
                 No steps yet — add one from the right panel
               </div>
             )}
@@ -285,33 +287,33 @@ function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
         {/* RIGHT: Step palette + actions */}
         <div>
           <div style={{ position: 'sticky', top: 20 }}>
-            <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 18, marginBottom: 16 }}>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#7a9bb0', letterSpacing: '0.18em', marginBottom: 12, textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: 18, marginBottom: 16, boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.18em', marginBottom: 12, textTransform: 'uppercase' }}>
                 ▸ ADD STEP
               </div>
               {STEP_TYPES.map(s => (
                 <button key={s.type} onClick={() => addStep(s.type)} style={{
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%',
-                  fontFamily: 'IBM Plex Mono, monospace', fontSize: 11,
+                  fontFamily: 'var(--font-mono)', fontSize: 11,
                   padding: '8px 10px', borderRadius: 5, cursor: 'pointer',
-                  border: '1px solid rgba(255,255,255,0.06)', background: 'transparent',
-                  color: '#a0a0a0', marginBottom: 6,
+                  border: '1px solid var(--border-light)', background: 'transparent',
+                  color: 'var(--text-muted)', marginBottom: 6,
                   letterSpacing: '0.06em', textAlign: 'left',
                 }}>
                   <span style={{ fontSize: 14, color: s.color }}>{s.icon}</span>
                   <span>{s.label}</span>
-                  <span style={{ marginLeft: 'auto', color: '#3a3a3a' }}>+</span>
+                  <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>+</span>
                 </button>
               ))}
             </div>
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 12, padding: '0 4px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)', marginBottom: 12, padding: '0 4px' }}>
               <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
               ENABLED
             </label>
 
             {err && (
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#e53e3e', padding: '6px 10px', marginBottom: 10, background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: 4 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#B91C1C', padding: '6px 10px', marginBottom: 10, background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.2)', borderRadius: 4 }}>
                 ⚠ {err}
               </div>
             )}
@@ -323,18 +325,18 @@ function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
               {playbook?.id && (
                 <>
                   <button onClick={handleDryRun} style={btnGhost}>DRY-RUN AGAINST SAMPLE</button>
-                  <button onClick={() => onDelete(playbook.id)} style={{ ...btnGhost, color: '#e53e3e', border: '1px solid rgba(229,62,62,0.3)' }}>DELETE PLAYBOOK</button>
+                  <button onClick={() => onDelete(playbook.id)} style={{ ...btnGhost, color: '#B91C1C', border: '1px solid rgba(185,28,28,0.3)' }}>DELETE PLAYBOOK</button>
                 </>
               )}
             </div>
 
             {dryRun && (
               <div style={{
-                marginTop: 14, fontFamily: 'IBM Plex Mono, monospace', fontSize: 10,
+                marginTop: 14, fontFamily: 'var(--font-mono)', fontSize: 10,
                 padding: 12, borderRadius: 6,
-                background: dryRun.matches ? 'rgba(72,187,120,0.06)' : 'rgba(229,62,62,0.06)',
-                border: `1px solid ${dryRun.matches ? 'rgba(72,187,120,0.25)' : 'rgba(229,62,62,0.25)'}`,
-                color: dryRun.matches ? '#48bb78' : '#e53e3e',
+                background: dryRun.matches ? 'rgba(74,93,79,0.08)' : 'rgba(185,28,28,0.06)',
+                border: `1px solid ${dryRun.matches ? 'rgba(74,93,79,0.25)' : 'rgba(185,28,28,0.25)'}`,
+                color: dryRun.matches ? 'var(--accent)' : '#B91C1C',
               }}>
                 {dryRun.matches
                   ? `✓ Trigger matches — would run ${dryRun.would_execute.length} step(s)`
@@ -350,7 +352,7 @@ function PlaybookEditor({ playbook, onSave, onCancel, onDelete }) {
 
 function Label({ children }) {
   return (
-    <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555', letterSpacing: '0.18em', marginBottom: 8, textTransform: 'uppercase' }}>
+    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.18em', marginBottom: 8, textTransform: 'uppercase' }}>
       {children}
     </div>
   );
@@ -361,10 +363,10 @@ function PlaybookList({ playbooks, onCreate, onEdit }) {
     <div className="page-enter">
       <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 22, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 2 }}>
+          <div className="page-title" style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text-primary)', letterSpacing: 2 }}>
             PLAYBOOK BUILDER
           </div>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 4, textTransform: 'uppercase', marginTop: 4 }}>
             {playbooks.length} custom playbook{playbooks.length !== 1 ? 's' : ''} · drag-and-drop step composer
           </div>
         </div>
@@ -372,10 +374,10 @@ function PlaybookList({ playbooks, onCreate, onEdit }) {
       </div>
 
       {playbooks.length === 0 ? (
-        <div style={{ padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#555' }}>
+        <div style={{ padding: 60, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>
           <div style={{ fontSize: 32, marginBottom: 14, opacity: 0.4 }}>▶</div>
           NO CUSTOM PLAYBOOKS YET
-          <div style={{ fontSize: 10, color: '#3a3a3a', marginTop: 8, letterSpacing: '0.06em' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 8, letterSpacing: '0.06em' }}>
             Build SOAR flows that automatically run on matching events
           </div>
         </div>
@@ -383,31 +385,34 @@ function PlaybookList({ playbooks, onCreate, onEdit }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: 16 }}>
           {playbooks.map(pb => (
             <div key={pb.id} onClick={() => onEdit(pb)} style={{
-              background: '#0a0a0a',
-              border: pb.enabled ? '1px solid rgba(72,187,120,0.25)' : '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 10, padding: 20, cursor: 'pointer',
+              background: 'var(--bg-card)',
+              backdropFilter: 'blur(16px)',
+              border: pb.enabled ? '1px solid rgba(74,93,79,0.35)' : '1px solid var(--border-light)',
+              borderRadius: 'var(--radius-md)', padding: 20, cursor: 'pointer',
               position: 'relative', overflow: 'hidden',
+              boxShadow: 'var(--shadow-sm)',
+              transition: 'transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out)',
             }}>
               <div style={{ position: 'absolute', top: 0, left: 0, width: 3, height: '100%',
-                            background: pb.enabled ? '#48bb78' : '#555' }} />
+                            background: pb.enabled ? 'var(--accent)' : 'var(--text-muted)' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: '#ffffff', letterSpacing: 1 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--text-primary)', letterSpacing: 1 }}>
                   {pb.name}
                 </div>
                 <span style={{
-                  fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
+                  fontFamily: 'var(--font-mono)', fontSize: 9,
                   padding: '2px 8px', borderRadius: 3,
-                  background: pb.enabled ? 'rgba(72,187,120,0.1)' : 'rgba(85,85,85,0.1)',
-                  border: `1px solid ${pb.enabled ? 'rgba(72,187,120,0.3)' : 'rgba(85,85,85,0.3)'}`,
-                  color: pb.enabled ? '#48bb78' : '#a0a0a0', letterSpacing: '0.08em', textTransform: 'uppercase',
+                  background: pb.enabled ? 'rgba(74,93,79,0.1)' : 'rgba(120,113,108,0.1)',
+                  border: `1px solid ${pb.enabled ? 'rgba(74,93,79,0.3)' : 'rgba(120,113,108,0.3)'}`,
+                  color: pb.enabled ? 'var(--accent)' : 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>{pb.enabled ? 'ACTIVE' : 'PAUSED'}</span>
               </div>
               {pb.description && (
-                <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 14, lineHeight: 1.5 }}>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>
                   {pb.description}
                 </div>
               )}
-              <div style={{ display: 'flex', gap: 16, fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#7a9bb0' }}>
+              <div style={{ display: 'flex', gap: 16, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)' }}>
                 <span>{pb.step_count} step{pb.step_count !== 1 ? 's' : ''}</span>
                 <span>·</span>
                 <span>min risk {pb.trigger_min_risk}</span>
@@ -437,7 +442,9 @@ export default function PlaybookBuilderPage() {
     try {
       const d = await fetchCustomPlaybooks();
       setPlaybooks(d.data || []);
-    } catch {}
+    } catch {
+      // ignore
+    }
     setLoading(false);
   };
   useEffect(() => { load(); }, []);

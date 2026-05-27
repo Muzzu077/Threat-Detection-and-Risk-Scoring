@@ -18,26 +18,28 @@ function KeyRevealModal({ fullKey, onClose }) {
   return (
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, zIndex: 1000,
-      background: 'rgba(2,7,12,0.85)', backdropFilter: 'blur(6px)',
+      background: 'rgba(200,200,205,0.7)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.3)',
-        borderRadius: 12, padding: '32px 36px', width: 580, maxWidth: '90%',
+        background: 'var(--bg-glass-heavy)', backdropFilter: 'blur(24px)',
+        border: '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-xl)', padding: '32px 36px', width: 580, maxWidth: '90%',
+        boxShadow: 'var(--shadow-xl)',
       }}>
-        <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 16, color: '#ffffff', marginBottom: 8 }}>API KEY GENERATED</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-primary)', marginBottom: 8 }}>API Key Generated</div>
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#e53e3e', marginBottom: 18,
-          padding: '8px 12px', background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: 5,
+          fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent-red)', marginBottom: 18, fontWeight: 500,
+          padding: '8px 12px', background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)', borderRadius: 'var(--radius-sm)',
         }}>WARNING: This key will only be shown once. Copy it now.</div>
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 13, color: '#e8f4f8',
-          background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.15)',
-          borderRadius: 6, padding: '14px 16px', wordBreak: 'break-all', marginBottom: 18,
+          fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-primary)',
+          background: 'var(--bg-glass)', backdropFilter: 'blur(12px)', border: '1px solid var(--border-dim)',
+          borderRadius: 'var(--radius-sm)', padding: '14px 16px', wordBreak: 'break-all', marginBottom: 18,
         }}>{fullKey}</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-          <button onClick={handleCopy} style={btnPrimary}>{copied ? 'COPIED' : 'COPY KEY'}</button>
-          <button onClick={onClose} style={btnGhost}>CLOSE</button>
+          <button onClick={handleCopy} className="btn btn-primary">{copied ? 'COPIED' : 'COPY KEY'}</button>
+          <button onClick={onClose} className="btn btn-ghost">CLOSE</button>
         </div>
       </div>
     </div>
@@ -45,18 +47,19 @@ function KeyRevealModal({ fullKey, onClose }) {
 }
 
 const btnPrimary = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-  padding: '10px 24px', borderRadius: 6, border: 'none', cursor: 'pointer',
-  background: 'rgba(255,255,255,0.15)', color: '#ffffff',
-  letterSpacing: '0.08em', textTransform: 'uppercase',
-  outline: '1px solid rgba(255,255,255,0.3)',
+  fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 600,
+  padding: '10px 24px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer',
+  background: 'var(--accent)', color: '#fff',
+  letterSpacing: '0.02em', textTransform: 'uppercase',
+  boxShadow: 'var(--shadow-glow)',
 };
 
 const btnGhost = {
-  fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
-  padding: '10px 20px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
-  cursor: 'pointer', background: 'transparent', color: '#a0a0a0',
-  letterSpacing: '0.08em', textTransform: 'uppercase',
+  fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 500,
+  padding: '10px 20px', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-dim)',
+  cursor: 'pointer', background: 'var(--bg-glass)', backdropFilter: 'blur(8px)',
+  color: 'var(--text-secondary)',
+  letterSpacing: '0.02em', textTransform: 'uppercase',
 };
 
 function CodeBlock({ children, label }) {
@@ -67,22 +70,22 @@ function CodeBlock({ children, label }) {
   return (
     <div style={{ position: 'relative', marginTop: 8 }}>
       {label && (
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, letterSpacing: '0.18em', color: '#555555', marginBottom: 6, textTransform: 'uppercase' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
           {label}
         </div>
       )}
       <pre style={{
-        background: '#050505', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 8, padding: '14px 16px', margin: 0, overflowX: 'auto',
-        fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#cfd8dc',
+        background: 'var(--bg-glass)', backdropFilter: 'blur(12px)', border: '1px solid var(--border-dim)',
+        borderRadius: 'var(--radius-sm)', padding: '14px 16px', margin: 0, overflowX: 'auto',
+        fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-secondary)',
         lineHeight: 1.6,
       }}>{children}</pre>
       <button onClick={handleCopy} style={{
         position: 'absolute', top: label ? 24 : 8, right: 8,
-        fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-        padding: '4px 10px', borderRadius: 4, cursor: 'pointer',
-        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-        color: copied ? '#48bb78' : '#a0a0a0', letterSpacing: '0.06em', textTransform: 'uppercase',
+        fontFamily: 'var(--font-mono)', fontSize: 9,
+        padding: '4px 10px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+        background: 'var(--bg-glass)', border: '1px solid var(--border-dim)',
+        color: copied ? 'var(--accent-green)' : 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase',
       }}>{copied ? 'COPIED' : 'COPY'}</button>
     </div>
   );
@@ -150,7 +153,7 @@ export default function ApplicationDetailPage() {
   };
 
   if (loading) return <div className="loading"><div className="spinner" /><div className="loading-text">Loading...</div></div>;
-  if (!app) return <div style={{ padding: 40, color: '#555' }}>Application not found.</div>;
+  if (!app) return <div style={{ padding: 40, color: 'var(--text-muted)' }}>Application not found.</div>;
 
   const stats        = app.stats || {};
   const apiBase      = window.location.origin;
@@ -199,9 +202,9 @@ await tf.sendEvent({
       {/* Breadcrumb */}
       <button onClick={() => navigate('/applications')} style={{
         background: 'transparent', border: 'none', cursor: 'pointer',
-        fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#7a9bb0',
-        letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 18, padding: 0,
-      }}>← APPLICATIONS</button>
+        fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent)', fontWeight: 500,
+        letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 18, padding: 0,
+      }}>← Applications</button>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
@@ -219,14 +222,14 @@ await tf.sendEvent({
             </>
           ) : (
             <>
-              <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 26, color: '#ffffff', textShadow: '0 0 24px rgba(255,255,255,0.35)', letterSpacing: 1.5, marginBottom: 6 }}>
+              <div className="page-title" style={{ marginBottom: 6 }}>
                 {app.name}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#a0a0a0', marginBottom: 6 }}>
-                {app.description || <em style={{ color: '#555' }}>No description</em>}
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {app.description || <em style={{ color: 'var(--text-faint)' }}>No description</em>}
               </div>
-              <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555', letterSpacing: '0.1em' }}>
-                slug: <span style={{ color: '#7a9bb0' }}>{app.slug}</span> · env: <span style={{ color: '#7a9bb0' }}>{app.environment}</span> · status: <span style={{ color: '#7a9bb0' }}>{app.status}</span>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
+                slug: <span style={{ color: 'var(--accent)' }}>{app.slug}</span> · env: <span style={{ color: 'var(--accent)' }}>{app.environment}</span> · status: <span style={{ color: 'var(--accent)' }}>{app.status}</span>
               </div>
             </>
           )}
@@ -235,7 +238,7 @@ await tf.sendEvent({
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setEd(true)} style={btnGhost}>EDIT</button>
             {app.status !== 'archived' && (
-              <button onClick={handleArchive} style={{ ...btnGhost, color: '#e53e3e', border: '1px solid rgba(229,62,62,0.3)' }}>ARCHIVE</button>
+              <button onClick={handleArchive} style={{ ...btnGhost, color: 'var(--accent-red)', border: '1px solid rgba(185,28,28,0.25)' }}>ARCHIVE</button>
             )}
           </div>
         )}
@@ -245,25 +248,25 @@ await tf.sendEvent({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 32 }}>
         <StatCard label="TOTAL EVENTS"     value={stats.total_events ?? 0} />
         <StatCard label="AVG RISK"         value={stats.avg_risk ?? 0}
-          color={(stats.avg_risk ?? 0) >= 60 ? '#e53e3e' : (stats.avg_risk ?? 0) >= 30 ? '#e6a817' : '#48bb78'} />
+          color={(stats.avg_risk ?? 0) >= 60 ? 'var(--accent-red)' : (stats.avg_risk ?? 0) >= 30 ? 'var(--accent-amber)' : 'var(--accent-green)'} />
         <StatCard label="CRITICAL EVENTS"  value={stats.critical_events ?? 0}
-          color={stats.critical_events ? '#e53e3e' : '#a0a0a0'} />
+          color={stats.critical_events ? 'var(--accent-red)' : 'var(--text-muted)'} />
         <StatCard label="OPEN INCIDENTS"   value={stats.open_incidents ?? 0}
-          color={stats.open_incidents ? '#ed8936' : '#a0a0a0'} />
+          color={stats.open_incidents ? 'var(--accent-amber)' : 'var(--text-muted)'} />
       </div>
 
       {err && (
         <div style={{
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#e53e3e',
+          fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--accent-red)', fontWeight: 500,
           padding: '8px 12px', marginBottom: 16,
-          background: 'rgba(229,62,62,0.08)', border: '1px solid rgba(229,62,62,0.2)', borderRadius: 5,
+          background: 'rgba(185,28,28,0.08)', border: '1px solid rgba(185,28,28,0.22)', borderRadius: 'var(--radius-sm)',
         }}>&#9888; {err}</div>
       )}
 
       {/* API Keys */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#ffffff', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
             API Keys ({keys.filter(k => k.is_active).length} active)
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -275,35 +278,35 @@ await tf.sendEvent({
         </div>
 
         {keys.length === 0 ? (
-          <div style={{ padding: 30, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#555555', background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8 }}>
+          <div style={{ padding: 30, textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-sm)' }}>
             No keys yet — generate one to start sending events from this application.
           </div>
         ) : (
-          <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
             <table className="data-table">
               <thead><tr>{['PREFIX','NAME','CREATED','LAST USED','STATUS',''].map(h => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {keys.map(k => (
                   <tr key={k.id}>
-                    <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#ffffff' }}>{k.prefix}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 11, color: '#e8f4f8' }}>{k.name}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#a0a0a0' }}>{formatDate(k.created_at)}</td>
-                    <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 10, color: '#555555' }}>{k.last_used_at ? formatDate(k.last_used_at) : 'Never'}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)' }}>{k.prefix}</td>
+                    <td style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-primary)', fontWeight: 500 }}>{k.name}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)' }}>{formatDate(k.created_at)}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-faint)' }}>{k.last_used_at ? formatDate(k.last_used_at) : 'Never'}</td>
                     <td>
                       <span style={{
-                        fontFamily: 'IBM Plex Mono, monospace', fontSize: 9,
-                        padding: '2px 8px', borderRadius: 3,
-                        background: k.is_active ? 'rgba(72,187,120,0.1)' : 'rgba(229,62,62,0.1)',
-                        border: `1px solid ${k.is_active ? 'rgba(72,187,120,0.3)' : 'rgba(229,62,62,0.3)'}`,
-                        color: k.is_active ? '#48bb78' : '#e53e3e', letterSpacing: '0.08em',
+                        fontFamily: 'var(--font-mono)', fontSize: 9,
+                        padding: '2px 8px', borderRadius: 'var(--radius-sm)',
+                        background: k.is_active ? 'rgba(5,150,105,0.10)' : 'rgba(185,28,28,0.10)',
+                        border: `1px solid ${k.is_active ? 'rgba(5,150,105,0.22)' : 'rgba(185,28,28,0.22)'}`,
+                        color: k.is_active ? 'var(--accent-green)' : 'var(--accent-red)', letterSpacing: '0.08em',
                       }}>{k.is_active ? 'ACTIVE' : 'REVOKED'}</span>
                     </td>
                     <td>
                       {k.is_active && (
                         <button onClick={() => handleRevoke(k.id)} style={{
-                          fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, padding: '3px 10px',
-                          borderRadius: 3, border: '1px solid rgba(229,62,62,0.3)',
-                          background: 'rgba(229,62,62,0.08)', color: '#e53e3e', cursor: 'pointer',
+                          fontFamily: 'var(--font-mono)', fontSize: 9, padding: '3px 10px',
+                          borderRadius: 'var(--radius-sm)', border: '1px solid rgba(185,28,28,0.22)',
+                          background: 'rgba(185,28,28,0.08)', color: 'var(--accent-red)', cursor: 'pointer',
                           letterSpacing: '0.06em', textTransform: 'uppercase',
                         }}>REVOKE</button>
                       )}
@@ -318,7 +321,7 @@ await tf.sendEvent({
 
       {/* SDK Snippets */}
       <div>
-        <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#ffffff', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: 14 }}>
           Integration Snippets
         </div>
         <CodeBlock label="cURL">{curlSnippet}</CodeBlock>
@@ -331,16 +334,16 @@ await tf.sendEvent({
   );
 }
 
-function StatCard({ label, value, color = '#ffffff' }) {
+function StatCard({ label, value, color = 'var(--text-primary)' }) {
   return (
     <div style={{
-      background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 8, padding: '18px 20px',
+      background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)',
+      borderRadius: 'var(--radius-lg)', padding: '18px 20px', boxShadow: 'var(--shadow-sm)',
     }}>
-      <div style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: 9, color: '#555555', letterSpacing: '0.18em', marginBottom: 6, textTransform: 'uppercase' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.18em', marginBottom: 6, textTransform: 'uppercase' }}>
         {label}
       </div>
-      <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 28, color, letterSpacing: 1 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color, letterSpacing: 1 }}>
         {value}
       </div>
     </div>

@@ -31,7 +31,7 @@ export function AttackTypeBadge({ type }) {
 
 export function RiskBar({ score }) {
   const sev = getSeverity(score || 0);
-  const colorMap = { critical: '#e53e3e', high: '#ed8936', medium: '#e6a817', low: '#ffffff' };
+  const colorMap = { critical: '#B91C1C', high: '#C2410C', medium: '#D97706', low: '#059669' };
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{
@@ -43,7 +43,6 @@ export function RiskBar({ score }) {
           background: colorMap[sev],
           borderRadius: 2,
           transition: 'width 0.5s ease',
-          boxShadow: `0 0 6px ${colorMap[sev]}80`,
         }} />
       </div>
       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: colorMap[sev], minWidth: 28 }}>

@@ -18,10 +18,10 @@ export default function LiveFeed() {
   };
 
   const getRiskColor = (score) => {
-    if (score >= 85) return '#e53e3e';
-    if (score >= 61) return '#ed8936';
-    if (score >= 31) return '#e6a817';
-    return '#ffffff';
+    if (score >= 85) return 'var(--accent-red)';
+    if (score >= 61) return '#C2410C';
+    if (score >= 31) return 'var(--accent-amber)';
+    return 'var(--accent-green)';
   };
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function LiveFeed() {
               <span className="feed-action">
                 {evt.action}
                 {evt.attack_type && evt.attack_type !== 'normal' && evt.attack_type !== 'unknown' && (
-                  <span style={{ marginLeft: 6, color: '#ed8936', fontSize: 10 }}>
+                  <span style={{ marginLeft: 6, color: '#C2410C', fontSize: 10 }}>
                     [{evt.attack_type}]
                   </span>
                 )}

@@ -5,7 +5,7 @@ import { fetchAttackGraph, fetchAttackChains, fetchEventsWithMitre } from '../ap
 import { SeverityBadge } from '../components/Badges';
 
 // Severity color helper
-const sevColor = (score) => score >= 85 ? '#e53e3e' : score >= 61 ? '#ed8936' : score >= 31 ? '#e6a817' : '#ffffff';
+const sevColor = (score) => score >= 85 ? 'var(--accent-red)' : score >= 61 ? '#C2410C' : score >= 31 ? 'var(--accent-amber)' : 'var(--accent-green)';
 const sevLabel = (score) => score >= 85 ? 'CRITICAL' : score >= 61 ? 'HIGH' : score >= 31 ? 'MEDIUM' : 'LOW';
 
 export default function AttackGraphPage() {
@@ -49,7 +49,7 @@ export default function AttackGraphPage() {
     const svg = d3.select(svgRef.current)
       .attr('width', W).attr('height', H);
 
-    svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#000000');
+    svg.append('rect').attr('width', W).attr('height', H).attr('fill', 'rgba(228, 228, 231, 0.5)');
 
     const g = svg.append('g');
 
@@ -66,10 +66,11 @@ export default function AttackGraphPage() {
       .force('center', d3.forceCenter(W / 2, H / 2))
       .force('collision', d3.forceCollide(20));
 
+    // Warm zinc edge colors
     const link = g.append('g').selectAll('line').data(links).join('line')
-      .attr('stroke', d => d.risk_score >= 85 ? '#e53e3e' : d.risk_score >= 61 ? '#ed8936' : d.risk_score >= 31 ? '#e6a817' : '#333333')
+      .attr('stroke', d => d.risk_score >= 85 ? '#B91C1C' : d.risk_score >= 61 ? '#C2410C' : d.risk_score >= 31 ? '#D97706' : 'rgba(161, 161, 170, 0.45)')
       .attr('stroke-width', d => d.risk_score >= 85 ? 2 : 1)
-      .attr('stroke-opacity', 0.6)
+      .attr('stroke-opacity', 0.7)
       .attr('marker-end', 'url(#arrow)');
 
     svg.append('defs').append('marker')
@@ -77,9 +78,21 @@ export default function AttackGraphPage() {
       .attr('refX', 12).attr('refY', 0)
       .attr('markerWidth', 6).attr('markerHeight', 6)
       .attr('orient', 'auto')
-      .append('path').attr('d', 'M0,-3L6,0L0,3').attr('fill', 'rgba(255,255,255,0.4)');
+      .append('path').attr('d', 'M0,-3L6,0L0,3').attr('fill', 'rgba(120, 113, 108, 0.5)');
 
     const getRadius = (type) => ({ ip: 12, user: 9, resource: 7 }[type] || 8);
+
+    // Remap node colors to warm zinc palette
+    const nodeColor = (d) => {
+      const c = (d.color || '').toLowerCase();
+      if (c.includes('e53e3e') || c.includes('red')) return '#B91C1C';
+      if (c.includes('ed8936') || c.includes('orange')) return '#C2410C';
+      if (c.includes('e6a817') || c.includes('yellow')) return '#D97706';
+      if (c.includes('63b3ed') || c.includes('blue')) return '#2563EB';
+      if (c.includes('b794f4') || c.includes('purple')) return '#7C3AED';
+      if (c === '#ffffff' || c === 'white') return '#4A5D4F';
+      return d.color || '#4A5D4F';
+    };
 
     const node = g.append('g').selectAll('g').data(nodes).join('g')
       .style('cursor', 'pointer')
@@ -92,21 +105,21 @@ export default function AttackGraphPage() {
 
     node.append('circle')
       .attr('r', d => getRadius(d.type))
-      .attr('fill', d => d.color + '22')
-      .attr('stroke', d => d.color)
+      .attr('fill', d => nodeColor(d) + '22')
+      .attr('stroke', d => nodeColor(d))
       .attr('stroke-width', 1.5)
-      .style('filter', d => `drop-shadow(0 0 4px ${d.color})`);
+      .style('filter', d => `drop-shadow(0 0 4px ${nodeColor(d)})`);
 
     node.append('text')
       .attr('text-anchor', 'middle').attr('dominant-baseline', 'central')
       .attr('font-size', d => getRadius(d.type) * 0.9)
-      .attr('fill', d => d.color)
+      .attr('fill', d => nodeColor(d))
       .text(d => ({ ip: '\u2B21', user: '\u25C9', resource: '\u25AA' }[d.type] || '\u2022'));
 
     node.append('text')
       .attr('text-anchor', 'middle').attr('dy', d => getRadius(d.type) + 10)
-      .attr('font-size', 8).attr('font-family', 'IBM Plex Mono, monospace')
-      .attr('fill', '#a0a0a0')
+      .attr('font-size', 8).attr('font-family', 'JetBrains Mono, monospace')
+      .attr('fill', '#78716C')
       .text(d => d.label?.length > 14 ? d.label.slice(0, 12) + '\u2026' : d.label);
 
     sim.on('tick', () => {
@@ -141,7 +154,7 @@ export default function AttackGraphPage() {
       {/* Header */}
       <div className="flex-between mb-24">
         <div>
-          <div className="page-title">{'\u2B21'} ATTACK GRAPH</div>
+          <div className="page-title">{'\u2B21'} Attack Graph</div>
           <div className="page-subtitle">Kill Chain Visualization — Interactive Threat Network</div>
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-muted)' }}>
@@ -152,7 +165,7 @@ export default function AttackGraphPage() {
       {/* IP Search + Tab Switcher */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
         <div style={{ position: 'relative', flex: '0 0 320px' }}>
-          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#555555', fontSize: 13 }}>{'\u2315'}</span>
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)', fontSize: 13 }}>{'\u2315'}</span>
           <input
             className="input"
             placeholder="Filter by IP address (e.g. 45.33.22.11)"
@@ -167,18 +180,18 @@ export default function AttackGraphPage() {
           </button>
         )}
         {ipFilter && (
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#e6a817' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-amber)' }}>
             {filteredChains.length} chains {'\u00B7'} {filteredEvents.length} events matching "{ipFilter}"
           </span>
         )}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
           {['graph', 'logs'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
-              padding: '6px 14px', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 11,
+              padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-mono)', fontSize: 11,
               cursor: 'pointer', border: 'none', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: 1,
-              background: activeTab === tab ? 'rgba(255,255,255,0.12)' : 'transparent',
-              color: activeTab === tab ? '#ffffff' : '#555555',
-              outline: `1px solid ${activeTab === tab ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              background: activeTab === tab ? 'rgba(255,255,255,0.55)' : 'transparent',
+              color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)',
+              outline: `1px solid ${activeTab === tab ? 'var(--border-mid)' : 'var(--border-dim)'}`,
             }}>
               {tab === 'graph' ? '\u2B21 Graph' : '\u25A6 Event Logs'}
             </button>
@@ -193,10 +206,10 @@ export default function AttackGraphPage() {
           <div className="graph-container" style={{ height: 560 }}>
             <div className="graph-legend">
               {[
-                { color: '#e53e3e', label: 'CRITICAL (>85)' },
-                { color: '#ed8936', label: 'HIGH (>61)' },
-                { color: '#e6a817', label: 'MEDIUM (>31)' },
-                { color: '#ffffff', label: 'LOW (<31)' },
+                { color: '#B91C1C', label: 'CRITICAL (>85)' },
+                { color: '#C2410C', label: 'HIGH (>61)' },
+                { color: '#D97706', label: 'MEDIUM (>31)' },
+                { color: '#4A5D4F', label: 'LOW (<31)' },
               ].map(l => (
                 <div key={l.label} className="legend-item">
                   <div className="legend-dot" style={{ background: l.color }} />
@@ -223,7 +236,7 @@ export default function AttackGraphPage() {
             {/* Selected Node */}
             <div className="card" style={{ minHeight: 140 }}>
               <div className="section-header">
-                <div className="section-title">{'\u25C9'} SELECTED NODE</div>
+                <div className="section-title">{'\u25C9'} Selected Node</div>
               </div>
               {selected ? (
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
@@ -248,7 +261,7 @@ export default function AttackGraphPage() {
             {/* Kill Chains */}
             <div className="card" style={{ flex: 1, overflow: 'hidden' }}>
               <div className="section-header flex-between">
-                <div className="section-title">{'\uD83D\uDD17'} KILL CHAINS</div>
+                <div className="section-title">{'\uD83D\uDD17'} Kill Chains</div>
                 <span className="section-count">{filteredChains.length} detected</span>
               </div>
               <div style={{ overflowY: 'auto', maxHeight: 340 }}>
@@ -258,8 +271,9 @@ export default function AttackGraphPage() {
                   </div>
                 ) : filteredChains.slice(0, 10).map(chain => (
                   <div key={chain.chain_id} style={{
-                    background: 'var(--bg-elevated)', borderRadius: 6, padding: '10px 12px',
-                    marginBottom: 8, borderLeft: `2px solid ${chain.severity === 'critical' ? '#e53e3e' : chain.severity === 'high' ? '#ed8936' : '#e6a817'}`
+                    background: 'var(--bg-glass)', backdropFilter: 'blur(8px)', borderRadius: 'var(--radius-sm)', padding: '10px 12px',
+                    marginBottom: 8, borderLeft: `3px solid ${chain.severity === 'critical' ? 'var(--accent-red)' : chain.severity === 'high' ? '#C2410C' : 'var(--accent-amber)'}`,
+                    border: '1px solid var(--border-dim)', borderLeftWidth: 3,
                   }}>
                     <div className="flex-between mb-8">
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-primary)' }}>{chain.chain_id}</span>
@@ -279,10 +293,10 @@ export default function AttackGraphPage() {
 
       {/* Tab: EVENT LOG EXPLORER */}
       {activeTab === 'logs' && (
-        <div style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555555', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'var(--bg-card)', backdropFilter: 'blur(16px)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-dim)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: 3, textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.2)' }}>
             <span>{'\u25A6'} Individual Event Logs ({filteredEvents.length} events with risk {'\u2265'} 30)</span>
-            <span style={{ color: '#ffffff', letterSpacing: 1 }}>Click any row to expand details</span>
+            <span style={{ color: 'var(--text-secondary)', letterSpacing: 1 }}>Click any row to expand details</span>
           </div>
 
           <div style={{ maxHeight: 600, overflowY: 'auto' }}>
@@ -301,21 +315,21 @@ export default function AttackGraphPage() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: '10px 20px',
-                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      borderBottom: '1px solid var(--border-dim)',
                       cursor: 'pointer', transition: 'background 0.15s',
-                      background: isExpanded ? 'rgba(255,255,255,0.04)' : 'transparent',
+                      background: isExpanded ? 'rgba(255,255,255,0.3)' : 'transparent',
                       borderLeft: `3px solid ${color}`,
                     }}
-                    onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+                    onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}
                     onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
                   >
                     {/* Expand arrow */}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555555', width: 16, flexShrink: 0, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-faint)', width: 16, flexShrink: 0, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
                       {'\u25B6'}
                     </span>
 
                     {/* Timestamp */}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555555', width: 130, flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', width: 130, flexShrink: 0 }}>
                       {evt.timestamp ? new Date(evt.timestamp).toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '--'}
                     </span>
 
@@ -325,36 +339,36 @@ export default function AttackGraphPage() {
                     </span>
 
                     {/* IP */}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#e8f4f8', width: 130, flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-primary)', width: 130, flexShrink: 0 }}>
                       {evt.ip || '--'}
                     </span>
 
                     {/* User */}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ffffff', width: 140, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', width: 140, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {evt.user || '--'}
                     </span>
 
                     {/* Attack type */}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#ed8936', background: 'rgba(255,140,0,0.1)', border: '1px solid rgba(255,140,0,0.25)', padding: '2px 8px', borderRadius: 3, flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#C2410C', background: 'rgba(234,88,12,0.08)', border: '1px solid rgba(234,88,12,0.2)', padding: '2px 8px', borderRadius: 3, flexShrink: 0 }}>
                       {(evt.attack_type || 'unknown').replace(/_/g, ' ').toUpperCase()}
                     </span>
 
                     {/* MITRE ID */}
                     {evt.mitre_id && evt.mitre_id !== 'None' && (
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#63b3ed', background: 'rgba(74,158,255,0.1)', border: '1px solid rgba(74,158,255,0.25)', padding: '2px 6px', borderRadius: 3, flexShrink: 0 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--accent-blue)', background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', padding: '2px 6px', borderRadius: 3, flexShrink: 0 }}>
                         {evt.mitre_id}
                       </span>
                     )}
 
                     {/* Action */}
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#a0a0a0', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {evt.action || '--'}
                     </span>
 
                     {/* Navigate arrow */}
                     <span
                       onClick={(e) => { e.stopPropagation(); if (evt.incident_id) navigate(`/incidents/${evt.incident_id}`); }}
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: evt.incident_id ? '#ffffff' : '#1a3a50', cursor: evt.incident_id ? 'pointer' : 'default', flexShrink: 0 }}
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: evt.incident_id ? 'var(--accent)' : 'var(--text-faint)', cursor: evt.incident_id ? 'pointer' : 'default', flexShrink: 0 }}
                       title={evt.incident_id ? `Go to INC-${String(evt.incident_id).padStart(4, '0')}` : 'No incident created (risk below threshold)'}
                     >
                       {evt.incident_id ? `INC-${String(evt.incident_id).padStart(4, '0')} \u2192` : ''}
@@ -363,16 +377,16 @@ export default function AttackGraphPage() {
 
                   {/* Expanded Detail Panel */}
                   {isExpanded && (
-                    <div style={{ background: '#0a0a0a', padding: '16px 20px 16px 44px', borderBottom: '1px solid rgba(255,255,255,0.06)', animation: 'fadeIn 0.2s ease' }}>
+                    <div style={{ background: 'var(--bg-glass-heavy)', backdropFilter: 'blur(12px)', padding: '16px 20px 16px 44px', borderBottom: '1px solid var(--border-dim)', animation: 'fadeIn 0.2s ease' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
                         {[
                           { label: 'RISK SCORE', value: Math.round(evt.risk_score || 0), color },
-                          { label: 'ML CONFIDENCE', value: `${Math.round(evt.ml_confidence || 0)}%`, color: '#63b3ed' },
-                          { label: 'COUNTRY', value: evt.country || 'UNKNOWN', color: '#a0a0a0' },
+                          { label: 'ML CONFIDENCE', value: `${Math.round(evt.ml_confidence || 0)}%`, color: 'var(--accent-blue)' },
+                          { label: 'COUNTRY', value: evt.country || 'UNKNOWN', color: 'var(--text-secondary)' },
                         ].map(kpi => (
-                          <div key={kpi.label} style={{ background: '#0a0a0a', borderRadius: 6, padding: '10px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: '#555555', letterSpacing: 2, marginBottom: 4 }}>{kpi.label}</div>
-                            <div style={{ fontFamily: 'Syne Mono, monospace', fontSize: 18, color: kpi.color }}>{kpi.value}</div>
+                          <div key={kpi.label} style={{ background: 'var(--bg-card)', backdropFilter: 'blur(8px)', borderRadius: 'var(--radius-sm)', padding: '10px 14px', border: '1px solid var(--border-dim)' }}>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 4 }}>{kpi.label}</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: kpi.color }}>{kpi.value}</div>
                           </div>
                         ))}
                       </div>
@@ -390,16 +404,16 @@ export default function AttackGraphPage() {
                           ['MITRE Tactic', evt.mitre_tactic || '--'],
                           ['Threat Intel Score', `${evt.threat_intel_score || 0}%`],
                         ].map(([k, v]) => (
-                          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#555555' }}>{k}</span>
-                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#e8f4f8' }}>{v}</span>
+                          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border-dim)' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)' }}>{k}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-primary)' }}>{v}</span>
                           </div>
                         ))}
                       </div>
 
                       {/* Risk breakdown bars */}
                       <div style={{ marginTop: 14 }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#555555', letterSpacing: 2, marginBottom: 8 }}>RISK BREAKDOWN</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: 2, marginBottom: 8 }}>RISK BREAKDOWN</div>
                         {[
                           { label: 'Anomaly Score', val: evt.anomaly_score },
                           { label: 'Time Risk', val: evt.time_risk },
@@ -407,14 +421,14 @@ export default function AttackGraphPage() {
                           { label: 'Resource Risk', val: evt.resource_risk },
                         ].map(row => {
                           const pct = Math.min(100, Math.max(0, row.val || 0));
-                          const barColor = pct >= 70 ? '#e53e3e' : pct >= 40 ? '#e6a817' : '#ffffff';
+                          const barColor = pct >= 70 ? 'var(--accent-red)' : pct >= 40 ? 'var(--accent-amber)' : 'var(--accent-green)';
                           return (
                             <div key={row.label} style={{ marginBottom: 6 }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#555555' }}>{row.label}</span>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)' }}>{row.label}</span>
                                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: barColor }}>{Math.round(pct)}</span>
                               </div>
-                              <div style={{ height: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ height: 3, background: 'var(--bg-elevated)', borderRadius: 2, overflow: 'hidden' }}>
                                 <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: 2, transition: 'width 0.6s ease' }} />
                               </div>
                             </div>

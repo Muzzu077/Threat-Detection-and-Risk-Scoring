@@ -28,15 +28,10 @@ import { authMe, authLogout } from './api/client';
 function AdminOnly({ user, children }) {
   if (user?.role !== 'admin') {
     return (
-      <div style={{
-        padding: 60, textAlign: 'center', fontFamily: 'IBM Plex Mono, monospace',
-        color: '#a0a0a0', fontSize: 13,
-      }}>
-        <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.4 }}>&#128274;</div>
-        <div style={{ color: '#e53e3e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-          Access Denied
-        </div>
-        <div style={{ fontSize: 11, color: '#555555' }}>
+      <div className="access-denied">
+        <div className="access-denied-icon">🔒</div>
+        <div className="access-denied-title">Access Denied</div>
+        <div className="access-denied-text">
           This section requires administrator privileges. If you were just promoted,
           your session needs to refresh — try navigating away and back, or log out and back in.
         </div>
@@ -46,9 +41,6 @@ function AdminOnly({ user, children }) {
   return children;
 }
 
-// Re-fetch the current user from the backend on every navigation. This
-// ensures a freshly promoted/demoted user picks up their new role without
-// having to log out and back in.
 function UserRefresher({ onUser }) {
   const location = useLocation();
   const lastPathRef = useRef(null);
@@ -58,7 +50,7 @@ function UserRefresher({ onUser }) {
     lastPathRef.current = location.pathname;
     authMe()
       .then((data) => { if (data?.user) onUser(data.user); })
-      .catch(() => {});
+      .catch(() => { /* ignore */ });
   }, [location.pathname, onUser]);
   return null;
 }
@@ -86,11 +78,10 @@ function App() {
     }
   }, []);
 
-  // When any API call hints that the role changed, re-sync from backend.
   useEffect(() => {
     const handler = () => {
       if (!localStorage.getItem('tp_tokens')) return;
-      authMe().then((data) => { if (data?.user) setUser(data.user); }).catch(() => {});
+      authMe().then((data) => { if (data?.user) setUser(data.user); }).catch(() => { /* ignore */ });
     };
     window.addEventListener('tp:role-may-have-changed', handler);
     return () => window.removeEventListener('tp:role-may-have-changed', handler);
@@ -104,7 +95,7 @@ function App() {
   const handleLogout = () => {
     const tokens = JSON.parse(localStorage.getItem('tp_tokens') || '{}');
     if (tokens.refresh_token) {
-      authLogout(tokens.refresh_token).catch(() => {});
+      authLogout(tokens.refresh_token).catch(() => { /* ignore */ });
     }
     localStorage.removeItem('tp_tokens');
     localStorage.removeItem('tp_user');
@@ -116,10 +107,11 @@ function App() {
     return (
       <div style={{
         height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg-dark)', color: '#ffffff',
-        fontFamily: 'IBM Plex Mono, monospace', fontSize: 12,
+        flexDirection: 'column', gap: 16,
+        background: 'var(--bg-base)', color: 'var(--text-primary)',
       }}>
-        INITIALIZING TRUSTFLOW...
+        <div className="spinner" />
+        <div className="loading-text">Initializing TrustFlow...</div>
       </div>
     );
   }
@@ -139,21 +131,15 @@ function App() {
         <Sidebar role={user?.role} />
         <main className="main-content">
           {/* Top Bar */}
-          <div style={{
-            display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-            marginBottom: 20, paddingBottom: 16,
-            borderBottom: '1px solid var(--border-dim)'
-          }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-muted)', marginRight: 12 }}>
-              OPERATOR: <span style={{ color: 'var(--accent-cyan)' }}>{(user?.display_name || user?.email || '').toUpperCase()}</span>
+          <div className="top-bar">
+            <span className="top-bar-user">
+              OPERATOR: <span className="top-bar-user-name">{(user?.display_name || user?.email || '').toUpperCase()}</span>
               {user?.role === 'admin' && (
-                <span style={{ marginLeft: 8, padding: '2px 6px', background: 'rgba(229,62,62,0.15)', border: '1px solid rgba(229,62,62,0.3)', borderRadius: 3, fontSize: 8, color: '#e53e3e' }}>
-                  ADMIN
-                </span>
+                <span className="top-bar-admin-badge">ADMIN</span>
               )}
             </span>
-            <button className="btn btn-ghost" style={{ fontSize: 10 }} onClick={handleLogout}>
-              DISCONNECT
+            <button className="btn btn-ghost top-bar-logout" onClick={handleLogout}>
+              Disconnect
             </button>
           </div>
 
@@ -170,11 +156,9 @@ function App() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/playbook-builder" element={<PlaybookBuilderPage />} />
 
-            {/* Tenant-scoped SOAR pages — every authenticated user sees their own */}
             <Route path="/response"     element={<ResponsePage user={user} />} />
             <Route path="/playbooks"    element={<PlaybooksPage user={user} />} />
 
-            {/* Admin-only routes — render Access Denied for non-admins */}
             <Route path="/ml-metrics"   element={<AdminOnly user={user}><MLMetricsPage /></AdminOnly>} />
             <Route path="/ml-lab"       element={<AdminOnly user={user}><MLLabPage /></AdminOnly>} />
             <Route path="/compliance"   element={<AdminOnly user={user}><CompliancePage /></AdminOnly>} />

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Shield } from 'lucide-react';
 import { api } from '../api/client';
+import DecryptedText from '../components/ReactBits/DecryptedText';
 
 export default function RegisterPage({ onRegister }) {
   const [email, setEmail] = useState('');
@@ -17,14 +19,14 @@ export default function RegisterPage({ onRegister }) {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('ACCESS DENIED \u2014 PASSWORDS DO NOT MATCH');
+      setError('Passwords do not match');
       setShake(true);
       setTimeout(() => setShake(false), 600);
       return;
     }
 
     if (password.length < 6) {
-      setError('ACCESS DENIED \u2014 PASSWORD MUST BE AT LEAST 6 CHARACTERS');
+      setError('Password must be at least 6 characters');
       setShake(true);
       setTimeout(() => setShake(false), 600);
       return;
@@ -45,8 +47,8 @@ export default function RegisterPage({ onRegister }) {
 
       if (onRegister) onRegister(user);
     } catch (err) {
-      const msg = err.response?.data?.detail || err.response?.data?.message || 'REGISTRATION FAILED \u2014 TRY AGAIN';
-      setError(typeof msg === 'string' ? msg.toUpperCase() : 'REGISTRATION FAILED');
+      const msg = err.response?.data?.detail || err.response?.data?.message || 'Registration failed — try again';
+      setError(typeof msg === 'string' ? msg : 'Registration failed');
       setShake(true);
       setTimeout(() => setShake(false), 600);
     }
@@ -54,94 +56,94 @@ export default function RegisterPage({ onRegister }) {
   };
 
   return (
-    <div className="login-page" style={{ overflow: 'hidden' }}>
+    <div className="login-page">
       <div className="login-bg-grid" />
 
       <div className="login-box" style={{
         position: 'relative', zIndex: 10,
         animation: shake ? 'shake 0.5s ease' : undefined,
       }}>
-        <div style={{ position: 'absolute', top: -1, left: -1, width: 20, height: 20, borderTop: '2px solid rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,255,255,0.5)', borderRadius: '2px 0 0 0' }} />
-        <div style={{ position: 'absolute', top: -1, right: -1, width: 20, height: 20, borderTop: '2px solid rgba(255,255,255,0.5)', borderRight: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 2px 0 0' }} />
-        <div style={{ position: 'absolute', bottom: -1, left: -1, width: 20, height: 20, borderBottom: '2px solid rgba(255,255,255,0.5)', borderLeft: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 0 0 2px' }} />
-        <div style={{ position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderBottom: '2px solid rgba(255,255,255,0.5)', borderRight: '2px solid rgba(255,255,255,0.5)', borderRadius: '0 0 2px 0' }} />
-
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 24, lineHeight: 1.4, textAlign: 'center' }}>
-          {'// OPERATOR ENROLLMENT SYSTEM'}
-        </div>
-
         <div className="login-header">
-          <div style={{ fontSize: 40, marginBottom: 12, filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.3))' }}>&#128737;</div>
-          <div className="login-title" style={{ fontSize: 28 }}>TRUSTFLOW</div>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: 'var(--accent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+            boxShadow: 'var(--shadow-glow)'
+          }}>
+            <Shield size={26} color="#fff" />
+          </div>
+          <div className="login-title">
+            <DecryptedText text="TrustFlow" animateOn="view" speed={50} maxIterations={6} />
+          </div>
           <div className="login-subtitle">
-            <span>New Operator Registration</span>
+            New Operator Registration
           </div>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">EMAIL</label>
-            <input className="input" type="email" placeholder="operator@trustflow.io"
+            <label htmlFor="email" className="form-label">Email</label>
+            <input id="email" className="input" type="email" placeholder="operator@company.com"
               value={email} onChange={e => setEmail(e.target.value)}
               autoComplete="email" required />
           </div>
 
           <div className="form-group">
-            <label className="form-label">DISPLAY NAME</label>
-            <input className="input" type="text" placeholder="Agent Callsign"
+            <label htmlFor="display-name" className="form-label">Display Name</label>
+            <input id="display-name" className="input" type="text" placeholder="Your display name"
               value={displayName} onChange={e => setDisplayName(e.target.value)}
               autoComplete="name" required />
           </div>
 
           <div className="form-group">
-            <label className="form-label">PASSWORD</label>
-            <input className="input" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+            <label htmlFor="password" className="form-label">Password</label>
+            <input id="password" className="input" type="password" placeholder="••••••••••"
               value={password} onChange={e => setPassword(e.target.value)}
               autoComplete="new-password" required />
           </div>
 
           <div className="form-group">
-            <label className="form-label">CONFIRM PASSWORD</label>
-            <input className="input" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
+            <label htmlFor="confirm-password" className="form-label">Confirm Password</label>
+            <input id="confirm-password" className="input" type="password" placeholder="••••••••••"
               value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
               autoComplete="new-password" required />
           </div>
 
           {error && (
-            <div className="login-error" style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <span style={{ fontSize: 14 }}>&#9888;</span> {error}
+            <div className="login-error">
+              ⚠ {error}
             </div>
           )}
 
-          <button className="login-btn" type="submit" disabled={loading} style={{
-            position: 'relative', overflow: 'hidden',
-          }}>
+          <button className="login-btn" type="submit" disabled={loading}>
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                <span className="spinner" style={{ width: 14, height: 14, borderWidth: 1.5 }} />
-                CREATING ACCOUNT...
+                <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                Creating Account...
               </span>
-            ) : 'CREATE ACCOUNT \u2192'}
+            ) : 'Create Account →'}
           </button>
         </form>
 
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
-          <span
+        <div style={{ marginTop: 28, textAlign: 'center' }}>
+          <button
             onClick={() => navigate('/login')}
             style={{
-              fontFamily: 'var(--font-mono)', fontSize: 11, color: '#ffffff',
-              cursor: 'pointer', letterSpacing: '0.05em',
-              borderBottom: '1px solid rgba(255,255,255,0.3)', paddingBottom: 2,
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 500,
+              color: 'var(--accent)',
+              textDecoration: 'underline', textUnderlineOffset: 3,
             }}
           >
-            Already have an account? Login
-          </span>
-        </div>
-
-        <div style={{ marginTop: 16, fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--border-bright)', letterSpacing: 2, textAlign: 'center' }}>
-          ALL ACTIVITIES ARE MONITORED AND LOGGED
+            Already have an account? Sign In
+          </button>
+          <div style={{
+            marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: '0.58rem',
+            color: 'var(--text-faint)', letterSpacing: '0.1em', fontWeight: 500,
+          }}>
+            ALL ACTIVITIES ARE MONITORED AND LOGGED
+          </div>
         </div>
       </div>
     </div>
