@@ -105,6 +105,10 @@ services:
       TO_WHATSAPP:        ${TO_WHATSAPP:-}
       ENABLE_TELEGRAM:    ${ENABLE_TELEGRAM:-false}
       ENABLE_WHATSAPP:    ${ENABLE_WHATSAPP:-false}
+      # Suppress TensorFlow CUDA errors (no GPU in container)
+      CUDA_VISIBLE_DEVICES: ""
+      TF_CPP_MIN_LOG_LEVEL: "3"
+      TF_ENABLE_ONEDNN_OPTS: "0"
     depends_on:
       postgres:
         condition: service_healthy

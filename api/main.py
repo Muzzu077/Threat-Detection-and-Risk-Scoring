@@ -288,7 +288,7 @@ async def broadcast_live_events():
                 await manager.broadcast_to_tenant(payload, event.tenant_id)
         except Exception:
             pass
-        await asyncio.sleep(2)
+        await asyncio.sleep(15)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -1194,6 +1194,7 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
     if is_failure and (is_http_auth_post or is_semantic_auth):
         # Query recent auth failures from this IP in the last 5 minutes to confirm brute force
         recent_failures = 0
+        session = None
         try:
             session = db.Session()
             five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
@@ -1203,9 +1204,11 @@ def _analyze_sdk_event(action: str, status: str, resource: str, ip: str) -> dict
                 LogEvent.timestamp >= five_minutes_ago,
                 LogEvent.status == "failure"
             ).count()
-            session.close()
         except Exception:
             recent_failures = 0
+        finally:
+            if session is not None:
+                session.close()
 
         # If they have had at least 4 previous failures (making this the 5th attempt), flag brute force
         if recent_failures >= 4:
